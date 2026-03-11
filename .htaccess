@@ -1,0 +1,25 @@
+# ============================================================
+# .htaccess — Raiz do Projeto
+# ============================================================
+# Este arquivo fica na raiz (crm/) e protege os diretórios
+# sensíveis de acesso direto pelo navegador.
+# ============================================================
+
+# Bloqueia acesso direto a qualquer arquivo em /app, /core, /config, /database
+# O único ponto de entrada público é /public/index.php
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Redireciona tudo para public/ mantendo a URL amigável
+    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^(.*)$ public/$1 [L]
+</IfModule>
+
+# Impede listagem de diretórios (segurança)
+Options -Indexes
+
+# Bloqueia acesso a arquivos sensíveis
+<FilesMatch "\.(env|sql|md|json|lock|gitignore)$">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
