@@ -4,12 +4,10 @@
 -- Charset: utf8mb4 (suporta emojis e caracteres especiais)
 -- ============================================================
 
--- Cria o banco de dados apenas se ainda não existir
-CREATE DATABASE IF NOT EXISTS crm_db
-  CHARACTER SET utf8mb4
-  COLLATE utf8mb4_unicode_ci;
-
-USE crm_db;
+-- ATENÇÃO: Em hospedagem compartilhada (Hostinger, etc.), crie o banco
+-- manualmente pelo painel de controle (hPanel) e importe este arquivo
+-- com o banco já selecionado. As linhas CREATE DATABASE e USE foram
+-- removidas pois o usuário de hospedagem não tem essa permissão.
 
 -- ------------------------------------------------------------
 -- TABELA: users
