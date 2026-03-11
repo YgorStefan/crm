@@ -1,0 +1,16 @@
+<?php
+// ============================================================
+// config/database.php — Credenciais de Conexão com o MySQL
+// ============================================================
+// Copie este arquivo para config/database.php e preencha
+// com suas credenciais reais. NÃO commite o arquivo real!
+// ============================================================
+
+return [
+    'host'    => 'localhost',
+    'port'    => '3306',
+    'dbname'  => 'crm_db',
+    'user'    => 'seu_usuario_mysql',
+    'pass'    => 'sua_senha_mysql',
+    'charset' => 'utf8mb4',
+];
