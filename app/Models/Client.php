@@ -63,7 +63,7 @@ class Client extends Model
     /**
      * Busca um cliente com todas as relações (para a tela de detalhes).
      */
-    public function findByIdWithRelations(int $id): array|false
+    public function findByIdWithRelations(int $id): array|bool
     {
         $stmt = $this->db->prepare("
             SELECT

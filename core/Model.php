@@ -38,7 +38,7 @@ abstract class Model
      * @param  int   $id  Chave primária do registro
      * @return array|false  Array associativo com o registro, ou false se não encontrado
      */
-    public function findById(int $id): array|false
+    public function findById(int $id): array|bool
     {
         $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE id = :id LIMIT 1");
         $stmt->execute([':id' => $id]);

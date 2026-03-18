@@ -82,7 +82,8 @@ class Database
             } catch (PDOException $e) {
                 // Em produção, não expomos mensagens de erro do banco para o usuário.
                 // Logamos internamente e mostramos uma mensagem genérica.
-                if (APP_ENV === 'development') {
+                $env = defined('APP_ENV') ? APP_ENV : 'development';
+                if ($env === 'development') {
                     // Em desenvolvimento, mostramos o erro completo para facilitar debug
                     die('Erro de conexão com o banco de dados: ' . $e->getMessage());
                 } else {

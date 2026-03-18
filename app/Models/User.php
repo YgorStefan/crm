@@ -23,7 +23,7 @@ class User extends Model
      * @param  string       $email
      * @return array|false  Dados do usuário ou false se não encontrado
      */
-    public function findByEmail(string $email): array|false
+    public function findByEmail(string $email): array|bool
     {
         $stmt = $this->db->prepare(
             "SELECT * FROM users WHERE email = :email AND is_active = 1 LIMIT 1"
