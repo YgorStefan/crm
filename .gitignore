@@ -5,11 +5,6 @@
 # Principalmente: credenciais, uploads de usuários e caches.
 # ============================================================
 
-# --- Credenciais e configuração real ---
-# O arquivo de configuração com senha real NÃO deve ir ao repo.
-# Use .env.example como template e crie o config/database.php localmente.
-config/database.php
-
 # Arquivo .env com variáveis de ambiente reais
 .env
 
