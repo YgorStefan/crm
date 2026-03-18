@@ -25,8 +25,8 @@
     </div>
 </div>
 
-<!-- Board Kanban (scroll horizontal) -->
-<div class="flex gap-4 overflow-x-auto pb-6 kanban-scroll" id="kanbanBoard"
+<!-- Board Kanban (quebra de linha automática) -->
+<div class="flex flex-wrap items-start gap-4 pb-6" id="kanbanBoard"
      data-move-url="<?= APP_URL ?>/pipeline/move"
      data-csrf="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
 
@@ -37,7 +37,7 @@
         $totalValue = array_sum(array_column($stageClients, 'deal_value'));
     ?>
     <!-- Coluna da Etapa -->
-    <div class="kanban-column flex-shrink-0 w-72 flex flex-col"
+    <div class="kanban-column w-full sm:w-72 flex flex-col"
          data-stage-id="<?= $stage['id'] ?>">
 
         <!-- Cabeçalho da coluna -->
