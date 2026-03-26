@@ -80,12 +80,19 @@ $router->get( '/clients/{id}/edit',    'ClientController', 'edit',    ['AuthMidd
 $router->post('/clients/{id}/update',  'ClientController', 'update',  ['AuthMiddleware', 'CsrfMiddleware']);
 $router->post('/clients/{id}/delete',  'ClientController', 'destroy', ['AuthMiddleware', 'CsrfMiddleware']);
 
+// ---- Cotas de Consórcio (AJAX) ----
+$router->post('/clients/{id}/sales',                    'ClientController', 'storeSale',   ['AuthMiddleware', 'CsrfMiddleware']);
+$router->post('/clients/{id}/sales/{sale_id}/delete',   'ClientController', 'destroySale', ['AuthMiddleware', 'CsrfMiddleware']);
+$router->post('/clients/{id}/sales/{sale_id}/paid',     'ClientController', 'markSalePaid', ['AuthMiddleware', 'CsrfMiddleware']);
+
 // ---- Pipeline / Kanban ----
 $router->get( '/pipeline',                        'PipelineController', 'index',       ['AuthMiddleware']);
 $router->post('/pipeline/move',                   'PipelineController', 'move',        ['AuthMiddleware', 'CsrfMiddleware']);
 $router->get( '/pipeline/stages',                 'PipelineController', 'stages',      ['AuthMiddleware']);
 $router->post('/pipeline/stages/store',           'PipelineController', 'storeStage',  ['AuthMiddleware', 'CsrfMiddleware']);
 $router->post('/pipeline/stages/{id}/delete',     'PipelineController', 'destroyStage',['AuthMiddleware', 'CsrfMiddleware']);
+$router->post('/pipeline/stages/{id}/update',     'PipelineController', 'updateStage', ['AuthMiddleware', 'CsrfMiddleware']);
+$router->post('/pipeline/stages/{id}/move',       'PipelineController', 'moveStage',   ['AuthMiddleware', 'CsrfMiddleware']);
 
 // ---- Interações ----
 $router->post('/interactions/store',       'InteractionController', 'store',   ['AuthMiddleware', 'CsrfMiddleware']);
@@ -97,6 +104,11 @@ $router->post('/tasks/store',         'TaskController', 'store',   ['AuthMiddlew
 $router->post('/tasks/{id}/update',   'TaskController', 'update',  ['AuthMiddleware', 'CsrfMiddleware']);
 $router->post('/tasks/{id}/delete',   'TaskController', 'destroy', ['AuthMiddleware', 'CsrfMiddleware']);
 
+// ---- API AJAX — dados para calendário de tarefas ----
+$router->get('/api/tasks/upcoming',   'TaskController', 'upcoming',     ['AuthMiddleware']);
+$router->get('/api/tasks/calendar',   'TaskController', 'calendarFeed', ['AuthMiddleware']);
+$router->get('/api/tasks/{id}',       'TaskController', 'getTask',      ['AuthMiddleware']);
+
 // ---- API AJAX — dados para gráficos do dashboard ----
 $router->get('/api/dashboard/stats',  'DashboardController', 'stats', ['AuthMiddleware']);
 
@@ -107,6 +119,18 @@ $router->post('/admin/users/store',        'UserController', 'store',   ['AuthMi
 $router->get( '/admin/users/{id}/edit',    'UserController', 'edit',    ['AuthMiddleware']);
 $router->post('/admin/users/{id}/update',  'UserController', 'update',  ['AuthMiddleware', 'CsrfMiddleware']);
 $router->post('/admin/users/{id}/delete',  'UserController', 'destroy', ['AuthMiddleware', 'CsrfMiddleware']);
+
+// ---- Contatos Frios ----
+$router->get( '/cold-contacts',              'ColdContactController', 'index',   ['AuthMiddleware']);
+$router->post('/cold-contacts/import',       'ColdContactController', 'import',  ['AuthMiddleware', 'CsrfMiddleware']);
+$router->get( '/cold-contacts/list',         'ColdContactController', 'listJson',['AuthMiddleware']);
+$router->get( '/cold-contacts/export',       'ColdContactController', 'export',  ['AuthMiddleware']);
+$router->post('/cold-contacts/bulk-update',  'ColdContactController', 'bulkUpdate', ['AuthMiddleware', 'CsrfMiddleware']);
+$router->post('/cold-contacts/{id}/update',  'ColdContactController', 'update',     ['AuthMiddleware', 'CsrfMiddleware']);
+$router->post('/cold-contacts/{id}/delete',  'ColdContactController', 'destroy',    ['AuthMiddleware', 'CsrfMiddleware']);
+
+// ---- Acompanhamento (Dashboard Lista Fria) ----
+$router->get('/acompanhamento', 'AcompanhamentoController', 'index', ['AuthMiddleware']);
 
 // --- 5. Despacha a requisição ---
 // O Router compara a URL atual com os padrões registrados acima

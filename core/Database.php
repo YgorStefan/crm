@@ -78,11 +78,15 @@ class Database
                 ];
 
                 self::$instance = new PDO($dsn, $config['user'], $config['pass'], $options);
+                
+                // Desativa o modo ONLY_FULL_GROUP_BY para compatibilidade com queries legadas
+                self::$instance->exec("SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))");
 
             } catch (PDOException $e) {
                 // Em produção, não expomos mensagens de erro do banco para o usuário.
                 // Logamos internamente e mostramos uma mensagem genérica.
-                if (APP_ENV === 'development') {
+                $env = defined('APP_ENV') ? APP_ENV : 'development';
+                if ($env === 'development') {
                     // Em desenvolvimento, mostramos o erro completo para facilitar debug
                     die('Erro de conexão com o banco de dados: ' . $e->getMessage());
                 } else {
