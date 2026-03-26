@@ -1,8 +1,4 @@
 <?php
-/**
- * View: clients/index.php
- * Variáveis: $clients, $stages, $users, $filters
- */
 ?>
 <!-- Cabeçalho da página -->
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
