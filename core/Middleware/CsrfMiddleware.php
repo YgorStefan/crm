@@ -1,18 +1,4 @@
 <?php
-// ============================================================
-// core/Middleware/CsrfMiddleware.php — Proteção contra CSRF
-// ============================================================
-// CSRF (Cross-Site Request Forgery) é um ataque onde um site
-// malicioso faz o navegador da vítima disparar uma requisição
-// autenticada para o nosso sistema sem o conhecimento dela.
-//
-// A defesa: gerar um token único por sessão e incluí-lo em
-// todos os formulários como campo hidden. No POST, validamos
-// se o token enviado corresponde ao da sessão.
-//
-// Uso no Router (apenas rotas POST que alteram dados):
-//   $router->post('/clients/store', 'ClientController', 'store', ['AuthMiddleware', 'CsrfMiddleware']);
-// ============================================================
 
 namespace Core\Middleware;
 
@@ -47,13 +33,12 @@ class CsrfMiddleware
         }
 
         // Após validação bem-sucedida, regenera o token para a próxima requisição.
-        // Isso implementa o padrão "Synchronizer Token" (uso único por requisição).
+        // Isso implementa o padrão "Synchronizer Token"
         $_SESSION['csrf_token'] = self::generateToken();
     }
 
     /**
      * Gera um token CSRF criptograficamente seguro.
-     * Usa random_bytes() que é a forma recomendada no PHP 7+.
      *
      * @return string  Token hexadecimal de 64 caracteres
      */
@@ -63,8 +48,8 @@ class CsrfMiddleware
     }
 
     /**
-     * Garante que exista um token na sessão (chama na abertura de formulários).
-     * Se já existir um token, não o substitui (evita invalidar formulários abertos).
+     * Garante que exista um token na sessão 
+     * Se já existir um token, não o substitui
      *
      * @return string  O token atual da sessão
      */

@@ -1,7 +1,4 @@
 <?php
-// ============================================================
-// app/Models/PipelineStage.php — Model das Etapas do Funil
-// ============================================================
 
 namespace App\Models;
 
@@ -34,8 +31,8 @@ class PipelineStage extends Model
             "INSERT INTO pipeline_stages (name, color, position) VALUES (:name, :color, :position)"
         );
         $stmt->execute([
-            ':name'     => $data['name'],
-            ':color'    => $data['color'] ?? '#6366f1',
+            ':name' => $data['name'],
+            ':color' => $data['color'] ?? '#6366f1',
             ':position' => (int) $maxPos + 1,
         ]);
         return (int) $this->db->lastInsertId();
@@ -43,8 +40,6 @@ class PipelineStage extends Model
 
     /**
      * Verifica se a etapa possui clientes vinculados.
-     * Usado antes de tentar deletar (a FK RESTRICT já bloqueia no banco,
-     * mas verificamos antes para dar uma mensagem amigável).
      */
     public function hasClients(int $stageId): bool
     {
@@ -64,16 +59,15 @@ class PipelineStage extends Model
             "UPDATE pipeline_stages SET name = :name, color = :color WHERE id = :id"
         );
         $stmt->execute([
-            ':name'  => $data['name'],
+            ':name' => $data['name'],
             ':color' => $data['color'],
-            ':id'    => $id,
+            ':id' => $id,
         ]);
         return (bool) ($stmt->rowCount() > 0);
     }
 
     /**
      * Move a etapa uma posição para cima ou para baixo trocando com a vizinha.
-     * $direction: 'up' | 'down'
      */
     public function movePosition(int $id, string $direction): bool
     {
@@ -92,7 +86,7 @@ class PipelineStage extends Model
             return false;
         }
 
-        $currentPos  = (int) $current['position'];
+        $currentPos = (int) $current['position'];
         $neighborPos = $direction === 'up' ? $currentPos - 1 : $currentPos + 1;
 
         // Busca a etapa vizinha

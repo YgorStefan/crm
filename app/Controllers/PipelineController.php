@@ -1,7 +1,4 @@
 <?php
-// ============================================================
-// app/Controllers/PipelineController.php — Kanban Pipeline
-// ============================================================
 
 namespace App\Controllers;
 
@@ -13,32 +10,27 @@ use App\Models\PipelineStage;
 class PipelineController extends Controller
 {
     /**
-     * GET /pipeline
      * Exibe o board Kanban com todos os clientes agrupados por etapa.
      */
     public function index(array $params = []): void
     {
-        $stageModel  = new PipelineStage();
+        $stageModel = new PipelineStage();
         $clientModel = new Client();
 
-        $stages  = $stageModel->findAllOrdered();
+        $stages = $stageModel->findAllOrdered();
         $grouped = $clientModel->findGroupedByStage(); // ['stage_id' => [clientes...]]
 
         $this->render('pipeline/index', [
-            'pageTitle'  => 'Pipeline de Vendas',
-            'title'      => 'Pipeline — ' . APP_NAME,
-            'stages'     => $stages,
-            'grouped'    => $grouped,
+            'pageTitle' => 'Pipeline de Vendas',
+            'title' => 'Pipeline — ' . APP_NAME,
+            'stages' => $stages,
+            'grouped' => $grouped,
             'csrf_token' => CsrfMiddleware::getToken(),
         ]);
     }
 
     /**
-     * POST /pipeline/move  (AJAX)
      * Move um cliente para uma nova etapa do funil via drag & drop.
-     *
-     * Recebe JSON: {"client_id": 5, "stage_id": 3}
-     * Retorna JSON: {"success": true} ou {"success": false, "message": "..."}
      */
     public function move(array $params = []): void
     {
@@ -46,7 +38,7 @@ class PipelineController extends Controller
         $body = json_decode(file_get_contents('php://input'), true);
 
         $clientId = isset($body['client_id']) ? (int) $body['client_id'] : 0;
-        $stageId  = isset($body['stage_id'])  ? (int) $body['stage_id']  : 0;
+        $stageId = isset($body['stage_id']) ? (int) $body['stage_id'] : 0;
 
         if (!$clientId || !$stageId) {
             $this->json(['success' => false, 'message' => 'Parâmetros inválidos.'], 422);
@@ -59,7 +51,6 @@ class PipelineController extends Controller
     }
 
     /**
-     * GET /pipeline/stages
      * Exibe a lista de etapas (gerenciamento pelo admin).
      */
     public function stages(array $params = []): void
@@ -68,21 +59,20 @@ class PipelineController extends Controller
         $stageModel = new PipelineStage();
 
         $this->render('pipeline/stages', [
-            'pageTitle'  => 'Gerenciar Etapas do Funil',
-            'title'      => 'Etapas — ' . APP_NAME,
-            'stages'     => $stageModel->findAllOrdered(),
+            'pageTitle' => 'Gerenciar Etapas do Funil',
+            'title' => 'Etapas — ' . APP_NAME,
+            'stages' => $stageModel->findAllOrdered(),
             'csrf_token' => CsrfMiddleware::getToken(),
         ]);
     }
 
     /**
-     * POST /pipeline/stages/store
      * Cria uma nova etapa no funil.
      */
     public function storeStage(array $params = []): void
     {
         $this->requireRole('admin');
-        $name  = $this->input('name');
+        $name = $this->input('name');
         $color = $this->inputRaw('color', '#6366f1');
 
         if (empty($name)) {
@@ -99,7 +89,6 @@ class PipelineController extends Controller
     }
 
     /**
-     * POST /pipeline/stages/{id}/delete
      * Deleta uma etapa do funil (apenas se não houver clientes vinculados).
      */
     public function destroyStage(array $params = []): void
@@ -120,15 +109,13 @@ class PipelineController extends Controller
     }
 
     /**
-     * POST /pipeline/stages/{id}/update  (AJAX)
      * Atualiza nome e/ou cor de uma etapa.
-     * Body: _csrf_token, name, color
      */
     public function updateStage(array $params = []): void
     {
         $this->requireRole('admin');
-        $id    = (int) ($params['id'] ?? 0);
-        $name  = $this->input('name');
+        $id = (int) ($params['id'] ?? 0);
+        $name = $this->input('name');
         $color = $this->inputRaw('color', '');
 
         if (!$id || empty($name)) {
@@ -140,20 +127,18 @@ class PipelineController extends Controller
         $ok = $stageModel->update($id, ['name' => $name, 'color' => $color]);
 
         $this->json([
-            'success'    => $ok,
+            'success' => $ok,
             'csrf_token' => CsrfMiddleware::getToken(),
         ]);
     }
 
     /**
-     * POST /pipeline/stages/{id}/move  (AJAX)
      * Move a etapa uma posição para cima ou para baixo.
-     * Body: _csrf_token, direction (up|down)
      */
     public function moveStage(array $params = []): void
     {
         $this->requireRole('admin');
-        $id        = (int) ($params['id'] ?? 0);
+        $id = (int) ($params['id'] ?? 0);
         $direction = $this->input('direction');
 
         if (!$id || !in_array($direction, ['up', 'down'], true)) {
@@ -165,7 +150,7 @@ class PipelineController extends Controller
         $ok = $stageModel->movePosition($id, $direction);
 
         $this->json([
-            'success'    => $ok,
+            'success' => $ok,
             'csrf_token' => CsrfMiddleware::getToken(),
         ]);
     }

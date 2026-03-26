@@ -1,14 +1,4 @@
 <?php
-// ============================================================
-// core/Model.php — Classe Base para todos os Models
-// ============================================================
-// Todos os Models do sistema (User, Client, Task, etc.) herdam
-// desta classe. Ela provê acesso direto ao PDO e métodos
-// genéricos que evitam repetição de código (DRY).
-//
-// Exemplo de herança:
-//   class User extends Model { ... }
-// ============================================================
 
 namespace Core;
 
@@ -20,7 +10,6 @@ abstract class Model
     protected PDO $db;
 
     // Nome da tabela no banco (cada model filho deve redefinir esta propriedade)
-    // Ex.: protected string $table = 'users';
     protected string $table = '';
 
     public function __construct()
@@ -31,9 +20,6 @@ abstract class Model
 
     /**
      * Busca um registro pelo ID primário.
-     *
-     * Usamos prepared statement com parâmetro nomeado (:id) para
-     * evitar SQL Injection — o valor nunca é concatenado na string SQL.
      *
      * @param  int   $id  Chave primária do registro
      * @return array|false  Array associativo com o registro, ou false se não encontrado

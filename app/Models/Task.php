@@ -1,7 +1,4 @@
 <?php
-// ============================================================
-// app/Models/Task.php — Model de Tarefas
-// ============================================================
 
 namespace App\Models;
 
@@ -83,13 +80,13 @@ class Task extends Model
             VALUES (:client_id, :assigned_to, :title, :description, :due_date, :priority, 'pending', :created_by)
         ");
         $stmt->execute([
-            ':client_id'   => !empty($data['client_id']) ? (int) $data['client_id'] : null,
+            ':client_id' => !empty($data['client_id']) ? (int) $data['client_id'] : null,
             ':assigned_to' => (int) $data['assigned_to'],
-            ':title'       => $data['title'],
+            ':title' => $data['title'],
             ':description' => $data['description'] ?? null,
-            ':due_date'    => $data['due_date'],
-            ':priority'    => $data['priority']    ?? 'medium',
-            ':created_by'  => (int) $data['created_by'],
+            ':due_date' => $data['due_date'],
+            ':priority' => $data['priority'] ?? 'medium',
+            ':created_by' => (int) $data['created_by'],
         ]);
         return (int) $this->db->lastInsertId();
     }
@@ -110,7 +107,8 @@ class Task extends Model
             }
         }
 
-        if (empty($setClauses)) return false;
+        if (empty($setClauses))
+            return false;
 
         $sql = "UPDATE tasks SET " . implode(', ', $setClauses) . " WHERE id = :id";
         $stmt = $this->db->prepare($sql);
@@ -139,8 +137,6 @@ class Task extends Model
 
     /**
      * Retorna tarefas com prazo vencido e ainda abertas.
-     * CAL-06: Usa CONVERT_TZ para garantir consistência de timezone
-     * entre PHP (America/Sao_Paulo) e MySQL (@@session.time_zone).
      */
     public function findOverdue(?int $userId = null): array
     {
