@@ -1,12 +1,8 @@
 <?php
-// ============================================================
-// app/Controllers/AuthController.php — Autenticação
-// ============================================================
 // Gerencia todo o fluxo de login e logout:
 //   loginForm() → exibe o formulário
 //   login()     → valida credenciais e cria a sessão
 //   logout()    → destrói a sessão
-// ============================================================
 
 namespace App\Controllers;
 
@@ -16,11 +12,8 @@ use App\Models\User;
 
 class AuthController extends Controller
 {
-    /**
-     * GET /login
-     * Exibe o formulário de login.
-     * Se o usuário já estiver logado, redireciona para o dashboard.
-     */
+    //Exibe o formulário de login.
+    //Se o usuário já estiver logado, redireciona para o dashboard.
     public function loginForm(array $params = []): void
     {
         // Usuário já autenticado? Vai direto ao dashboard
@@ -29,17 +22,14 @@ class AuthController extends Controller
         }
 
         $this->render('auth/login', [
-            'title'      => 'Login — ' . APP_NAME,
+            'title' => 'Login — ' . APP_NAME,
             'csrf_token' => CsrfMiddleware::getToken(),
             // Mensagem de timeout (sessão expirada)
-            'timeout'    => isset($_GET['timeout']),
+            'timeout' => isset($_GET['timeout']),
         ], 'blank'); // layout 'blank': sem sidebar/header (página pública)
     }
 
     /**
-     * POST /login
-     * Processa o formulário de login.
-     *
      * Fluxo de segurança:
      *   1. Valida campos obrigatórios
      *   2. Busca usuário por e-mail (não revela se o e-mail existe)
@@ -49,15 +39,15 @@ class AuthController extends Controller
      */
     public function login(array $params = []): void
     {
-        $email    = filter_var(trim($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL);
+        $email = filter_var(trim($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL);
         $password = $_POST['password'] ?? '';
 
         // Validação básica de campos
         if (empty($email) || empty($password)) {
             $this->render('auth/login', [
-                'title'      => 'Login — ' . APP_NAME,
+                'title' => 'Login — ' . APP_NAME,
                 'csrf_token' => CsrfMiddleware::getToken(),
-                'error'      => 'Preencha o e-mail e a senha.',
+                'error' => 'Preencha o e-mail e a senha.',
             ], 'blank');
             return;
         }
@@ -65,8 +55,8 @@ class AuthController extends Controller
         $userModel = new User();
         $user = $userModel->findByEmail($email);
 
-        // Verificamos a senha SOMENTE se o usuário existir.
-        // Mesmo assim, sempre chamamos password_verify() para evitar
+        // Verifica a senha SOMENTE se o usuário existir.
+        // sempre chamamos password_verify() para evitar
         // que um atacante meça diferenças de tempo de resposta e
         // descubra se um e-mail está ou não cadastrado.
         $passwordValid = false;
@@ -75,11 +65,10 @@ class AuthController extends Controller
         }
 
         if (!$user || !$passwordValid) {
-            // Mensagem genérica: não informamos qual campo está errado
             $this->render('auth/login', [
-                'title'      => 'Login — ' . APP_NAME,
+                'title' => 'Login — ' . APP_NAME,
                 'csrf_token' => CsrfMiddleware::getToken(),
-                'error'      => 'E-mail ou senha incorretos.',
+                'error' => 'E-mail ou senha incorretos.',
             ], 'blank');
             return;
         }
@@ -92,10 +81,10 @@ class AuthController extends Controller
 
         // Popula a sessão com os dados necessários em toda a aplicação
         $_SESSION['user'] = [
-            'id'     => $user['id'],
-            'name'   => $user['name'],
-            'email'  => $user['email'],
-            'role'   => $user['role'],
+            'id' => $user['id'],
+            'name' => $user['name'],
+            'email' => $user['email'],
+            'role' => $user['role'],
             'avatar' => $user['avatar'],
         ];
         $_SESSION['last_activity'] = time();
@@ -110,20 +99,16 @@ class AuthController extends Controller
     }
 
     /**
-     * GET /logout
-     * Destrói a sessão e redireciona para o login.
-     *
-     * Para destruir a sessão corretamente:
      *   1. Limpa todas as variáveis de sessão
      *   2. Apaga o cookie de sessão do navegador
      *   3. Destrói os dados da sessão no servidor
      */
     public function logout(array $params = []): void
     {
-        // 1. Remove todas as variáveis da sessão
+        // Remove todas as variáveis da sessão
         $_SESSION = [];
 
-        // 2. Apaga o cookie de sessão no navegador do usuário
+        // Apaga o cookie de sessão no navegador do usuário
         if (ini_get('session.use_cookies')) {
             $params = session_get_cookie_params();
             setcookie(
@@ -137,7 +122,7 @@ class AuthController extends Controller
             );
         }
 
-        // 3. Destrói os dados da sessão no servidor
+        // Destrói os dados da sessão no servidor
         session_destroy();
 
         header('Location: ' . APP_URL . '/login');

@@ -1,7 +1,4 @@
 <?php
-// ============================================================
-// app/Models/ColdContact.php — Model de Contatos Frios
-// ============================================================
 
 namespace App\Models;
 
@@ -13,7 +10,6 @@ class ColdContact extends Model
 
     /**
      * Retorna contatos agrupados por mês/ano de importação.
-     * Cada linha: year_month (YYYY-MM), month_label (Ex: "Março 2026"), total
      * Ordenado do mais recente para o mais antigo.
      */
     public function findMonthSummaries(): array
@@ -74,18 +70,17 @@ class ColdContact extends Model
             VALUES (:phone, :name, :tipo_lista, :telefone_enviado, :data_mensagem, NOW())
         ");
         $stmt->execute([
-            ':phone'            => $data['phone'],
-            ':name'             => $data['name'],
-            ':tipo_lista'       => $data['tipo_lista'],
+            ':phone' => $data['phone'],
+            ':name' => $data['name'],
+            ':tipo_lista' => $data['tipo_lista'],
             ':telefone_enviado' => $data['telefone_enviado'] ?? null,
-            ':data_mensagem'    => $data['data_mensagem']    ?? null,
+            ':data_mensagem' => $data['data_mensagem'] ?? null,
         ]);
         return (int) $this->db->lastInsertId();
     }
 
     /**
      * Atualiza campos editáveis de um contato.
-     * Campos editáveis: phone, name, telefone_enviado, data_mensagem (D-15).
      */
     public function update(int $id, array $data): bool
     {
@@ -98,11 +93,11 @@ class ColdContact extends Model
             WHERE id = :id
         ");
         $stmt->execute([
-            ':phone'            => $data['phone'],
-            ':name'             => $data['name'],
+            ':phone' => $data['phone'],
+            ':name' => $data['name'],
             ':telefone_enviado' => $data['telefone_enviado'] ?? null,
-            ':data_mensagem'    => $data['data_mensagem']    ?? null,
-            ':id'               => $id,
+            ':data_mensagem' => $data['data_mensagem'] ?? null,
+            ':id' => $id,
         ]);
         return $stmt->rowCount() > 0;
     }
@@ -123,7 +118,8 @@ class ColdContact extends Model
      */
     public function bulkSetTelefoneEnviado(array $ids, string $telefone): int
     {
-        if (empty($ids)) return 0;
+        if (empty($ids))
+            return 0;
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
         $stmt = $this->db->prepare(
             "UPDATE cold_contacts SET telefone_enviado = ? WHERE id IN ($placeholders)"
@@ -147,20 +143,20 @@ class ColdContact extends Model
      */
     public function weeklyStats(int $weeks = 4): array
     {
-        // 1. Calcular o inicio da semana atual (segunda-feira)
-        $today  = new \DateTimeImmutable('today');
+        // Calcular o inicio da semana atual (segunda-feira)
+        $today = new \DateTimeImmutable('today');
         $monday = $today->modify('monday this week');
 
-        // 2. Montar array de semanas (mais antiga primeiro)
+        // Montar array de semanas (mais antiga primeiro)
         $semanas = [];
         for ($i = $weeks - 1; $i >= 0; $i--) {
-            $inicio    = $monday->modify("-{$i} weeks");
+            $inicio = $monday->modify("-{$i} weeks");
             $semanas[] = ['start' => $inicio->format('Y-m-d'), 'label' => $inicio->format('d/m')];
         }
 
         $desde = $semanas[0]['start'];
 
-        // 3. Buscar importados agrupados por semana e tipo_lista
+        // Buscar importados agrupados por semana e tipo_lista
         $stmtImp = $this->db->prepare("
             SELECT
                 DATE_FORMAT(DATE_SUB(imported_at, INTERVAL WEEKDAY(imported_at) DAY), '%Y-%m-%d') AS week_start,
@@ -173,7 +169,7 @@ class ColdContact extends Model
         $stmtImp->execute([':desde' => $desde]);
         $rowsImportados = $stmtImp->fetchAll();
 
-        // 4. Buscar abordados (data_mensagem IS NOT NULL) agrupados por semana e tipo_lista
+        // Buscar abordados (data_mensagem IS NOT NULL) agrupados por semana e tipo_lista
         $stmtAbord = $this->db->prepare("
             SELECT
                 DATE_FORMAT(DATE_SUB(data_mensagem, INTERVAL WEEKDAY(data_mensagem) DAY), '%Y-%m-%d') AS week_start,
@@ -187,13 +183,13 @@ class ColdContact extends Model
         $stmtAbord->execute([':desde' => $desde]);
         $rowsAbordados = $stmtAbord->fetchAll();
 
-        // 5. Buscar tipo_lista distintos
+        // Buscar tipo_lista distintos
         $stmtTipos = $this->db->query("
             SELECT DISTINCT tipo_lista FROM cold_contacts WHERE tipo_lista IS NOT NULL AND tipo_lista != '' ORDER BY tipo_lista ASC
         ");
         $tiposLista = $stmtTipos->fetchAll(\PDO::FETCH_COLUMN);
 
-        // 6. Montar estrutura de retorno
+        // Montar estrutura de retorno
         $labels = array_column($semanas, 'label');
 
         $listas = ['Todos' => ['importados' => [], 'abordados' => []]];
@@ -204,10 +200,10 @@ class ColdContact extends Model
         // Preencher zeros para cada semana
         foreach ($semanas as $sem) {
             $listas['Todos']['importados'][] = 0;
-            $listas['Todos']['abordados'][]  = 0;
+            $listas['Todos']['abordados'][] = 0;
             foreach ($tiposLista as $tipo) {
                 $listas[$tipo]['importados'][] = 0;
-                $listas[$tipo]['abordados'][]  = 0;
+                $listas[$tipo]['abordados'][] = 0;
             }
         }
 
@@ -217,7 +213,8 @@ class ColdContact extends Model
         // Aplicar dados de importados
         foreach ($rowsImportados as $row) {
             $idx = $semanaIdx[$row['week_start']] ?? null;
-            if ($idx === null) continue;
+            if ($idx === null)
+                continue;
             $listas['Todos']['importados'][$idx] += (int) $row['total'];
             if (isset($listas[$row['tipo_lista']])) {
                 $listas[$row['tipo_lista']]['importados'][$idx] = (int) $row['total'];
@@ -227,7 +224,8 @@ class ColdContact extends Model
         // Aplicar dados de abordados
         foreach ($rowsAbordados as $row) {
             $idx = $semanaIdx[$row['week_start']] ?? null;
-            if ($idx === null) continue;
+            if ($idx === null)
+                continue;
             $listas['Todos']['abordados'][$idx] += (int) $row['total'];
             if (isset($listas[$row['tipo_lista']])) {
                 $listas[$row['tipo_lista']]['abordados'][$idx] = (int) $row['total'];

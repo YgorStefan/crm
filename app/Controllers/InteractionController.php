@@ -1,7 +1,4 @@
 <?php
-// ============================================================
-// app/Controllers/InteractionController.php
-// ============================================================
 
 namespace App\Controllers;
 
@@ -11,15 +8,14 @@ use App\Models\Interaction;
 class InteractionController extends Controller
 {
     /**
-     * POST /interactions/store
      * Registra uma nova interação com o cliente.
      * Redireciona de volta para a página do cliente após salvar.
      */
     public function store(array $params = []): void
     {
-        $clientId    = (int) ($this->inputRaw('client_id') ?? 0);
+        $clientId = (int) ($this->inputRaw('client_id') ?? 0);
         $description = trim($_POST['description'] ?? '');
-        $occurredAt  = $this->inputRaw('occurred_at');
+        $occurredAt = $this->inputRaw('occurred_at');
 
         if (!$clientId || empty($description) || empty($occurredAt)) {
             $this->flash('error', 'Preencha todos os campos da interação.');
@@ -32,9 +28,9 @@ class InteractionController extends Controller
 
         $interactionModel = new Interaction();
         $interactionModel->create([
-            'client_id'   => $clientId,
-            'user_id'     => $_SESSION['user']['id'], // usuário logado
-            'type'        => $this->inputRaw('type', 'note'),
+            'client_id' => $clientId,
+            'user_id' => $_SESSION['user']['id'], // usuário logado
+            'type' => $this->inputRaw('type', 'note'),
             'description' => $description,
             'occurred_at' => $occurredAt,
         ]);
@@ -44,7 +40,6 @@ class InteractionController extends Controller
     }
 
     /**
-     * POST /interactions/{id}/delete
      * Remove uma interação do histórico.
      */
     public function destroy(array $params = []): void

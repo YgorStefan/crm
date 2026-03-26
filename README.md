@@ -2,7 +2,7 @@
 
 Sistema de CRM (Customer Relationship Management) empresarial desenvolvido do zero com **PHP 8 puro**, arquitetura **MVC**, **MySQL/PDO** e **Tailwind CSS**.
 
-> Projeto educativo com código comentado didaticamente em cada camada da aplicação.
+> Projeto com código comentado em cada camada da aplicação.
 
 ---
 
