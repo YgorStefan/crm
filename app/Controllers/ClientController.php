@@ -1,0 +1,332 @@
+<?php
+// ============================================================
+// app/Controllers/ClientController.php — CRUD de Clientes
+// ============================================================
+
+namespace App\Controllers;
+
+use Core\Controller;
+use Core\Middleware\CsrfMiddleware;
+use App\Models\Client;
+use App\Models\PipelineStage;
+use App\Models\User;
+use App\Models\Interaction;
+use App\Models\Task;
+
+class ClientController extends Controller
+{
+    /**
+     * GET /clients
+     * Lista todos os clientes com filtros opcionais.
+     */
+    public function index(array $params = []): void
+    {
+        $clientModel = new Client();
+        $stageModel  = new PipelineStage();
+        $userModel   = new User();
+
+        // Lê os filtros da query string (?search=...&stage_id=...&assigned_to=...&tipo_venda=...)
+        $filters = [
+            'search'      => $_GET['search']      ?? '',
+            'stage_id'    => $_GET['stage_id']    ?? '',
+            'assigned_to' => $_GET['assigned_to'] ?? '',
+            'tipo_venda'  => $_GET['tipo_venda']  ?? '',
+        ];
+
+        $clients = $clientModel->findAllWithRelations($filters);
+        $stages  = $stageModel->findAllOrdered();
+        $users   = $userModel->findAllActive();
+
+        $this->render('clients/index', [
+            'pageTitle' => 'Clientes',
+            'title'     => 'Clientes — ' . APP_NAME,
+            'clients'   => $clients,
+            'stages'    => $stages,
+            'users'     => $users,
+            'filters'   => $filters,
+        ]);
+    }
+
+    /**
+     * GET /clients/create
+     * Exibe o formulário de cadastro de cliente.
+     */
+    public function create(array $params = []): void
+    {
+        $stageModel = new PipelineStage();
+        $userModel  = new User();
+
+        $this->render('clients/create', [
+            'pageTitle'  => 'Novo Cliente',
+            'title'      => 'Novo Cliente — ' . APP_NAME,
+            'stages'     => $stageModel->findAllOrdered(),
+            'users'      => $userModel->findAllActive(),
+            'csrf_token' => CsrfMiddleware::getToken(),
+        ]);
+    }
+
+    /**
+     * POST /clients/store
+     * Processa o formulário e cria o cliente no banco.
+     */
+    public function store(array $params = []): void
+    {
+        // Validação mínima: nome e etapa do funil são obrigatórios
+        $name    = $this->input('name');
+        $stageId = $this->inputRaw('pipeline_stage_id');
+
+        if (empty($name) || empty($stageId)) {
+            $this->flash('error', 'Nome e Etapa do Funil são obrigatórios.');
+            $this->redirect('/clients/create');
+            return;
+        }
+
+        $data = [
+            'name'              => $name,
+            'email'             => $this->input('email'),
+            'phone'             => $this->input('phone'),
+            'company'           => $this->input('company'),
+            'cnpj_cpf'          => $this->input('cnpj_cpf'),
+            'address'           => $this->input('address'),
+            'city'              => $this->input('city'),
+            'state'             => $this->input('state'),
+            'zip_code'          => $this->input('zip_code'),
+            'pipeline_stage_id' => $stageId,
+            'assigned_to'       => $this->inputRaw('assigned_to'),
+            'deal_value'        => $this->inputRaw('deal_value', '0'),
+            'source'            => $this->input('source'),
+            'notes'             => $this->input('notes'),
+            'birth_date'        => $this->inputRaw('birth_date'),
+            'referido_por'      => $this->input('referido_por'),
+        ];
+
+        $clientModel = new Client();
+        $id = $clientModel->create($data);
+
+        $this->flash('success', 'Cliente cadastrado com sucesso!');
+        $this->redirect('/clients/' . $id);
+    }
+
+    /**
+     * GET /clients/{id}
+     * Exibe os detalhes de um cliente com histórico de interações e tarefas.
+     */
+    public function show(array $params = []): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $clientModel = new Client();
+        $client = $clientModel->findByIdWithRelations($id);
+
+        if (!$client) {
+            $this->flash('error', 'Cliente não encontrado.');
+            $this->redirect('/clients');
+        }
+
+        $interactionModel = new Interaction();
+        $taskModel        = new Task();
+        $stageModel       = new PipelineStage();
+        $userModel        = new User();
+        $sales            = $clientModel->findSalesWithPaymentStatus($id);
+
+        $this->render('clients/show', [
+            'pageTitle'    => $client['name'],
+            'title'        => $client['name'] . ' — ' . APP_NAME,
+            'client'       => $client,
+            'interactions' => $interactionModel->findByClient($id),
+            'tasks'        => $taskModel->findByClient($id),
+            'stages'       => $stageModel->findAllOrdered(),
+            'users'        => $userModel->findAllActive(),
+            'csrf_token'   => CsrfMiddleware::getToken(),
+            'sales'        => $sales,
+        ]);
+    }
+
+    /**
+     * GET /clients/{id}/edit
+     * Exibe o formulário de edição de um cliente.
+     */
+    public function edit(array $params = []): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $clientModel = new Client();
+        $client = $clientModel->findById($id);
+
+        if (!$client) {
+            $this->flash('error', 'Cliente não encontrado.');
+            $this->redirect('/clients');
+        }
+
+        $stageModel = new PipelineStage();
+        $userModel  = new User();
+
+        $this->render('clients/edit', [
+            'pageTitle'  => 'Editar: ' . $client['name'],
+            'title'      => 'Editar Cliente — ' . APP_NAME,
+            'client'     => $client,
+            'stages'     => $stageModel->findAllOrdered(),
+            'users'      => $userModel->findAllActive(),
+            'csrf_token' => CsrfMiddleware::getToken(),
+        ]);
+    }
+
+    /**
+     * POST /clients/{id}/update
+     * Processa o formulário de edição.
+     */
+    public function update(array $params = []): void
+    {
+        $id   = (int) ($params['id'] ?? 0);
+        $name = $this->input('name');
+
+        if (empty($name)) {
+            $this->flash('error', 'O nome do cliente é obrigatório.');
+            $this->redirect('/clients/' . $id . '/edit');
+            return;
+        }
+
+        $data = [
+            'name'              => $name,
+            'email'             => $this->input('email'),
+            'phone'             => $this->input('phone'),
+            'company'           => $this->input('company'),
+            'cnpj_cpf'          => $this->input('cnpj_cpf'),
+            'address'           => $this->input('address'),
+            'city'              => $this->input('city'),
+            'state'             => $this->input('state'),
+            'zip_code'          => $this->input('zip_code'),
+            'pipeline_stage_id' => $this->inputRaw('pipeline_stage_id'),
+            'assigned_to'       => $this->inputRaw('assigned_to'),
+            'deal_value'        => $this->inputRaw('deal_value', '0'),
+            'source'            => $this->input('source'),
+            'notes'             => $this->input('notes'),
+            'birth_date'        => $this->inputRaw('birth_date'),
+            'referido_por'      => $this->input('referido_por'),
+        ];
+
+        $clientModel = new Client();
+        $clientModel->update($id, $data);
+
+        $this->flash('success', 'Cliente atualizado com sucesso!');
+        $this->redirect('/clients/' . $id);
+    }
+
+    /**
+     * POST /clients/{id}/delete
+     * Realiza soft-delete do cliente.
+     */
+    public function destroy(array $params = []): void
+    {
+        $id = (int) ($params['id'] ?? 0);
+        $clientModel = new Client();
+        $clientModel->softDelete($id);
+
+        $this->flash('success', 'Cliente removido com sucesso.');
+        $this->redirect('/clients');
+    }
+
+    /**
+     * POST /clients/{id}/sales
+     * Cria uma nova cota de consórcio para o cliente. Retorna JSON.
+     */
+    public function storeSale(array $params = []): void
+    {
+        header('Content-Type: application/json');
+        $clientId = (int) ($params['id'] ?? 0);
+
+        if (!$clientId) {
+            echo json_encode(['success' => false, 'error' => 'Cliente inválido.']);
+            exit;
+        }
+
+        $tipo = $this->inputRaw('tipo');
+        $tiposValidos = ['Imóvel', 'Veículo', 'Serviço'];
+        if (!in_array($tipo, $tiposValidos, true)) {
+            echo json_encode(['success' => false, 'error' => 'Tipo de consórcio inválido.']);
+            exit;
+        }
+
+        $data = [
+            'grupo'              => $this->input('grupo'),
+            'cota'               => $this->input('cota'),
+            'tipo'               => $tipo,
+            'credito_contratado' => $this->inputRaw('credito_contratado', '0'),
+        ];
+
+        $clientModel = new Client();
+        $saleId = $clientModel->createSale($clientId, $data);
+
+        echo json_encode([
+            'success'    => true,
+            'csrf_token' => CsrfMiddleware::getToken(),
+            'sale' => [
+                'id'                 => $saleId,
+                'grupo'              => $data['grupo'],
+                'cota'               => $data['cota'],
+                'tipo'               => $data['tipo'],
+                'credito_contratado' => $data['credito_contratado'],
+            ],
+        ]);
+        exit;
+    }
+
+    /**
+     * POST /clients/{id}/sales/{sale_id}/delete
+     * Remove uma cota de consórcio. Retorna JSON.
+     */
+    public function destroySale(array $params = []): void
+    {
+        header('Content-Type: application/json');
+        $clientId = (int) ($params['id']      ?? 0);
+        $saleId   = (int) ($params['sale_id'] ?? 0);
+
+        if (!$clientId || !$saleId) {
+            echo json_encode(['success' => false, 'error' => 'Parâmetros inválidos.']);
+            exit;
+        }
+
+        $clientModel = new Client();
+        $deleted = $clientModel->deleteSale($saleId, $clientId);
+
+        echo json_encode(['success' => $deleted, 'csrf_token' => CsrfMiddleware::getToken()]);
+        exit;
+    }
+
+    /**
+     * POST /clients/{id}/sales/{sale_id}/paid
+     * Registra paid_at = NOW() para a cota. Retorna JSON.
+     * Sem modal de confirmação — clique direto (D-09).
+     */
+    public function markSalePaid(array $params = []): void
+    {
+        header('Content-Type: application/json');
+        $clientId = (int) ($params['id']      ?? 0);
+        $saleId   = (int) ($params['sale_id'] ?? 0);
+
+        if (!$clientId || !$saleId) {
+            echo json_encode(['success' => false, 'error' => 'Parâmetros inválidos.']);
+            exit;
+        }
+
+        $clientModel = new Client();
+        $updated = $clientModel->updateSalePaidAt($saleId, $clientId);
+
+        // Busca paid_at atualizado para retornar a data formatada ao front
+        $paidFormatted = null;
+        if ($updated) {
+            $sales = $clientModel->findSalesWithPaymentStatus($clientId);
+            foreach ($sales as $s) {
+                if ((int) $s['id'] === $saleId) {
+                    $paidFormatted = $s['paid_at_formatted'];
+                    break;
+                }
+            }
+        }
+
+        echo json_encode([
+            'success'           => $updated,
+            'csrf_token'        => CsrfMiddleware::getToken(),
+            'paid_at_formatted' => $paidFormatted,
+        ]);
+        exit;
+    }
+}
