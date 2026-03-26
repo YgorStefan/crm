@@ -1,0 +1,44 @@
+# ============================================================
+# .gitignore — CRM Empresarial
+# ============================================================
+# Lista de arquivos e pastas que NÃO devem ir para o repositório.
+# Principalmente: credenciais, uploads de usuários e caches.
+# ============================================================
+
+# Arquivos .env com variáveis de ambiente reais
+.env
+.env.local
+.env.*.local
+.env.production
+.env.staging
+
+# --- Uploads de usuários ---
+# Arquivos enviados pelos usuários (avatares, anexos).
+# Apenas a pasta deve existir (mantemos o .gitkeep).
+public/uploads/*
+!public/uploads/.gitkeep
+
+# --- Cache e sessões PHP ---
+/tmp/
+*.cache
+
+# --- Sistema operacional ---
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --- IDEs e editores ---
+.vscode/
+.idea/
+*.swp
+*.swo
+*.sublime-project
+*.sublime-workspace
+
+# --- Logs ---
+*.log
+error_log
+
+# --- Claude Code e planejamento GSD ---
+.claude/
+.planning/
