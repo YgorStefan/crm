@@ -1,11 +1,4 @@
 <?php
-/**
- * View: auth/login.php
- * Variáveis disponíveis (injetadas pelo AuthController):
- *   $csrf_token  string  Token de segurança CSRF
- *   $error       string  Mensagem de erro de autenticação (opcional)
- *   $timeout     bool    Se true, exibe aviso de sessão expirada
- */
 ?>
 <div class="w-full max-w-md bg-white rounded-2xl shadow-xl overflow-hidden">
 

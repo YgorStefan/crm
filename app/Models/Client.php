@@ -1,7 +1,4 @@
 <?php
-// ============================================================
-// app/Models/Client.php — Model de Clientes
-// ============================================================
 
 namespace App\Models;
 
@@ -16,7 +13,7 @@ class Client extends Model
      * Retorna também o nome da etapa do funil e do vendedor responsável
      * para exibição na listagem sem precisar de queries adicionais.
      *
-     * @param  array  $filters  Filtros opcionais: ['stage_id', 'assigned_to', 'search']
+     * @param  array  $filters  ['stage_id', 'assigned_to', 'search']
      * @return array
      */
     public function findAllWithRelations(array $filters = []): array
@@ -66,7 +63,7 @@ class Client extends Model
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
-        $rows       = $stmt->fetchAll();
+        $rows = $stmt->fetchAll();
         $overdueIds = array_flip($this->findAllOverdueSalesByClient());
 
         foreach ($rows as &$row) {
@@ -122,22 +119,22 @@ class Client extends Model
                  :birth_date, :referido_por)
         ");
         $stmt->execute([
-            ':name'              => $data['name'],
-            ':email'             => $data['email']             ?: null,
-            ':phone'             => $data['phone']             ?: null,
-            ':company'           => $data['company']           ?: null,
-            ':cnpj_cpf'          => $data['cnpj_cpf']          ?: null,
-            ':address'           => $data['address']           ?: null,
-            ':city'              => $data['city']              ?: null,
-            ':state'             => $data['state']             ?: null,
-            ':zip_code'          => $data['zip_code']          ?: null,
+            ':name' => $data['name'],
+            ':email' => $data['email'] ?: null,
+            ':phone' => $data['phone'] ?: null,
+            ':company' => $data['company'] ?: null,
+            ':cnpj_cpf' => $data['cnpj_cpf'] ?: null,
+            ':address' => $data['address'] ?: null,
+            ':city' => $data['city'] ?: null,
+            ':state' => $data['state'] ?: null,
+            ':zip_code' => $data['zip_code'] ?: null,
             ':pipeline_stage_id' => (int) $data['pipeline_stage_id'],
-            ':assigned_to'       => !empty($data['assigned_to']) ? (int) $data['assigned_to'] : null,
-            ':deal_value'        => !empty($data['deal_value'])  ? (float) str_replace(',', '.', $data['deal_value']) : 0,
-            ':source'            => $data['source']            ?: null,
-            ':notes'             => $data['notes']             ?: null,
-            ':birth_date'        => !empty($data['birth_date']) ? $data['birth_date'] : null,
-            ':referido_por'      => $data['referido_por'] ?: null,
+            ':assigned_to' => !empty($data['assigned_to']) ? (int) $data['assigned_to'] : null,
+            ':deal_value' => !empty($data['deal_value']) ? (float) str_replace(',', '.', $data['deal_value']) : 0,
+            ':source' => $data['source'] ?: null,
+            ':notes' => $data['notes'] ?: null,
+            ':birth_date' => !empty($data['birth_date']) ? $data['birth_date'] : null,
+            ':referido_por' => $data['referido_por'] ?: null,
         ]);
         return (int) $this->db->lastInsertId();
     }
@@ -158,23 +155,23 @@ class Client extends Model
             WHERE id = :id
         ");
         $stmt->execute([
-            ':name'              => $data['name'],
-            ':email'             => $data['email']             ?: null,
-            ':phone'             => $data['phone']             ?: null,
-            ':company'           => $data['company']           ?: null,
-            ':cnpj_cpf'          => $data['cnpj_cpf']          ?: null,
-            ':address'           => $data['address']           ?: null,
-            ':city'              => $data['city']              ?: null,
-            ':state'             => $data['state']             ?: null,
-            ':zip_code'          => $data['zip_code']          ?: null,
+            ':name' => $data['name'],
+            ':email' => $data['email'] ?: null,
+            ':phone' => $data['phone'] ?: null,
+            ':company' => $data['company'] ?: null,
+            ':cnpj_cpf' => $data['cnpj_cpf'] ?: null,
+            ':address' => $data['address'] ?: null,
+            ':city' => $data['city'] ?: null,
+            ':state' => $data['state'] ?: null,
+            ':zip_code' => $data['zip_code'] ?: null,
             ':pipeline_stage_id' => (int) $data['pipeline_stage_id'],
-            ':assigned_to'       => !empty($data['assigned_to']) ? (int) $data['assigned_to'] : null,
-            ':deal_value'        => !empty($data['deal_value'])  ? (float) str_replace(',', '.', $data['deal_value']) : 0,
-            ':source'            => $data['source']            ?: null,
-            ':notes'             => $data['notes']             ?: null,
-            ':birth_date'        => !empty($data['birth_date']) ? $data['birth_date'] : null,
-            ':referido_por'      => $data['referido_por'] ?: null,
-            ':id'                => $id,
+            ':assigned_to' => !empty($data['assigned_to']) ? (int) $data['assigned_to'] : null,
+            ':deal_value' => !empty($data['deal_value']) ? (float) str_replace(',', '.', $data['deal_value']) : 0,
+            ':source' => $data['source'] ?: null,
+            ':notes' => $data['notes'] ?: null,
+            ':birth_date' => !empty($data['birth_date']) ? $data['birth_date'] : null,
+            ':referido_por' => $data['referido_por'] ?: null,
+            ':id' => $id,
         ]);
         return $stmt->rowCount() > 0;
     }
@@ -270,13 +267,13 @@ class Client extends Model
             VALUES (:client_id, :grupo, :cota, :tipo, :credito_contratado)
         ");
         $stmt->execute([
-            ':client_id'          => $clientId,
-            ':grupo'              => $data['grupo']              ?: null,
-            ':cota'               => $data['cota']               ?: null,
-            ':tipo'               => $data['tipo'],
+            ':client_id' => $clientId,
+            ':grupo' => $data['grupo'] ?: null,
+            ':cota' => $data['cota'] ?: null,
+            ':tipo' => $data['tipo'],
             ':credito_contratado' => !empty($data['credito_contratado'])
-                                     ? (float) str_replace(',', '.', $data['credito_contratado'])
-                                     : 0,
+                ? (float) str_replace(',', '.', $data['credito_contratado'])
+                : 0,
         ]);
         return (int) $this->db->lastInsertId();
     }
@@ -295,16 +292,11 @@ class Client extends Model
 
     /**
      * Busca cotas do cliente com status de pagamento calculado em PHP.
-     * Status calculado, nunca armazenado (D-03, D-05).
-     *
-     * Ciclo vigente (D-04):
      *   - dia atual >= 20 → mês de referência = mês atual
      *   - dia atual < 20  → mês de referência = mês anterior
      * A cota está "em dia" se paid_at NÃO for NULL e cair dentro do mês de referência.
-     *
      * @param  int   $clientId
      * @return array  Cada elemento possui todos os campos de client_sales
-     *                mais: 'is_paid' (bool), 'paid_at_formatted' (string|null)
      */
     public function findSalesWithPaymentStatus(int $clientId): array
     {
@@ -315,7 +307,7 @@ class Client extends Model
         $sales = $stmt->fetchAll();
 
         // Determina mês/ano de referência do ciclo vigente
-        $ref    = $this->computeRefMonth();
+        $ref = $this->computeRefMonth();
         $refMes = $ref['mes'];
         $refAno = $ref['ano'];
 
@@ -324,17 +316,17 @@ class Client extends Model
             $paidFormatted = null;
 
             if (!empty($sale['paid_at'])) {
-                $paidDt  = new \DateTimeImmutable($sale['paid_at']);
+                $paidDt = new \DateTimeImmutable($sale['paid_at']);
                 $paidMes = (int) $paidDt->format('n');
                 $paidAno = (int) $paidDt->format('Y');
 
                 if ($paidMes === $refMes && $paidAno === $refAno) {
-                    $isPaid        = true;
+                    $isPaid = true;
                     $paidFormatted = $paidDt->format('d/m/Y H:i');
                 }
             }
 
-            $sale['is_paid']           = $isPaid;
+            $sale['is_paid'] = $isPaid;
             $sale['paid_at_formatted'] = $paidFormatted;
         }
         unset($sale);
@@ -367,7 +359,7 @@ class Client extends Model
      */
     private function computeRefMonth(): array
     {
-        $hoje    = new \DateTimeImmutable('now');
+        $hoje = new \DateTimeImmutable('now');
         $diaHoje = (int) $hoje->format('j');
 
         if ($diaHoje >= 20) {
@@ -386,7 +378,7 @@ class Client extends Model
      */
     public function findAllOverdueSalesByClient(): array
     {
-        $ref    = $this->computeRefMonth();
+        $ref = $this->computeRefMonth();
         $refMes = $ref['mes'];
         $refAno = $ref['ano'];
 
@@ -402,11 +394,12 @@ class Client extends Model
         foreach ($rows as $row) {
             $clientId = (int) $row['client_id'];
             // Se o client_id já marcado como overdue, não precisa checar mais cotas
-            if (isset($overdueSet[$clientId])) continue;
+            if (isset($overdueSet[$clientId]))
+                continue;
 
             $isPaid = false;
             if (!empty($row['paid_at'])) {
-                $paidDt  = new \DateTimeImmutable($row['paid_at']);
+                $paidDt = new \DateTimeImmutable($row['paid_at']);
                 $paidMes = (int) $paidDt->format('n');
                 $paidAno = (int) $paidDt->format('Y');
                 if ($paidMes === $refMes && $paidAno === $refAno) {

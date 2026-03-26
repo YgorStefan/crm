@@ -1,7 +1,4 @@
 <?php
-// ============================================================
-// app/Controllers/ColdContactController.php — Contatos Frios
-// ============================================================
 
 namespace App\Controllers;
 
@@ -12,40 +9,26 @@ use App\Models\ColdContact;
 class ColdContactController extends Controller
 {
     /**
-     * GET /cold-contacts
      * Exibe a tela de Cards Mensais com resumo de importações.
-     * View implementada no Plano 02.
      */
     public function index(array $params = []): void
     {
-        $model    = new ColdContact();
+        $model = new ColdContact();
         $summaries = $model->findMonthSummaries();
 
         $this->render('cold-contacts/index', [
-            'pageTitle'  => 'Contatos Frios',
-            'title'      => 'Contatos Frios — ' . APP_NAME,
-            'summaries'  => $summaries,
+            'pageTitle' => 'Contatos Frios',
+            'title' => 'Contatos Frios — ' . APP_NAME,
+            'summaries' => $summaries,
             'csrf_token' => CsrfMiddleware::getToken(),
         ]);
     }
 
     /**
-     * POST /cold-contacts/import
      * Processa upload de CSV e insere os contatos no banco.
-     *
-     * Formato CSV esperado (D-01, CF-02):
-     *   Coluna A = Nome, Coluna B = Telefone
-     *   Header opcional — se a primeira linha contiver texto não numérico na coluna A, é ignorada.
-     *   Separador: vírgula (,)
-     *
-     * Campos de metadados da lista (CF-03):
-     *   tipo_lista — obrigatório, digitado no formulário (D-01, D-02)
-     *
-     * Todos os contatos do mesmo upload ficam com o mesmo imported_at = NOW() (D-03, D-04).
      */
     public function import(array $params = []): void
     {
-        // Valida campo obrigatório tipo_lista (D-02)
         $tipoLista = trim($_POST['tipo_lista'] ?? '');
         if (empty($tipoLista)) {
             $this->flash('error', 'O campo "Tipo de lista" é obrigatório para importar.');
@@ -62,22 +45,22 @@ class ColdContactController extends Controller
         }
 
         $tmpPath = $_FILES['csv_file']['tmp_name'] ?? '';
-        $handle  = fopen($tmpPath, 'r');
+        $handle = fopen($tmpPath, 'r');
         if (!$handle) {
             $this->flash('error', 'Não foi possível ler o arquivo CSV enviado.');
             $this->redirect('/cold-contacts');
             return;
         }
 
-        // Auto-detecta separador a partir da primeira linha
+        // Autodetecta separador a partir da primeira linha
         $firstLine = fgets($handle);
         $separator = (substr_count($firstLine, ';') >= substr_count($firstLine, ',')) ? ';' : ',';
         rewind($handle);
 
-        $model    = new ColdContact();
+        $model = new ColdContact();
         $inserted = 0;
-        $skipped  = 0;
-        $lineNum  = 0;
+        $skipped = 0;
+        $lineNum = 0;
 
         while (($row = fgetcsv($handle, 0, $separator)) !== false) {
             $lineNum++;
@@ -88,7 +71,7 @@ class ColdContactController extends Controller
                 continue;
             }
 
-            $name  = trim($row[0] ?? '');
+            $name = trim($row[0] ?? '');
             $phone = trim($row[1] ?? '');
 
             // Ignora linhas sem dados ou possível header (coluna B sem dígito)
@@ -104,11 +87,11 @@ class ColdContactController extends Controller
             }
 
             $model->create([
-                'phone'            => $phone,
-                'name'             => $name,
-                'tipo_lista'       => $tipoLista,
+                'phone' => $phone,
+                'name' => $name,
+                'tipo_lista' => $tipoLista,
                 'telefone_enviado' => null,
-                'data_mensagem'    => null,
+                'data_mensagem' => null,
             ]);
             $inserted++;
         }
@@ -125,9 +108,7 @@ class ColdContactController extends Controller
     }
 
     /**
-     * POST /cold-contacts/{id}/update
      * Atualiza campos editáveis de um contato frio. Retorna JSON.
-     * Campos editáveis (D-15): phone, name, telefone_enviado, data_mensagem.
      */
     public function update(array $params = []): void
     {
@@ -139,23 +120,23 @@ class ColdContactController extends Controller
             exit;
         }
 
-        $phone           = $this->input('phone');
-        $name            = $this->input('name');
+        $phone = $this->input('phone');
+        $name = $this->input('name');
         $telefoneEnviado = $this->inputRaw('telefone_enviado');
-        $dataMensagem    = $this->inputRaw('data_mensagem');
+        $dataMensagem = $this->inputRaw('data_mensagem');
 
         if (empty($phone) || empty($name)) {
             echo json_encode(['success' => false, 'error' => 'Celular e Nome são obrigatórios.']);
             exit;
         }
 
-        // Valida telefone_enviado: se preenchido, deve ser numérico, máx 4 dígitos (D-06)
+        // Valida telefone_enviado se preenchido, deve ser numérico, máx 4 dígitos
         if (!empty($telefoneEnviado) && (!ctype_digit($telefoneEnviado) || strlen($telefoneEnviado) > 4)) {
             echo json_encode(['success' => false, 'error' => 'Telefone enviado deve ser numérico com até 4 dígitos.']);
             exit;
         }
 
-        // Normaliza data_mensagem: aceita YYYY-MM-DD ou DD/MM/YYYY, converte para YYYY-MM-DD (D-08)
+        // Normaliza data_mensagem aceita YYYY-MM-DD ou DD/MM/YYYY, converte para YYYY-MM-DD
         $dataNormalizada = null;
         if (!empty($dataMensagem)) {
             if (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $dataMensagem)) {
@@ -166,23 +147,22 @@ class ColdContactController extends Controller
             }
         }
 
-        $model   = new ColdContact();
+        $model = new ColdContact();
         $updated = $model->update($id, [
-            'phone'            => $phone,
-            'name'             => $name,
+            'phone' => $phone,
+            'name' => $name,
             'telefone_enviado' => !empty($telefoneEnviado) ? $telefoneEnviado : null,
-            'data_mensagem'    => $dataNormalizada,
+            'data_mensagem' => $dataNormalizada,
         ]);
 
         echo json_encode([
-            'success'    => $updated,
+            'success' => $updated,
             'csrf_token' => CsrfMiddleware::getToken(),
         ]);
         exit;
     }
 
     /**
-     * POST /cold-contacts/{id}/delete
      * Deleta um contato frio. Retorna JSON.
      */
     public function destroy(array $params = []): void
@@ -195,21 +175,20 @@ class ColdContactController extends Controller
             exit;
         }
 
-        $model   = new ColdContact();
+        $model = new ColdContact();
         $deleted = $model->destroy($id);
 
         echo json_encode([
-            'success'    => $deleted,
+            'success' => $deleted,
             'csrf_token' => CsrfMiddleware::getToken(),
         ]);
         exit;
     }
 
     /**
-     * GET /cold-contacts/export?month=YYYY-MM&dia=N&phone=X
-     * Exporta CSV filtrado dos contatos do mês (CF-07).
-     * Se nenhum filtro ativo, exporta todos do mês (D-13).
-     * Se filtros ativos, exporta apenas os filtrados (D-12).
+     * Exporta CSV filtrado dos contatos do mês
+     * Se nenhum filtro ativo, exporta todos do mês
+     * Se filtros ativos, exporta apenas os filtrados
      */
     public function export(array $params = []): void
     {
@@ -228,7 +207,7 @@ class ColdContactController extends Controller
             $filters['telefone_enviado'] = trim($_GET['telefone_enviado']);
         }
 
-        $model    = new ColdContact();
+        $model = new ColdContact();
         $contacts = $model->findForExport($yearMonth, $filters);
 
         // Nome do arquivo: contatos-frios-YYYY-MM.csv
@@ -262,7 +241,6 @@ class ColdContactController extends Controller
     }
 
     /**
-     * POST /cold-contacts/bulk-update
      * Marca telefone_enviado em lote para os IDs selecionados. Retorna JSON.
      */
     public function bulkUpdate(array $params = []): void
@@ -281,20 +259,19 @@ class ColdContactController extends Controller
             exit;
         }
 
-        $model   = new ColdContact();
+        $model = new ColdContact();
         $updated = $model->bulkSetTelefoneEnviado($ids, $telefone);
 
         echo json_encode([
-            'success'    => $updated > 0,
-            'updated'    => $updated,
+            'success' => $updated > 0,
+            'updated' => $updated,
             'csrf_token' => CsrfMiddleware::getToken(),
         ]);
         exit;
     }
 
     /**
-     * GET /cold-contacts/list?month=YYYY-MM&dia=N&phone=X
-     * Retorna JSON com contatos filtrados do mês — usado pela modal JS (CF-05).
+     * Retorna JSON com contatos filtrados do mês — usado pela modal JS
      */
     public function listJson(array $params = []): void
     {
@@ -305,10 +282,12 @@ class ColdContactController extends Controller
             exit;
         }
         $filters = [];
-        if (!empty($_GET['dia']))               $filters['dia']               = (int) $_GET['dia'];
-        if (!empty($_GET['telefone_enviado']))   $filters['telefone_enviado']  = trim($_GET['telefone_enviado']);
+        if (!empty($_GET['dia']))
+            $filters['dia'] = (int) $_GET['dia'];
+        if (!empty($_GET['telefone_enviado']))
+            $filters['telefone_enviado'] = trim($_GET['telefone_enviado']);
 
-        $model    = new ColdContact();
+        $model = new ColdContact();
         $contacts = $model->findByMonth($yearMonth, $filters);
         echo json_encode(['contacts' => $contacts]);
         exit;

@@ -1,7 +1,4 @@
 <?php
-// ============================================================
-// app/Controllers/UserController.php — Administração de Usuários
-// ============================================================
 
 namespace App\Controllers;
 
@@ -12,7 +9,6 @@ use App\Models\User;
 class UserController extends Controller
 {
     /**
-     * GET /admin/users
      * Lista todos os usuários (somente admin).
      */
     public function index(array $params = []): void
@@ -22,35 +18,29 @@ class UserController extends Controller
 
         $this->render('admin/users/index', [
             'pageTitle' => 'Usuários',
-            'title'     => 'Usuários — ' . APP_NAME,
-            'users'     => $userModel->findAll(),
+            'title' => 'Usuários — ' . APP_NAME,
+            'users' => $userModel->findAll(),
         ]);
     }
 
-    /**
-     * GET /admin/users/create
-     */
     public function create(array $params = []): void
     {
         $this->requireRole('admin');
         $this->render('admin/users/create', [
-            'pageTitle'  => 'Novo Usuário',
-            'title'      => 'Novo Usuário — ' . APP_NAME,
+            'pageTitle' => 'Novo Usuário',
+            'title' => 'Novo Usuário — ' . APP_NAME,
             'csrf_token' => CsrfMiddleware::getToken(),
         ]);
     }
 
-    /**
-     * POST /admin/users/store
-     */
     public function store(array $params = []): void
     {
         $this->requireRole('admin');
 
-        $name     = $this->input('name');
-        $email    = filter_var(trim($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL);
+        $name = $this->input('name');
+        $email = filter_var(trim($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL);
         $password = $_POST['password'] ?? '';
-        $role     = $this->inputRaw('role', 'seller');
+        $role = $this->inputRaw('role', 'seller');
 
         if (empty($name) || empty($email) || strlen($password) < MIN_PASSWORD_LENGTH) {
             $this->flash('error', 'Preencha todos os campos. Senha mínima: ' . MIN_PASSWORD_LENGTH . ' caracteres.');
@@ -60,20 +50,17 @@ class UserController extends Controller
 
         $userModel = new User();
         $userModel->create([
-            'name'          => $name,
-            'email'         => $email,
-            // Aplica o hash bcrypt — nunca armazene senhas em texto puro!
+            'name' => $name,
+            'email' => $email,
+            // Aplica o hash bcrypt — nunca armazene senhas em texto puro
             'password_hash' => password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]),
-            'role'          => in_array($role, ['admin','seller','viewer']) ? $role : 'seller',
+            'role' => in_array($role, ['admin', 'seller', 'viewer']) ? $role : 'seller',
         ]);
 
         $this->flash('success', "Usuário \"{$name}\" criado com sucesso!");
         $this->redirect('/admin/users');
     }
 
-    /**
-     * GET /admin/users/{id}/edit
-     */
     public function edit(array $params = []): void
     {
         $this->requireRole('admin');
@@ -87,25 +74,22 @@ class UserController extends Controller
         }
 
         $this->render('admin/users/edit', [
-            'pageTitle'  => 'Editar: ' . $user['name'],
-            'title'      => 'Editar Usuário — ' . APP_NAME,
-            'user'       => $user,
+            'pageTitle' => 'Editar: ' . $user['name'],
+            'title' => 'Editar Usuário — ' . APP_NAME,
+            'user' => $user,
             'csrf_token' => CsrfMiddleware::getToken(),
         ]);
     }
 
-    /**
-     * POST /admin/users/{id}/update
-     */
     public function update(array $params = []): void
     {
         $this->requireRole('admin');
         $id = (int) ($params['id'] ?? 0);
 
         $data = [
-            'name'      => $this->input('name'),
-            'email'     => filter_var(trim($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL),
-            'role'      => $this->inputRaw('role', 'seller'),
+            'name' => $this->input('name'),
+            'email' => filter_var(trim($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL),
+            'role' => $this->inputRaw('role', 'seller'),
             'is_active' => isset($_POST['is_active']) ? 1 : 0,
         ];
 
@@ -128,7 +112,6 @@ class UserController extends Controller
     }
 
     /**
-     * POST /admin/users/{id}/delete
      * Soft-delete: desativa o usuário em vez de apagá-lo.
      */
     public function destroy(array $params = []): void

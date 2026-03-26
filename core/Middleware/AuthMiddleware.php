@@ -1,13 +1,6 @@
 <?php
-// ============================================================
-// core/Middleware/AuthMiddleware.php — Verificação de Sessão
-// ============================================================
 // Middleware executado ANTES de qualquer rota protegida.
 // Se o usuário não estiver logado, redireciona para /login.
-//
-// Uso no Router (routes.php):
-//   $router->get('/dashboard', 'DashboardController', 'index', ['AuthMiddleware']);
-// ============================================================
 
 namespace Core\Middleware;
 
@@ -15,7 +8,6 @@ class AuthMiddleware
 {
     /**
      * Verifica se existe uma sessão de usuário válida.
-     *
      * A sessão é criada em AuthController::login() quando as
      * credenciais são verificadas com password_verify().
      * Se não existir (usuário não logado), redireciona para /login.
@@ -38,7 +30,7 @@ class AuthMiddleware
             exit;
         }
 
-        // Verifica inatividade por timeout (segurança adicional)
+        // Verifica inatividade por timeout
         $timeout = SESSION_LIFETIME;
         if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity']) > $timeout) {
             // Sessão expirada: destrói tudo e redireciona
