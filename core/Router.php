@@ -1,18 +1,6 @@
 <?php
-// ============================================================
-// core/Router.php — Sistema de Roteamento da Aplicação
-// ============================================================
-// O Router lê a URL requisitada, a compara com as rotas
-// registradas e despacha para o Controller e método corretos.
-//
-// Suporta:
-//   - Rotas estáticas: GET /dashboard
-//   - Rotas com parâmetros: GET /clients/{id}
-//   - Middlewares por rota (ex.: autenticação, CSRF)
-//
 // Todas as requisições passam pelo public/index.php antes de
 // chegarem aqui, graças ao .htaccess.
-// ============================================================
 
 namespace Core;
 
@@ -53,18 +41,18 @@ class Router
     private function addRoute(string $method, string $pattern, string $controller, string $action, array $middlewares): void
     {
         // Converte parâmetros de rota como {id} em grupos de captura regex: (\d+) ou ([^/]+)
-        // {id}   → captura apenas números (INT UNSIGNED)
+        // {id}   → captura apenas números
         // {slug} → captura qualquer string sem barra
         $regex = preg_replace('/\{id\}/', '(\d+)', $pattern);
         $regex = preg_replace('/\{[a-z_]+\}/', '([^/]+)', $regex);
         $regex = '#^' . $regex . '$#';
 
         $this->routes[] = [
-            'method'      => strtoupper($method),
-            'pattern'     => $regex,
-            'original'    => $pattern, // guardamos o original para extrair os nomes dos params
-            'controller'  => $controller,
-            'action'      => $action,
+            'method' => strtoupper($method),
+            'pattern' => $regex,
+            'original' => $pattern, // guardamos o original para extrair os nomes dos params
+            'controller' => $controller,
+            'action' => $action,
             'middlewares' => $middlewares,
         ];
     }

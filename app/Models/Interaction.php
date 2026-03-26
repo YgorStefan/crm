@@ -1,7 +1,4 @@
 <?php
-// ============================================================
-// app/Models/Interaction.php — Model de Interações
-// ============================================================
 
 namespace App\Models;
 
@@ -13,7 +10,6 @@ class Interaction extends Model
 
     /**
      * Busca todas as interações de um cliente, do mais recente ao mais antigo.
-     * Inclui o nome do usuário que registrou via JOIN.
      *
      * @param  int    $clientId
      * @return array
@@ -46,9 +42,9 @@ class Interaction extends Model
             VALUES (:client_id, :user_id, :type, :description, :occurred_at)
         ");
         $stmt->execute([
-            ':client_id'   => (int) $data['client_id'],
-            ':user_id'     => (int) $data['user_id'],
-            ':type'        => $data['type']        ?? 'note',
+            ':client_id' => (int) $data['client_id'],
+            ':user_id' => (int) $data['user_id'],
+            ':type' => $data['type'] ?? 'note',
             ':description' => $data['description'],
             ':occurred_at' => $data['occurred_at'],
         ]);

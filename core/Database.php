@@ -1,15 +1,4 @@
 <?php
-// ============================================================
-// core/Database.php — Classe de Conexão PDO (Padrão Singleton)
-// ============================================================
-// O padrão Singleton garante que apenas UMA instância do PDO
-// seja criada por requisição, evitando abrir múltiplas conexões
-// desnecessárias com o banco de dados.
-//
-// Uso em qualquer Model:
-//   $pdo = Database::getInstance();
-//   $stmt = $pdo->prepare("SELECT * FROM users WHERE id = :id");
-// ============================================================
 
 namespace Core;
 
@@ -18,15 +7,19 @@ use PDOException;
 
 class Database
 {
-    // Armazena a única instância desta classe (padrão Singleton)
+    // Armazena a única instância desta classe
     private static ?PDO $instance = null;
 
-    // Construtor privado: impede que se use `new Database()` diretamente.
+    // impede que se use `new Database()` diretamente.
     // A única forma de obter o PDO é pelo método estático getInstance().
-    private function __construct() {}
+    private function __construct()
+    {
+    }
 
-    // Clonagem também proibida (parte do contrato do Singleton)
-    private function __clone() {}
+    // Clonagem também proibida
+    private function __clone()
+    {
+    }
 
     /**
      * Retorna a instância única do PDO.
@@ -59,31 +52,31 @@ class Database
             try {
                 // Opções do PDO que melhoram segurança e comportamento:
                 $options = [
-                    // Lança exceções PDOException em vez de retornar false em erros.
-                    // Facilita muito o tratamento de erros com try/catch.
-                    PDO::ATTR_ERRMODE            => PDO::ERRMODE_EXCEPTION,
+                        // Lança exceções PDOException em vez de retornar false em erros.
+                        // Facilita muito o tratamento de erros com try/catch.
+                    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
 
-                    // Retorna os resultados como arrays associativos por padrão
-                    // (ex.: ['id' => 1, 'name' => 'João'] em vez de [0 => 1, 'id' => 1])
+                        // Retorna os resultados como arrays associativos por padrão
+                        // (ex.: ['id' => 1, 'name' => 'João'] em vez de [0 => 1, 'id' => 1])
                     PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
 
-                    // Desativa emulação de prepared statements.
-                    // Com false, o MySQL realmente prepara a query no servidor,
-                    // aumentando a proteção contra SQL Injection.
-                    PDO::ATTR_EMULATE_PREPARES   => false,
+                        // Desativa emulação de prepared statements.
+                        // Com false, o MySQL realmente prepara a query no servidor,
+                        // aumentando a proteção contra SQL Injection.
+                    PDO::ATTR_EMULATE_PREPARES => false,
 
-                    // Garante que números retornados como string pelo MySQL
-                    // sejam convertidos para tipos nativos PHP (int, float)
-                    PDO::ATTR_STRINGIFY_FETCHES  => false,
+                        // Garante que números retornados como string pelo MySQL
+                        // sejam convertidos para tipos nativos PHP (int, float)
+                    PDO::ATTR_STRINGIFY_FETCHES => false,
                 ];
 
                 self::$instance = new PDO($dsn, $config['user'], $config['pass'], $options);
-                
+
                 // Desativa o modo ONLY_FULL_GROUP_BY para compatibilidade com queries legadas
                 self::$instance->exec("SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))");
 
             } catch (PDOException $e) {
-                // Em produção, não expomos mensagens de erro do banco para o usuário.
+                // Em produção não tem mensagens de erro do banco para o usuário.
                 // Logamos internamente e mostramos uma mensagem genérica.
                 $env = defined('APP_ENV') ? APP_ENV : 'development';
                 if ($env === 'development') {

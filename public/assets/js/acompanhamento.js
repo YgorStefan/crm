@@ -1,14 +1,5 @@
 /**
  * acompanhamento.js — Grafico de Acompanhamento Semanal (Chart.js 4)
- * ============================================================
- * Le acompanhamentoData injetado pelo PHP e renderiza um grafico
- * de barras agrupadas com duas series:
- *   - Importados: total importado por semana (indigo)
- *   - Abordados:  total com data_mensagem preenchida por semana (emerald)
- *
- * Filtro client-side via select#filtroLista — nenhum AJAX necessario.
- * Chart.js 4.4.0 carregado globalmente via CDN em main.php.
- * ============================================================
  */
 
 (function () {
@@ -25,10 +16,10 @@
     Chart.defaults.color = '#6b7280';
 
     // --- Cores das series (per D-01/D-02 e Claude discretion) ---
-    const COR_IMPORTADOS_BG   = 'rgba(99, 102, 241, 0.75)';  // indigo-500 com 75% opacidade
-    const COR_IMPORTADOS_BDR  = 'rgb(99, 102, 241)';
-    const COR_ABORDADOS_BG    = 'rgba(16, 185, 129, 0.75)';  // emerald-500 com 75% opacidade
-    const COR_ABORDADOS_BDR   = 'rgb(16, 185, 129)';
+    const COR_IMPORTADOS_BG = 'rgba(99, 102, 241, 0.75)';  // indigo-500 com 75% opacidade
+    const COR_IMPORTADOS_BDR = 'rgb(99, 102, 241)';
+    const COR_ABORDADOS_BG = 'rgba(16, 185, 129, 0.75)';  // emerald-500 com 75% opacidade
+    const COR_ABORDADOS_BDR = 'rgb(16, 185, 129)';
 
     // --- Funcao auxiliar: monta config de datasets para uma lista ---
     function buildDatasets(listaKey) {
@@ -38,7 +29,7 @@
                 label: 'Importados',
                 data: lista.importados.map(Number),
                 backgroundColor: COR_IMPORTADOS_BG,
-                borderColor:     COR_IMPORTADOS_BDR,
+                borderColor: COR_IMPORTADOS_BDR,
                 borderWidth: 2,
                 borderRadius: 5,
                 borderSkipped: false,
@@ -47,7 +38,7 @@
                 label: 'Abordados',
                 data: lista.abordados.map(Number),
                 backgroundColor: COR_ABORDADOS_BG,
-                borderColor:     COR_ABORDADOS_BDR,
+                borderColor: COR_ABORDADOS_BDR,
                 borderWidth: 2,
                 borderRadius: 5,
                 borderSkipped: false,
@@ -59,7 +50,7 @@
     const chart = new Chart(canvas, {
         type: 'bar',
         data: {
-            labels:   acompanhamentoData.semanas,
+            labels: acompanhamentoData.semanas,
             datasets: buildDatasets('Todos'),
         },
         options: {

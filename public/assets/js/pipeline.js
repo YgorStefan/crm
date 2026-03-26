@@ -1,22 +1,10 @@
-/**
- * pipeline.js — Kanban Drag & Drop
- * ============================================================
- * Implementa o board Kanban usando a API nativa HTML5 de
- * Drag and Drop. Quando um cartão é solto em outra coluna,
- * uma requisição AJAX (Fetch API) é enviada ao servidor para
- * atualizar o pipeline_stage_id do cliente no banco.
- *
- * Não há dependência de bibliotecas externas — Vanilla JS puro.
- * ============================================================
- */
-
 (function () {
     'use strict';
 
     // --- Referências globais ---
-    const board    = document.getElementById('kanbanBoard');
-    const toast    = document.getElementById('kanbanToast');
-    const moveUrl  = board?.dataset.moveUrl;   // URL da rota POST /pipeline/move
+    const board = document.getElementById('kanbanBoard');
+    const toast = document.getElementById('kanbanToast');
+    const moveUrl = board?.dataset.moveUrl;   // URL da rota POST /pipeline/move
     const csrfToken = board?.dataset.csrf;      // Token CSRF da sessão
 
     if (!board) return; // Sai silenciosamente se o board não existir na página
@@ -24,9 +12,7 @@
     // Cartão que está sendo arrastado no momento
     let draggedCard = null;
 
-    // ============================================================
-    // EVENTOS NOS CARTÕES (draggable)
-    // ============================================================
+    // EVENTOS NOS CARTÕES
 
     /**
      * Adiciona os event listeners em todos os cartões do board.
@@ -36,10 +22,10 @@
         document.querySelectorAll('.kanban-card').forEach(card => {
             // Remove listeners antigos para evitar duplicação
             card.removeEventListener('dragstart', onDragStart);
-            card.removeEventListener('dragend',   onDragEnd);
+            card.removeEventListener('dragend', onDragEnd);
 
             card.addEventListener('dragstart', onDragStart);
-            card.addEventListener('dragend',   onDragEnd);
+            card.addEventListener('dragend', onDragEnd);
         });
     }
 
@@ -69,10 +55,6 @@
         document.querySelectorAll('.kanban-drop-zone').forEach(z => z.classList.remove('drag-over'));
     }
 
-    // ============================================================
-    // EVENTOS NAS ZONAS DE DROP (colunas)
-    // ============================================================
-
     document.querySelectorAll('.kanban-drop-zone').forEach(zone => {
 
         /**
@@ -100,9 +82,9 @@
 
             if (!draggedCard) return;
 
-            const newStageId  = parseInt(this.dataset.stageId, 10);
-            const oldStageId  = parseInt(draggedCard.dataset.currentStage, 10);
-            const clientId    = parseInt(draggedCard.dataset.clientId, 10);
+            const newStageId = parseInt(this.dataset.stageId, 10);
+            const oldStageId = parseInt(draggedCard.dataset.currentStage, 10);
+            const clientId = parseInt(draggedCard.dataset.clientId, 10);
 
             // Sem mudança de coluna? Nada a fazer.
             if (newStageId === oldStageId) return;
@@ -121,10 +103,6 @@
         });
     });
 
-    // ============================================================
-    // FUNÇÕES AUXILIARES
-    // ============================================================
-
     /**
      * Envia a mudança de etapa para o servidor via Fetch API (AJAX).
      * O servidor responde com JSON: {"success": true/false}.
@@ -138,13 +116,13 @@
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    // O token CSRF é enviado tanto no corpo (validado pelo CsrfMiddleware)
+                    // O token CSRF é enviado tanto no corpo
                     'X-CSRF-Token': csrfToken,
                 },
                 // Corpo da requisição em JSON
                 body: JSON.stringify({
-                    client_id:   clientId,
-                    stage_id:    stageId,
+                    client_id: clientId,
+                    stage_id: stageId,
                     _csrf_token: csrfToken, // também no body para o middleware PHP
                 }),
             });
@@ -170,9 +148,9 @@
      */
     function updateColumnCounters() {
         document.querySelectorAll('.kanban-column').forEach(col => {
-            const zone    = col.querySelector('.kanban-drop-zone');
+            const zone = col.querySelector('.kanban-drop-zone');
             const counter = col.querySelector('[class*="rounded-full"]');
-            const count   = zone.querySelectorAll('.kanban-card').length;
+            const count = zone.querySelectorAll('.kanban-card').length;
 
             if (counter) counter.textContent = count;
 

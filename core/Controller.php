@@ -1,13 +1,10 @@
 <?php
-// ============================================================
 // core/Controller.php — Classe Base para todos os Controllers
-// ============================================================
 // Fornece métodos utilitários usados por todos os controllers:
 //   - render()    → carrega uma View com dados
 //   - redirect()  → redireciona para outra URL
 //   - json()      → retorna resposta JSON (para AJAX)
 //   - flash()     → mensagens de sucesso/erro via sessão
-// ============================================================
 
 namespace Core;
 
@@ -15,16 +12,9 @@ abstract class Controller
 {
     /**
      * Renderiza uma View passando variáveis para ela.
-     *
      * O método usa extract() para transformar as chaves do array $data
      * em variáveis locais dentro do escopo do arquivo de view.
-     *
-     * Exemplo:
-     *   $this->render('clients/index', ['clients' => $clientes]);
-     *   // Dentro da view, estará disponível: $clients
-     *
      * @param  string  $view   Caminho relativo à pasta Views/ (sem .php)
-     *                         Ex.: 'clients/index', 'auth/login'
      * @param  array   $data   Dados a serem extraídos como variáveis na view
      * @param  string  $layout Layout padrão (usa 'main' se não especificado)
      */
@@ -94,7 +84,7 @@ abstract class Controller
     }
 
     /**
-     * Verifica se o usuário logado tem o papel (role) exigido.
+     * Verifica se o usuário logado tem o papel exigido.
      * Caso contrário, redireciona para o dashboard com mensagem de acesso negado.
      *
      * @param  string|array  $roles  Role(s) permitidos: 'admin' ou ['admin', 'seller']

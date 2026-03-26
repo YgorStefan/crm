@@ -1,8 +1,4 @@
 <?php
-/**
- * View: pipeline/index.php — Board Kanban
- * Variáveis: $stages, $grouped (array indexado por stage_id), $csrf_token
- */
 ?>
 
 <!-- Cabeçalho -->

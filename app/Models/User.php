@@ -1,10 +1,6 @@
 <?php
-// ============================================================
-// app/Models/User.php — Model de Usuários
-// ============================================================
 // Responsável por TODAS as interações com a tabela `users`.
 // Herda os métodos genéricos de Core\Model (findById, delete...).
-// ============================================================
 
 namespace App\Models;
 
@@ -47,11 +43,11 @@ class User extends Model
             VALUES (:name, :email, :password_hash, :role, :avatar)
         ");
         $stmt->execute([
-            ':name'          => $data['name'],
-            ':email'         => $data['email'],
+            ':name' => $data['name'],
+            ':email' => $data['email'],
             ':password_hash' => $data['password_hash'],
-            ':role'          => $data['role']   ?? 'seller',
-            ':avatar'        => $data['avatar'] ?? null,
+            ':role' => $data['role'] ?? 'seller',
+            ':avatar' => $data['avatar'] ?? null,
         ]);
         return (int) $this->db->lastInsertId();
     }

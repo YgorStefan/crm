@@ -1,29 +1,14 @@
-/**
- * dashboard.js — Gráficos do Dashboard com Chart.js 4
- * ============================================================
- * Lê os dados injetados pelo PHP (variável `pipelineData`)
- * e renderiza dois gráficos:
- *   1. Gráfico de barras: clientes por etapa do funil
- *   2. Gráfico de rosca (doughnut): valor (R$) por etapa
- *
- * Chart.js é carregado via CDN no layout main.php.
- * ============================================================
- */
-
 (function () {
     'use strict';
 
     // Verifica se os dados e o Chart.js estão disponíveis
     if (typeof pipelineData === 'undefined' || typeof Chart === 'undefined') return;
 
-    // --- Configuração global do Chart.js ---
     // Define fontes e estilos padrão para todos os gráficos
     Chart.defaults.font.family = "'Inter', sans-serif";
     Chart.defaults.color = '#6b7280'; // text-gray-500
 
-    // ============================================================
-    // GRÁFICO 1 — Barras: Número de Clientes por Etapa
-    // ============================================================
+    // Barras: Número de Clientes por Etapa
     const ctxBar = document.getElementById('chartPipeline');
     if (ctxBar) {
         new Chart(ctxBar, {
@@ -35,7 +20,7 @@
                     data: pipelineData.counts,
                     // Usa as cores de cada etapa (definidas no banco de dados)
                     backgroundColor: pipelineData.colors.map(c => c + 'cc'), // 80% opacidade
-                    borderColor:     pipelineData.colors,
+                    borderColor: pipelineData.colors,
                     borderWidth: 2,
                     borderRadius: 6,  // bordas arredondadas nas barras
                     borderSkipped: false,
@@ -69,9 +54,7 @@
         });
     }
 
-    // ============================================================
-    // GRÁFICO 2 — Rosca (Doughnut): Valor Total (R$) por Etapa
-    // ============================================================
+    // Rosca (Doughnut): Valor Total (R$) por Etapa
     const ctxDoughnut = document.getElementById('chartValues');
     if (ctxDoughnut) {
         // Filtra etapas sem valor para não poluir o gráfico
@@ -89,9 +72,9 @@
             data: {
                 labels: pipelineData.labels,
                 datasets: [{
-                    data:            pipelineData.values,
+                    data: pipelineData.values,
                     backgroundColor: pipelineData.colors.map(c => c + 'cc'),
-                    borderColor:     pipelineData.colors,
+                    borderColor: pipelineData.colors,
                     borderWidth: 2,
                     hoverOffset: 8, // Destaque ao passar o mouse
                 }]
