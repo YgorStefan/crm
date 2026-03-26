@@ -166,16 +166,14 @@ function val(array $client, string $key): string
 
         <!-- Botões -->
         <div class="px-6 py-4 bg-gray-50 flex flex-col sm:flex-row justify-between gap-3">
-            <!-- Botão de excluir (esquerda) -->
-            <form method="POST" action="<?= APP_URL ?>/clients/<?= $client['id'] ?>/delete"
-                onsubmit="return confirm('Tem certeza que deseja remover este cliente?')">
-                <input type="hidden" name="_csrf_token"
-                    value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
-                <button type="submit"
+            <!-- Placeholder para manter o layout (form delete fica fora) -->
+            <div>
+                <button type="button" form="form-delete-client"
+                    onclick="if(confirm('Tem certeza que deseja remover este cliente?')) document.getElementById('form-delete-client').submit();"
                     class="px-4 py-2 border border-red-300 text-red-600 rounded-lg text-sm hover:bg-red-50 transition-colors">
                     🗑️ Remover Cliente
                 </button>
-            </form>
+            </div>
             <!-- Salvar (direita) -->
             <div class="flex gap-3">
                 <a href="<?= APP_URL ?>/clients/<?= $client['id'] ?>"
@@ -189,6 +187,11 @@ function val(array $client, string $key): string
             </div>
         </div>
     </form>
+
+<!-- Form de delete FORA do form de edição (HTML não suporta forms aninhados) -->
+<form id="form-delete-client" method="POST" action="<?= APP_URL ?>/clients/<?= $client['id'] ?>/delete" style="display:none;">
+    <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
+</form>
 </div>
 
 <script>
