@@ -382,6 +382,12 @@ $interactionTypes = [
 
     <script>
     window.crmCsrfToken = '<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>';
+    window.syncCsrfForms = function (token) {
+        window.crmCsrfToken = token;
+        document.querySelectorAll('input[name="_csrf_token"]').forEach(function (el) {
+            el.value = token;
+        });
+    };
     </script>
 
     <script>
@@ -461,7 +467,7 @@ $interactionTypes = [
                     })
                     .then(function (r) { return r.json(); })
                     .then(function (data) {
-                        if (data.csrf_token) window.crmCsrfToken = data.csrf_token;
+                        if (data.csrf_token) window.syncCsrfForms(data.csrf_token);
                         saveBtn.disabled = false;
                         saveBtn.textContent = 'Salvar';
 
@@ -564,7 +570,7 @@ $interactionTypes = [
             })
             .then(function (r) { return r.json(); })
             .then(function (data) {
-                if (data.csrf_token) window.crmCsrfToken = data.csrf_token;
+                if (data.csrf_token) window.syncCsrfForms(data.csrf_token);
                 saveBtn.disabled = false;
                 saveBtn.textContent = 'Salvar';
 
@@ -605,7 +611,7 @@ $interactionTypes = [
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
                     deleteBtn.disabled = false;
-                    if (data.csrf_token) window.crmCsrfToken = data.csrf_token;
+                    if (data.csrf_token) window.syncCsrfForms(data.csrf_token);
                     if (data.success) {
                         notesText.textContent = '';
                         textarea.value = '';
@@ -672,7 +678,6 @@ $interactionTypes = [
         <script>
             (function () {
                 const clientId = <?= (int) $client['id'] ?>;
-                let window.crmCsrfToken = '<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>';
                 const appUrl = '<?= rtrim(APP_URL, '/') ?>';
                 const overlay = document.getElementById('cota-modal-overlay');
                 const btnAdd = document.getElementById('btn-add-cota');
@@ -715,7 +720,7 @@ $interactionTypes = [
                     })
                         .then(function (r) { return r.json(); })
                         .then(function (data) {
-                            if (data.csrf_token) window.crmCsrfToken = data.csrf_token;
+                            if (data.csrf_token) window.syncCsrfForms(data.csrf_token);
                             if (!data.success) { alert('Erro ao salvar cota.'); return; }
 
                             // Remove mensagem "Nenhuma cota" se existir
@@ -756,7 +761,7 @@ $interactionTypes = [
                     })
                         .then(function (r) { return r.json(); })
                         .then(function (data) {
-                            if (data.csrf_token) window.crmCsrfToken = data.csrf_token;
+                            if (data.csrf_token) window.syncCsrfForms(data.csrf_token);
                             if (!data.success) { alert('Erro ao remover cota.'); return; }
                             const card = cotasList.querySelector('[data-sale-id="' + saleId + '"]');
                             if (card) card.remove();
@@ -787,7 +792,7 @@ $interactionTypes = [
                         })
                             .then(function (r) { return r.json(); })
                             .then(function (data) {
-                                if (data.csrf_token) window.crmCsrfToken = data.csrf_token;
+                                if (data.csrf_token) window.syncCsrfForms(data.csrf_token);
                                 if (!data.success) {
                                     btn.disabled = false;
                                     btn.textContent = 'Marcar como pago';
