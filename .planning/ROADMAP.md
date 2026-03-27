@@ -25,7 +25,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 ### v1.1 Correções e Edições
 
 - [x] **Phase 8: Bugs e Melhorias de Contatos Frios** - Corrige falha de rede no drag-and-drop Kanban, erro no modal de contatos frios, localiza meses para pt-BR e adiciona exclusão de mês (completed 2026-03-27)
-- [ ] **Phase 9: Calendário — CSRF, Exclusão e Conclusão** - Corrige renovação de CSRF entre edições de tarefas e adiciona exclusão e marcação de concluída
+- [x] **Phase 9: Calendário — CSRF, Exclusão e Conclusão** - Corrige renovação de CSRF entre edições de tarefas e adiciona exclusão e marcação de concluída (completed 2026-03-27)
 - [ ] **Phase 10: Edição de Histórico de Contatos** - Permite editar entradas existentes de interações e anotações na ficha do cliente
 
 ## Phase Details
@@ -70,7 +70,11 @@ Plans:
   1. Usuário edita o texto de uma interação existente na ficha do cliente e a alteração persiste ao recarregar a página
   2. Usuário edita o texto de uma anotação existente na ficha do cliente e a alteração persiste ao recarregar a página
   3. A edição usa CSRF e retorna token renovado, permitindo edições consecutivas sem erro
-**Plans**: TBD
+**Plans**: 2 plans
+
+Plans:
+- [ ] 10-01-PLAN.md — CLI-10 + CLI-11: backend — Interaction::update(), Client::updateNotes(), rotas AJAX
+- [ ] 10-02-PLAN.md — CLI-10 + CLI-11: frontend — edição inline de interações e notas em show.php
 
 ## Progress
 
@@ -84,8 +88,8 @@ Plans:
 | 6. Módulo de Contatos Frios | v1.0 | 3/3 | Complete | 2026-03-26 |
 | 7. Dashboard de Acompanhamento | v1.0 | 2/2 | Complete | 2026-03-26 |
 | 8. Bugs de Pipeline e Contatos Frios | v1.1 | 3/3 | Complete   | 2026-03-27 |
-| 9. Calendário — CSRF, Exclusão e Conclusão | v1.1 | 0/2 | Not started | - |
-| 10. Edição de Histórico de Contatos | v1.1 | 0/? | Not started | - |
+| 9. Calendário — CSRF, Exclusão e Conclusão | v1.1 | 2/2 | Complete | 2026-03-27 |
+| 10. Edição de Histórico de Contatos | v1.1 | 0/2 | Not started | - |
 
 ### Phase 11: Importação de Contatos Frios via XLS e XLSX
 
