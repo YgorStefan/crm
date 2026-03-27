@@ -29,7 +29,7 @@
 
 ### Importação de Contatos Frios (CF)
 
-- [ ] **CF-10**: Usuário pode importar contatos frios a partir de arquivos `.xls` e `.xlsx` além de `.csv` — mesma interface de upload, suporte a múltiplos formatos.
+- [x] **CF-10**: Usuário pode importar contatos frios a partir de arquivos `.xls` e `.xlsx` além de `.csv` — mesma interface de upload, suporte a múltiplos formatos.
 
 ## Future Requirements
 
@@ -57,4 +57,4 @@
 | CAL-11 | Phase 9 | Complete |
 | CLI-10 | Phase 10 | Complete |
 | CLI-11 | Phase 10 | Complete |
-| CF-10 | Phase 11 | Pending |
+| CF-10 | Phase 11 | Complete |
