@@ -24,8 +24,8 @@
 
 ### Histórico de Contatos (CLI)
 
-- [ ] **CLI-10**: Usuário pode editar uma entrada existente de registro de interação na ficha do cliente.
-- [ ] **CLI-11**: Usuário pode editar uma entrada existente de anotação na ficha do cliente.
+- [x] **CLI-10**: Usuário pode editar uma entrada existente de registro de interação na ficha do cliente.
+- [x] **CLI-11**: Usuário pode editar uma entrada existente de anotação na ficha do cliente.
 
 ### Importação de Contatos Frios (CF)
 
@@ -55,6 +55,6 @@
 | BUG-03 | Phase 9 | Complete |
 | CAL-10 | Phase 9 | Complete |
 | CAL-11 | Phase 9 | Complete |
-| CLI-10 | Phase 10 | Pending |
-| CLI-11 | Phase 10 | Pending |
+| CLI-10 | Phase 10 | Complete |
+| CLI-11 | Phase 10 | Complete |
 | CF-10 | Phase 11 | Pending |
