@@ -381,9 +381,12 @@ $interactionTypes = [
     </div>
 
     <script>
+    window.crmCsrfToken = '<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>';
+    </script>
+
+    <script>
     (function () {
         const appUrl = '<?= rtrim(APP_URL, '/') ?>';
-        let csrfToken = '<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>';
 
         // ---- CLI-10: edição inline de interações ----
         document.querySelectorAll('[data-interaction-id]').forEach(function (row) {
@@ -452,13 +455,13 @@ $interactionTypes = [
                         method: 'POST',
                         headers: {
                             'Content-Type': 'application/x-www-form-urlencoded',
-                            'X-CSRF-Token': csrfToken,
+                            'X-CSRF-Token': window.crmCsrfToken,
                         },
                         body: body.toString(),
                     })
                     .then(function (r) { return r.json(); })
                     .then(function (data) {
-                        if (data.csrf_token) csrfToken = data.csrf_token;
+                        if (data.csrf_token) window.crmCsrfToken = data.csrf_token;
                         saveBtn.disabled = false;
                         saveBtn.textContent = 'Salvar';
 
@@ -514,7 +517,6 @@ $interactionTypes = [
     (function () {
         const clientId = <?= (int) $client['id'] ?>;
         const appUrl   = '<?= rtrim(APP_URL, '/') ?>';
-        let csrfToken  = '<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>';
 
         // ---- CLI-11: edição inline de notas ----
         const btnEdit   = document.getElementById('btn-edit-notes');
@@ -556,13 +558,13 @@ $interactionTypes = [
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/x-www-form-urlencoded',
-                    'X-CSRF-Token': csrfToken,
+                    'X-CSRF-Token': window.crmCsrfToken,
                 },
                 body: body.toString(),
             })
             .then(function (r) { return r.json(); })
             .then(function (data) {
-                if (data.csrf_token) csrfToken = data.csrf_token;
+                if (data.csrf_token) window.crmCsrfToken = data.csrf_token;
                 saveBtn.disabled = false;
                 saveBtn.textContent = 'Salvar';
 
@@ -596,14 +598,14 @@ $interactionTypes = [
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/x-www-form-urlencoded',
-                        'X-CSRF-Token': csrfToken,
+                        'X-CSRF-Token': window.crmCsrfToken,
                     },
                     body: new URLSearchParams({ notes: '' }).toString(),
                 })
                 .then(function (r) { return r.json(); })
                 .then(function (data) {
                     deleteBtn.disabled = false;
-                    if (data.csrf_token) csrfToken = data.csrf_token;
+                    if (data.csrf_token) window.crmCsrfToken = data.csrf_token;
                     if (data.success) {
                         notesText.textContent = '';
                         textarea.value = '';
@@ -670,7 +672,7 @@ $interactionTypes = [
         <script>
             (function () {
                 const clientId = <?= (int) $client['id'] ?>;
-                let csrfToken = '<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>';
+                let window.crmCsrfToken = '<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>';
                 const appUrl = '<?= rtrim(APP_URL, '/') ?>';
                 const overlay = document.getElementById('cota-modal-overlay');
                 const btnAdd = document.getElementById('btn-add-cota');
@@ -699,7 +701,7 @@ $interactionTypes = [
                     if (!tipo) { alert('Selecione o Tipo de consórcio.'); return; }
 
                     const body = new URLSearchParams({
-                        _csrf_token: csrfToken,
+                        _csrf_token: window.crmCsrfToken,
                         grupo: document.getElementById('cota-grupo').value.trim(),
                         cota: document.getElementById('cota-cota').value.trim(),
                         tipo: tipo,
@@ -713,7 +715,7 @@ $interactionTypes = [
                     })
                         .then(function (r) { return r.json(); })
                         .then(function (data) {
-                            if (data.csrf_token) csrfToken = data.csrf_token;
+                            if (data.csrf_token) window.crmCsrfToken = data.csrf_token;
                             if (!data.success) { alert('Erro ao salvar cota.'); return; }
 
                             // Remove mensagem "Nenhuma cota" se existir
@@ -745,7 +747,7 @@ $interactionTypes = [
                     if (!confirm('Remover esta cota?')) return;
 
                     const saleId = btn.dataset.saleId;
-                    const body = new URLSearchParams({ _csrf_token: csrfToken });
+                    const body = new URLSearchParams({ _csrf_token: window.crmCsrfToken });
 
                     fetch(appUrl + '/clients/' + clientId + '/sales/' + saleId + '/delete', {
                         method: 'POST',
@@ -754,7 +756,7 @@ $interactionTypes = [
                     })
                         .then(function (r) { return r.json(); })
                         .then(function (data) {
-                            if (data.csrf_token) csrfToken = data.csrf_token;
+                            if (data.csrf_token) window.crmCsrfToken = data.csrf_token;
                             if (!data.success) { alert('Erro ao remover cota.'); return; }
                             const card = cotasList.querySelector('[data-sale-id="' + saleId + '"]');
                             if (card) card.remove();
@@ -776,7 +778,7 @@ $interactionTypes = [
                         btn.textContent = 'Salvando...';
 
                         const saleId = btn.dataset.saleId;
-                        const body = new URLSearchParams({ _csrf_token: csrfToken });
+                        const body = new URLSearchParams({ _csrf_token: window.crmCsrfToken });
 
                         fetch(appUrl + '/clients/' + clientId + '/sales/' + saleId + '/paid', {
                             method: 'POST',
@@ -785,7 +787,7 @@ $interactionTypes = [
                         })
                             .then(function (r) { return r.json(); })
                             .then(function (data) {
-                                if (data.csrf_token) csrfToken = data.csrf_token;
+                                if (data.csrf_token) window.crmCsrfToken = data.csrf_token;
                                 if (!data.success) {
                                     btn.disabled = false;
                                     btn.textContent = 'Marcar como pago';
