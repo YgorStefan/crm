@@ -82,13 +82,40 @@ $interactionTypes = [
                 </div>
             </div>
 
-            <!-- Card: notas -->
-            <?php if (!empty($client['notes'])): ?>
-                <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-900">
-                    <p class="font-semibold mb-2">📝 Notas</p>
-                    <p class="whitespace-pre-wrap"><?= htmlspecialchars($client['notes'], ENT_QUOTES, 'UTF-8') ?></p>
+            <!-- Card: notas (sempre visível — D-09) -->
+            <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-900" id="notes-card">
+                <div class="flex items-center justify-between mb-2">
+                    <p class="font-semibold">📝 Notas</p>
+                    <button type="button" id="btn-edit-notes"
+                        class="text-xs text-yellow-700 hover:text-yellow-900 underline">
+                        Editar Notas
+                    </button>
                 </div>
-            <?php endif; ?>
+                <!-- Estado: visualização -->
+                <div id="notes-view">
+                    <?php if (!empty($client['notes'])): ?>
+                        <p class="whitespace-pre-wrap" id="notes-text"><?= htmlspecialchars($client['notes'], ENT_QUOTES, 'UTF-8') ?></p>
+                    <?php else: ?>
+                        <p class="text-yellow-600 italic" id="notes-text"></p>
+                    <?php endif; ?>
+                </div>
+                <!-- Estado: edição (oculto) -->
+                <div id="notes-edit" style="display:none">
+                    <textarea id="notes-textarea" rows="4"
+                        class="w-full px-2 py-1 border border-yellow-300 rounded text-sm text-yellow-900 bg-yellow-50 focus:ring-2 focus:ring-yellow-500 focus:outline-none mb-2"><?= htmlspecialchars($client['notes'] ?? '', ENT_QUOTES, 'UTF-8') ?></textarea>
+                    <div class="flex gap-2">
+                        <button type="button" id="notes-save-btn"
+                            class="bg-yellow-600 hover:bg-yellow-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">
+                            Salvar
+                        </button>
+                        <button type="button" id="notes-cancel-btn"
+                            class="border border-yellow-400 text-yellow-700 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-yellow-100 transition-colors">
+                            Cancelar
+                        </button>
+                        <span id="notes-save-error" class="text-xs text-red-500 self-center" style="display:none">Erro ao salvar.</span>
+                    </div>
+                </div>
+            </div>
 
             <!-- Card: adicionar tarefa rápida -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -473,6 +500,85 @@ $interactionTypes = [
                     });
                 });
             }
+        });
+    })();
+    </script>
+
+    <script>
+    (function () {
+        const clientId = <?= (int) $client['id'] ?>;
+        const appUrl   = '<?= rtrim(APP_URL, '/') ?>';
+        let csrfToken  = '<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>';
+
+        // ---- CLI-11: edição inline de notas ----
+        const btnEdit   = document.getElementById('btn-edit-notes');
+        const notesView = document.getElementById('notes-view');
+        const notesEdit = document.getElementById('notes-edit');
+        const notesText = document.getElementById('notes-text');
+        const textarea  = document.getElementById('notes-textarea');
+        const saveBtn   = document.getElementById('notes-save-btn');
+        const cancelBtn = document.getElementById('notes-cancel-btn');
+        const errorEl   = document.getElementById('notes-save-error');
+
+        if (!btnEdit) return;
+
+        let origNotes = textarea ? textarea.value : '';
+
+        btnEdit.addEventListener('click', function () {
+            origNotes = textarea.value;
+            notesView.style.display = 'none';
+            notesEdit.style.display = '';
+            errorEl.style.display = 'none';
+            textarea.focus();
+        });
+
+        cancelBtn.addEventListener('click', function () {
+            textarea.value = origNotes;
+            notesEdit.style.display = 'none';
+            notesView.style.display = '';
+        });
+
+        saveBtn.addEventListener('click', function () {
+            saveBtn.disabled = true;
+            saveBtn.textContent = 'Salvando...';
+            errorEl.style.display = 'none';
+
+            const body = new URLSearchParams({ notes: textarea.value });
+
+            fetch(appUrl + '/clients/' + clientId + '/update-notes', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRF-Token': csrfToken,
+                },
+                body: body.toString(),
+            })
+            .then(function (r) { return r.json(); })
+            .then(function (data) {
+                if (data.csrf_token) csrfToken = data.csrf_token;
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Salvar';
+
+                if (!data.success) {
+                    errorEl.textContent = 'Erro ao salvar notas.';
+                    errorEl.style.display = '';
+                    return;
+                }
+
+                // Atualizar texto exibido e estado original
+                const newText = textarea.value;
+                notesText.textContent = newText;
+                origNotes = newText;
+
+                notesEdit.style.display = 'none';
+                notesView.style.display = '';
+            })
+            .catch(function () {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Salvar';
+                errorEl.textContent = 'Erro de conexão.';
+                errorEl.style.display = '';
+            });
         });
     })();
     </script>
