@@ -169,7 +169,8 @@ class Task extends Model
         $sql = "
             SELECT id, title, due_date, priority, status
             FROM tasks
-            WHERE status NOT IN ('done', 'cancelled')
+            WHERE status NOT IN ('cancelled')
+            ORDER BY CASE WHEN status = 'done' THEN 1 ELSE 0 END ASC, due_date ASC
         ";
         $params = [];
         if (!$isAdmin) {
