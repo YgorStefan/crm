@@ -103,4 +103,4 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 11-01-PLAN.md — CF-10: SheetJS CDN + interceptor de submit converte XLS/XLSX para CSV antes do envio ao backend
+- [x] 11-01-PLAN.md — CF-10: SheetJS CDN + interceptor de submit converte XLS/XLSX para CSV antes do envio ao backend
