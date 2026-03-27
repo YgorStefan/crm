@@ -85,8 +85,13 @@ class ColdContactController extends Controller
                 continue;
             }
 
-            $name = trim($row[0] ?? '');
+            $name  = trim($row[0] ?? '');
             $phone = trim($row[1] ?? '');
+
+            // Normaliza encoding: arquivos XLS/XLSX brasileiros frequentemente usam Windows-1252
+            if ($name !== '' && !mb_check_encoding($name, 'UTF-8')) {
+                $name = mb_convert_encoding($name, 'UTF-8', 'Windows-1252');
+            }
 
             // Ignora linhas sem dados ou possível header (coluna B sem dígito)
             if (empty($name) || empty($phone)) {
