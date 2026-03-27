@@ -168,6 +168,9 @@
     window.APP_URL = '<?= APP_URL ?>';
 </script>
 
+<!-- SheetJS para conversão client-side de XLS/XLSX para CSV -->
+<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+
 <script>
     // JS sem biblioteca de modal
     (function () {
@@ -478,4 +481,59 @@
             return dateStr;
         }
     })();
+</script>
+
+<script>
+(function () {
+    var importForm = document.querySelector('form[action*="cold-contacts/import"]');
+    if (!importForm) return;
+
+    var fileInput = importForm.querySelector('input[name="csv_file"]');
+    if (!fileInput) return;
+
+    importForm.addEventListener('submit', function (e) {
+        var file = fileInput.files[0];
+        if (!file) return; // deixa o browser validar 'required'
+
+        var ext = file.name.split('.').pop().toLowerCase();
+        if (ext !== 'xls' && ext !== 'xlsx') return; // CSV: submit nativo sem interceptação
+
+        e.preventDefault();
+
+        if (typeof XLSX === 'undefined') {
+            alert('Erro: biblioteca de leitura de planilhas não carregou. Verifique sua conexão e recarregue a página.');
+            return;
+        }
+
+        var reader = new FileReader();
+        reader.onload = function (ev) {
+            try {
+                var workbook = XLSX.read(ev.target.result, { type: 'array' });
+                var sheetName = workbook.SheetNames[0];
+                if (!sheetName) throw new Error('Planilha vazia ou sem abas.');
+                var sheet = workbook.Sheets[sheetName];
+                // Converte para CSV com separador vírgula (backend autodetecta)
+                var csvString = XLSX.utils.sheet_to_csv(sheet, { FS: ',', RS: '\n' });
+
+                // Cria File object com conteúdo CSV para substituir o arquivo original
+                var csvBlob = new Blob([csvString], { type: 'text/csv' });
+                var csvFile = new File([csvBlob], file.name.replace(/\.(xls|xlsx)$/i, '.csv'), { type: 'text/csv' });
+
+                // Injeta o File convertido no input via DataTransfer
+                var dt = new DataTransfer();
+                dt.items.add(csvFile);
+                fileInput.files = dt.files;
+
+                // Submit nativo — envia ao backend como multipart/form-data normal
+                importForm.submit();
+            } catch (err) {
+                alert('Erro ao ler o arquivo: ' + (err.message || 'Formato inválido. Use .csv, .xls ou .xlsx com coluna A = Nome, coluna B = Celular.'));
+            }
+        };
+        reader.onerror = function () {
+            alert('Não foi possível ler o arquivo. Tente novamente.');
+        };
+        reader.readAsArrayBuffer(file);
+    });
+})();
 </script>
