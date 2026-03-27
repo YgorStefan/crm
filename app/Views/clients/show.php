@@ -85,15 +85,15 @@ $interactionTypes = [
             <!-- Card: notas (sempre visível — D-09) -->
             <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-900" id="notes-card">
                 <div class="flex items-center justify-between mb-2">
-                    <p class="font-semibold">📝 Notas</p>
+                    <p class="font-semibold">📝 Nota</p>
                     <div class="flex gap-3">
                         <button type="button" id="btn-edit-notes"
                             class="text-xs text-yellow-700 hover:text-yellow-900 underline">
-                            Editar Notas
+                            Editar Nota
                         </button>
                         <button type="button" id="btn-delete-notes"
                             class="text-xs text-red-500 hover:text-red-700 underline">
-                            Excluir Notas
+                            Excluir Nota
                         </button>
                     </div>
                 </div>
@@ -567,7 +567,7 @@ $interactionTypes = [
                 saveBtn.textContent = 'Salvar';
 
                 if (!data.success) {
-                    errorEl.textContent = 'Erro ao salvar notas.';
+                    errorEl.textContent = 'Erro ao salvar nota.';
                     errorEl.style.display = '';
                     return;
                 }
@@ -589,7 +589,7 @@ $interactionTypes = [
         });
         if (deleteBtn) {
             deleteBtn.addEventListener('click', function () {
-                if (!confirm('Excluir todas as notas deste cliente?')) return;
+                if (!confirm('Excluir a nota deste cliente?')) return;
                 deleteBtn.disabled = true;
 
                 fetch(appUrl + '/clients/' + clientId + '/update-notes', {
