@@ -31,7 +31,7 @@ metrics:
 
 ## What Was Built
 
-### Task 1 — CLI-10: Edição inline de interações (commit `71edfb0`)
+### Task 1 — CLI-10: Edição inline de interações (commit `75fa716`)
 
 Modified the `foreach ($interactions as $inter)` loop in `app/Views/clients/show.php` to support inline editing:
 
@@ -41,7 +41,7 @@ Modified the `foreach ($interactions as $inter)` loop in `app/Views/clients/show
 - Delete button receives class `.inter-delete-btn` to allow JS hide/show during edit mode
 - Added IIFE script block: `querySelectorAll('[data-interaction-id]')` — click on `.inter-description` activates edit mode; "Cancelar" restores original values without network request; "Salvar" POSTs to `/interactions/{id}/update` with `X-CSRF-Token` header, re-renders row on success, rotates `csrfToken`
 
-### Task 2 — CLI-11: Card de Notas sempre visível + JS (commit `f09a820`)
+### Task 2 — CLI-11: Card de Notas sempre visível + JS (commit `14919fd`)
 
 Replaced the conditional `<?php if (!empty($client['notes'])): ?>` wrapper with an always-rendered card `id="notes-card"`:
 
@@ -75,5 +75,9 @@ Files exist:
 - `app/Views/clients/show.php` — FOUND (modified)
 
 Commits exist:
-- `71edfb0` — FOUND (feat(10-02): edição inline de interações CLI-10)
-- `f09a820` — FOUND (feat(10-02): card notas sempre visível CLI-11)
+- `75fa716` — FOUND (feat(10-02): edição inline de interações CLI-10)
+- `14919fd` — FOUND (feat(10-02): card notas sempre visível CLI-11)
+
+## Checkpoint
+
+Task 3 (human-verify): Aprovado pelo usuário em 2026-03-27.
