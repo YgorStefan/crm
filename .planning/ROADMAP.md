@@ -89,7 +89,7 @@ Plans:
 | 7. Dashboard de Acompanhamento | v1.0 | 2/2 | Complete | 2026-03-26 |
 | 8. Bugs de Pipeline e Contatos Frios | v1.1 | 3/3 | Complete   | 2026-03-27 |
 | 9. Calendário — CSRF, Exclusão e Conclusão | v1.1 | 2/2 | Complete | 2026-03-27 |
-| 10. Edição de Histórico de Contatos | v1.1 | 2/2 | Complete   | 2026-03-27 |
+| 10. Edição de Histórico de Contatos | v1.1 | 2/2 | Complete    | 2026-03-27 |
 
 ### Phase 11: Importação de Contatos Frios via XLS e XLSX
 
