@@ -287,9 +287,14 @@ class ColdContactController extends Controller
         if (!empty($_GET['telefone_enviado']))
             $filters['telefone_enviado'] = trim($_GET['telefone_enviado']);
 
-        $model = new ColdContact();
-        $contacts = $model->findByMonth($yearMonth, $filters);
-        echo json_encode(['contacts' => $contacts]);
+        try {
+            $model = new ColdContact();
+            $contacts = $model->findByMonth($yearMonth, $filters);
+            echo json_encode(['contacts' => $contacts]);
+        } catch (\Throwable $e) {
+            http_response_code(500);
+            echo json_encode(['contacts' => [], 'error' => 'Erro ao carregar contatos.']);
+        }
         exit;
     }
 }
