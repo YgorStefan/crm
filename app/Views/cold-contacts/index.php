@@ -520,7 +520,7 @@
                 var csvFile = new File([csvBlob], file.name.replace(/\.(xls|xlsx)$/i, '.csv'), { type: 'text/csv' });
 
                 var fd = new FormData();
-                fd.append('_csrf_token', (importForm.querySelector('[name="_csrf_token"]') || {value: ''}).value);
+                fd.append('_csrf_token', window.CSRF_TOKEN || '');
                 fd.append('tipo_lista', (importForm.querySelector('[name="tipo_lista"]') || {value: ''}).value);
                 fd.append('csv_file', csvFile);
 
