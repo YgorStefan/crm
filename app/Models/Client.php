@@ -371,6 +371,24 @@ class Client extends Model
     }
 
     /**
+     * Atualiza apenas o campo notes do cliente.
+     *
+     * @param  int     $id
+     * @param  string  $notes  Conteúdo das notas (pode ser string vazia)
+     * @return bool
+     */
+    public function updateNotes(int $id, string $notes): bool
+    {
+        $stmt = $this->db->prepare("
+            UPDATE clients SET notes = :notes WHERE id = :id
+        ");
+        return $stmt->execute([
+            ':notes' => $notes,
+            ':id'    => $id,
+        ]);
+    }
+
+    /**
      * Retorna lista de client_ids que possuem ao menos uma cota em atraso no ciclo vigente.
      * Usado por findAllWithRelations para injetar has_overdue sem N+1 queries.
      *
