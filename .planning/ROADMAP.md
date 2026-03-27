@@ -24,7 +24,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 
 ### v1.1 Correções e Edições
 
-- [ ] **Phase 8: Bugs e Melhorias de Contatos Frios** - Corrige falha de rede no drag-and-drop Kanban, erro no modal de contatos frios, localiza meses para pt-BR e adiciona exclusão de mês
+- [x] **Phase 8: Bugs e Melhorias de Contatos Frios** - Corrige falha de rede no drag-and-drop Kanban, erro no modal de contatos frios, localiza meses para pt-BR e adiciona exclusão de mês (completed 2026-03-27)
 - [ ] **Phase 9: Calendário — CSRF, Exclusão e Conclusão** - Corrige renovação de CSRF entre edições de tarefas e adiciona exclusão e marcação de concluída
 - [ ] **Phase 10: Edição de Histórico de Contatos** - Permite editar entradas existentes de interações e anotações na ficha do cliente
 
@@ -45,7 +45,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 Plans:
 - [x] 08-01-PLAN.md — BUG-02: CSRF middleware aceita header X-CSRF-Token (Kanban fix)
 - [x] 08-02-PLAN.md — BUG-01: listJson com try/catch + CF-08: meses em pt-BR
-- [ ] 08-03-PLAN.md — CF-09: exclusão de mês com botão, confirmação e remoção do DOM
+- [x] 08-03-PLAN.md — CF-09: exclusão de mês com botão, confirmação e remoção do DOM
 
 ### Phase 9: Calendário — CSRF, Exclusão e Conclusão
 **Goal**: Usuário pode editar, excluir e concluir tarefas no calendário sem erros, em qualquer sequência de ações na mesma sessão
@@ -56,8 +56,11 @@ Plans:
   2. Usuário exclui uma tarefa pelo calendário e ela desaparece do calendário imediatamente, sem recarregar a página
   3. Usuário marca uma tarefa como concluída e ela exibe risco visual (strikethrough) no calendário/modal
   4. Tarefas concluídas não acionam a flag "em atraso" no badge de notificações; tarefas pendentes continuam acionando normalmente
-**Plans**: TBD
-**UI hint**: yes
+**Plans**: 2 plans
+
+Plans:
+- [ ] 09-01-PLAN.md — BUG-03 + CAL-10 + CAL-11: backend — update() e destroy() retornam csrf_token; findForCalendar() inclui done
+- [ ] 09-02-PLAN.md — BUG-03 + CAL-10 + CAL-11: frontend — renovação CSRF, botões Excluir/Concluída, strikethrough no calendário
 
 ### Phase 10: Edição de Histórico de Contatos
 **Goal**: Usuário pode corrigir ou atualizar entradas existentes de histórico na ficha do cliente
@@ -80,8 +83,8 @@ Plans:
 | 5. Acesso Rápido | v1.0 | 1/1 | Complete | 2026-03-26 |
 | 6. Módulo de Contatos Frios | v1.0 | 3/3 | Complete | 2026-03-26 |
 | 7. Dashboard de Acompanhamento | v1.0 | 2/2 | Complete | 2026-03-26 |
-| 8. Bugs de Pipeline e Contatos Frios | v1.1 | 2/3 | In Progress|  |
-| 9. Calendário — CSRF, Exclusão e Conclusão | v1.1 | 0/? | Not started | - |
+| 8. Bugs de Pipeline e Contatos Frios | v1.1 | 3/3 | Complete   | 2026-03-27 |
+| 9. Calendário — CSRF, Exclusão e Conclusão | v1.1 | 0/2 | Not started | - |
 | 10. Edição de Histórico de Contatos | v1.1 | 0/? | Not started | - |
 
 ### Phase 11: Importação de Contatos Frios via XLS e XLSX
