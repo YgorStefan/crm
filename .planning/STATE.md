@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Correções e Edições
 status: executing
-stopped_at: Completed 08-02-PLAN.md
-last_updated: "2026-03-27T01:49:35.113Z"
+stopped_at: Completed 09-01-PLAN.md
+last_updated: "2026-03-27T15:25:03.755Z"
 last_activity: 2026-03-27
 progress:
   total_phases: 4
-  completed_phases: 0
-  total_plans: 3
-  completed_plans: 2
+  completed_phases: 1
+  total_plans: 5
+  completed_plans: 4
 ---
 
 # Project State
@@ -20,12 +20,12 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-26)
 
 **Core value:** Visibilidade total e organização do funil de vendas e rotina comercial, garantindo que nenhum follow-up, tarefa ou pagamento de cliente seja esquecido.
-**Current focus:** Phase 08 — bugs-e-melhorias-de-contatos-frios
+**Current focus:** Phase 09 — calend-rio-csrf-exclus-o-e-conclus-o
 
 ## Current Position
 
-Phase: 08 (bugs-e-melhorias-de-contatos-frios) — EXECUTING
-Plan: 3 of 3
+Phase: 09 (calend-rio-csrf-exclus-o-e-conclus-o) — EXECUTING
+Plan: 2 of 2
 Status: Ready to execute
 Last activity: 2026-03-27
 
@@ -65,6 +65,8 @@ Last activity: 2026-03-27
 | Phase 07-dashboard-de-acompanhamento P01 | 2 | 2 tasks | 4 files |
 | Phase 08-bugs-e-melhorias-de-contatos-frios P01 | 5 | 1 tasks | 1 files |
 | Phase 08-bugs-e-melhorias-de-contatos-frios P02 | 2 | 2 tasks | 2 files |
+| Phase 08-bugs-e-melhorias-de-contatos-frios P03 | 8 | 2 tasks | 4 files |
+| Phase 09-calend-rio-csrf-exclus-o-e-conclus-o P01 | 1 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -99,6 +101,9 @@ Recent decisions affecting current work:
 - [Phase 08-bugs-e-melhorias-de-contatos-frios]: CsrfMiddleware aceita token via header X-CSRF-Token (prioridade) com fallback para \['_csrf_token'] — backward-compatible com todos os formulários existentes
 - [Phase 08-bugs-e-melhorias-de-contatos-frios]: try/catch Throwable em listJson garante JSON valido mesmo em exceptions PHP — evita HTML de erro poluir resposta AJAX
 - [Phase 08-bugs-e-melhorias-de-contatos-frios]: month_label calculado em PHP com array pt-BR hardcoded — independente do locale MySQL do Hostinger
+- [Phase 08-bugs-e-melhorias-de-contatos-frios]: Route /cold-contacts/month/{yearMonth}/delete registered before /{id} routes to prevent pattern collision; DOM card removed via closest('.bg-white.rounded-xl').remove()
+- [Phase 09-calend-rio-csrf-exclus-o-e-conclus-o]: destroy() returns csrf_token on AJAX delete — both update() and destroy() renew token, enabling continuous editing in single session
+- [Phase 09-calend-rio-csrf-exclus-o-e-conclus-o]: findForCalendar ORDER BY CASE WHEN status='done' THEN 1 pushes done tasks after active ones without client-side sorting
 
 ### Roadmap Evolution
 
@@ -114,6 +119,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-27T01:49:35.109Z
-Stopped at: Completed 08-02-PLAN.md
+Last session: 2026-03-27T15:25:03.751Z
+Stopped at: Completed 09-01-PLAN.md
 Resume file: None
