@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use Core\Controller;
+use Core\Middleware\CsrfMiddleware;
 use App\Models\Interaction;
 
 class InteractionController extends Controller
@@ -37,6 +38,46 @@ class InteractionController extends Controller
 
         $this->flash('success', 'Interação registrada com sucesso!');
         $this->redirect('/clients/' . $clientId);
+    }
+
+    /**
+     * Atualiza uma interação existente. Retorna JSON.
+     */
+    public function update(array $params = []): void
+    {
+        header('Content-Type: application/json');
+        $id = (int) ($params['id'] ?? 0);
+
+        if (!$id) {
+            echo json_encode(['success' => false, 'error' => 'ID inválido.']);
+            exit;
+        }
+
+        $description = trim($_POST['description'] ?? '');
+        $type        = $_POST['type'] ?? '';
+        $occurredAt  = $_POST['occurred_at'] ?? '';
+
+        $validTypes = ['call', 'email', 'meeting', 'whatsapp', 'note', 'other'];
+        if (empty($description) || !in_array($type, $validTypes, true) || empty($occurredAt)) {
+            echo json_encode(['success' => false, 'error' => 'Campos inválidos.']);
+            exit;
+        }
+
+        // Converte datetime-local (YYYY-MM-DDTHH:MM) para MySQL (YYYY-MM-DD HH:MM:SS)
+        $occurredAt = str_replace('T', ' ', $occurredAt) . ':00';
+
+        $interactionModel = new Interaction();
+        $ok = $interactionModel->update($id, [
+            'description' => $description,
+            'type'        => $type,
+            'occurred_at' => $occurredAt,
+        ]);
+
+        echo json_encode([
+            'success'    => $ok,
+            'csrf_token' => CsrfMiddleware::getToken(),
+        ]);
+        exit;
     }
 
     /**
