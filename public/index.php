@@ -122,6 +122,7 @@ $router->post('/cold-contacts/import', 'ColdContactController', 'import', ['Auth
 $router->get('/cold-contacts/list', 'ColdContactController', 'listJson', ['AuthMiddleware']);
 $router->get('/cold-contacts/export', 'ColdContactController', 'export', ['AuthMiddleware']);
 $router->post('/cold-contacts/bulk-update', 'ColdContactController', 'bulkUpdate', ['AuthMiddleware', 'CsrfMiddleware']);
+$router->post('/cold-contacts/month/{yearMonth}/delete', 'ColdContactController', 'deleteMonth', ['AuthMiddleware', 'CsrfMiddleware']);
 $router->post('/cold-contacts/{id}/update', 'ColdContactController', 'update', ['AuthMiddleware', 'CsrfMiddleware']);
 $router->post('/cold-contacts/{id}/delete', 'ColdContactController', 'destroy', ['AuthMiddleware', 'CsrfMiddleware']);
 
