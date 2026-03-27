@@ -160,6 +160,13 @@
             eventClick: function (info) {
                 info.jsEvent.preventDefault();
                 openEditTaskModal(info.event.id);
+            },
+            dayMaxEvents: false,
+            eventDidMount: function (info) {
+                if (info.event.extendedProps.status === 'done') {
+                    info.el.style.textDecoration = 'line-through';
+                    info.el.style.opacity = '0.6';
+                }
             }
         });
         calendar.render();
