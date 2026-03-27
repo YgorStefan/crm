@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Correções e Edições
-status: verifying
-stopped_at: Completed 09-02-PLAN.md
-last_updated: "2026-03-27T15:28:42.643Z"
+status: executing
+stopped_at: Completed 10-01-PLAN.md
+last_updated: "2026-03-27T20:34:06.968Z"
 last_activity: 2026-03-27
 progress:
   total_phases: 4
   completed_phases: 2
-  total_plans: 5
-  completed_plans: 5
+  total_plans: 7
+  completed_plans: 6
 ---
 
 # Project State
@@ -20,13 +20,13 @@ progress:
 See: .planning/PROJECT.md (updated 2026-03-26)
 
 **Core value:** Visibilidade total e organização do funil de vendas e rotina comercial, garantindo que nenhum follow-up, tarefa ou pagamento de cliente seja esquecido.
-**Current focus:** Phase 09 — calend-rio-csrf-exclus-o-e-conclus-o
+**Current focus:** Phase 10 — edi-o-de-hist-rico-de-contatos
 
 ## Current Position
 
-Phase: 09 (calend-rio-csrf-exclus-o-e-conclus-o) — EXECUTING
+Phase: 10 (edi-o-de-hist-rico-de-contatos) — EXECUTING
 Plan: 2 of 2
-Status: Phase complete — ready for verification
+Status: Ready to execute
 Last activity: 2026-03-27
 
 ## Performance Metrics
@@ -68,6 +68,7 @@ Last activity: 2026-03-27
 | Phase 08-bugs-e-melhorias-de-contatos-frios P03 | 8 | 2 tasks | 4 files |
 | Phase 09-calend-rio-csrf-exclus-o-e-conclus-o P01 | 1 | 2 tasks | 2 files |
 | Phase 09-calend-rio-csrf-exclus-o-e-conclus-o P02 | 1 | 2 tasks | 1 files |
+| Phase 10-edi-o-de-hist-rico-de-contatos P01 | 2 | 2 tasks | 5 files |
 
 ## Accumulated Context
 
@@ -107,6 +108,8 @@ Recent decisions affecting current work:
 - [Phase 09-calend-rio-csrf-exclus-o-e-conclus-o]: findForCalendar ORDER BY CASE WHEN status='done' THEN 1 pushes done tasks after active ones without client-side sorting
 - [Phase 09-calend-rio-csrf-exclus-o-e-conclus-o]: taskActionBtns hidden via inline style\!important, overridden with .style.display='flex' in JS edit handler — avoids Tailwind specificity conflicts
 - [Phase 09-calend-rio-csrf-exclus-o-e-conclus-o]: Delete uses calendar.getEventById(id).remove() for optimistic DOM removal; toggle-done uses refetchEvents() so eventDidMount applies strikethrough styling
+- [Phase 10-edi-o-de-hist-rico-de-contatos]: InteractionController::update() validates type against allowlist ['call','email','meeting','whatsapp','note','other'] before persisting
+- [Phase 10-edi-o-de-hist-rico-de-contatos]: Client::updateNotes() accepts empty string — notes are optional and may be cleared by the user
 
 ### Roadmap Evolution
 
@@ -122,6 +125,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-27T15:28:42.638Z
-Stopped at: Completed 09-02-PLAN.md
+Last session: 2026-03-27T20:34:06.964Z
+Stopped at: Completed 10-01-PLAN.md
 Resume file: None

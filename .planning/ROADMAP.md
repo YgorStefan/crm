@@ -73,7 +73,7 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 10-01-PLAN.md — CLI-10 + CLI-11: backend — Interaction::update(), Client::updateNotes(), rotas AJAX
+- [x] 10-01-PLAN.md — CLI-10 + CLI-11: backend — Interaction::update(), Client::updateNotes(), rotas AJAX
 - [ ] 10-02-PLAN.md — CLI-10 + CLI-11: frontend — edição inline de interações e notas em show.php
 
 ## Progress
@@ -89,7 +89,7 @@ Plans:
 | 7. Dashboard de Acompanhamento | v1.0 | 2/2 | Complete | 2026-03-26 |
 | 8. Bugs de Pipeline e Contatos Frios | v1.1 | 3/3 | Complete   | 2026-03-27 |
 | 9. Calendário — CSRF, Exclusão e Conclusão | v1.1 | 2/2 | Complete | 2026-03-27 |
-| 10. Edição de Histórico de Contatos | v1.1 | 0/2 | Not started | - |
+| 10. Edição de Histórico de Contatos | v1.1 | 1/2 | In Progress|  |
 
 ### Phase 11: Importação de Contatos Frios via XLS e XLSX
 
