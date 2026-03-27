@@ -8,7 +8,7 @@
 
 ### Bugs Críticos (BUG)
 
-- [ ] **BUG-01**: O sistema carrega a lista de contatos frios corretamente ao abrir o modal de um mês após ter realizado importação CSV na mesma sessão.
+- [x] **BUG-01**: O sistema carrega a lista de contatos frios corretamente ao abrir o modal de um mês após ter realizado importação CSV na mesma sessão.
 - [x] **BUG-02**: O sistema processa o arrastar de cards entre colunas do Pipeline Kanban sem retornar erro de "Falha de rede".
 - [ ] **BUG-03**: O sistema permite editar múltiplas tarefas no calendário na mesma sessão sem retornar "Erro ao salvar tarefa" na segunda edição (token CSRF renovado corretamente entre mutations).
 
@@ -19,7 +19,7 @@
 
 ### Contatos Frios (CF)
 
-- [ ] **CF-08**: Nomes dos meses nos cards de contatos frios são exibidos em português (pt-BR), não em inglês gerado pelo MySQL.
+- [x] **CF-08**: Nomes dos meses nos cards de contatos frios são exibidos em português (pt-BR), não em inglês gerado pelo MySQL.
 - [ ] **CF-09**: Usuário pode excluir todos os contatos de um mês clicando no card; o sistema pede confirmação via `window.confirm()` antes de deletar; após confirmação o card desaparece da lista.
 
 ### Histórico de Contatos (CLI)
@@ -48,9 +48,9 @@
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| BUG-01 | Phase 8 | Pending |
+| BUG-01 | Phase 8 | Complete |
 | BUG-02 | Phase 8 | Complete |
-| CF-08 | Phase 8 | Pending |
+| CF-08 | Phase 8 | Complete |
 | CF-09 | Phase 8 | Pending |
 | BUG-03 | Phase 9 | Pending |
 | CAL-10 | Phase 9 | Pending |
