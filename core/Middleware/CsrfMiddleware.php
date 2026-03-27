@@ -14,8 +14,10 @@ class CsrfMiddleware
             session_start();
         }
 
-        // Recupera o token enviado pelo formulário (campo hidden "_csrf_token")
-        $tokenFromForm = $_POST['_csrf_token'] ?? '';
+        // Aceita token via header HTTP (para fetch/XHR com JSON body) ou via campo hidden de formulário
+        $tokenFromHeader = $_SERVER['HTTP_X_CSRF_TOKEN'] ?? '';
+        $tokenFromForm   = $_POST['_csrf_token'] ?? '';
+        $tokenReceived   = $tokenFromHeader !== '' ? $tokenFromHeader : $tokenFromForm;
 
         // Recupera o token armazenado na sessão do usuário
         $tokenFromSession = $_SESSION['csrf_token'] ?? '';
@@ -24,9 +26,9 @@ class CsrfMiddleware
         // ataques de timing (timing attacks) onde o atacante mede o
         // tempo de resposta para adivinhar o token caractere por caractere.
         if (
-            empty($tokenFromForm)
+            empty($tokenReceived)
             || empty($tokenFromSession)
-            || !hash_equals($tokenFromSession, $tokenFromForm)
+            || !hash_equals($tokenFromSession, $tokenReceived)
         ) {
             http_response_code(403);
             die('Ação bloqueada: token CSRF inválido. Por favor, recarregue a página e tente novamente.');
