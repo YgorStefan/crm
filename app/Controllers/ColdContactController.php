@@ -200,6 +200,34 @@ class ColdContactController extends Controller
     }
 
     /**
+     * Deleta todos os contatos de um mês. Recebe {yearMonth} = YYYY-MM. Retorna JSON.
+     */
+    public function deleteMonth(array $params = []): void
+    {
+        header('Content-Type: application/json');
+        $yearMonth = trim($params['yearMonth'] ?? '');
+
+        if (empty($yearMonth) || !preg_match('/^\d{4}-\d{2}$/', $yearMonth)) {
+            echo json_encode(['success' => false, 'error' => 'Mês inválido.']);
+            exit;
+        }
+
+        try {
+            $model = new ColdContact();
+            $deleted = $model->deleteByMonth($yearMonth);
+            echo json_encode([
+                'success'    => true,
+                'deleted'    => $deleted,
+                'csrf_token' => CsrfMiddleware::getToken(),
+            ]);
+        } catch (\Throwable $e) {
+            http_response_code(500);
+            echo json_encode(['success' => false, 'error' => 'Erro ao excluir mês.']);
+        }
+        exit;
+    }
+
+    /**
      * Exporta CSV filtrado dos contatos do mês
      * Se nenhum filtro ativo, exporta todos do mês
      * Se filtros ativos, exporta apenas os filtrados
