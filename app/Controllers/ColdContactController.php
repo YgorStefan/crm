@@ -14,11 +14,25 @@ class ColdContactController extends Controller
     public function index(array $params = []): void
     {
         $model = new ColdContact();
-        $summaries = $model->findMonthSummaries();
+        $rawSummaries = $model->findMonthSummaries();
+
+        $meses = [
+            '01' => 'Janeiro', '02' => 'Fevereiro', '03' => 'Março',
+            '04' => 'Abril',   '05' => 'Maio',      '06' => 'Junho',
+            '07' => 'Julho',   '08' => 'Agosto',    '09' => 'Setembro',
+            '10' => 'Outubro', '11' => 'Novembro',  '12' => 'Dezembro',
+        ];
+
+        $summaries = array_map(function (array $row) use ($meses): array {
+            $parts = explode('-', $row['mes_ano']); // ['YYYY', 'MM']
+            $nomeMes = $meses[$parts[1]] ?? $parts[1];
+            $row['month_label'] = $nomeMes . ' ' . $parts[0]; // ex: "Março 2026"
+            return $row;
+        }, $rawSummaries);
 
         $this->render('cold-contacts/index', [
             'pageTitle' => 'Contatos Frios',
-            'title' => 'Contatos Frios — ' . APP_NAME,
+            'title'     => 'Contatos Frios — ' . APP_NAME,
             'summaries' => $summaries,
             'csrf_token' => CsrfMiddleware::getToken(),
         ]);
