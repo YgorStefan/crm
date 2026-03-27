@@ -9,12 +9,13 @@
     </div>
 </div>
 
-<!-- Formulário de importação CSV -->
+<!-- Formulário de importação -->
 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-8">
-    <h4 class="font-semibold text-gray-700 mb-4">Importar lista CSV</h4>
+    <h4 class="font-semibold text-gray-700 mb-4">Importar lista</h4>
     <p class="text-sm text-gray-500 mb-4">
-        O arquivo CSV deve ter: <strong>coluna A = Nome</strong>, <strong>coluna B = Celular</strong>.
+        O arquivo deve ter: <strong>coluna A = Nome</strong>, <strong>coluna B = Celular</strong>.
         Header é opcional (será ignorado automaticamente se a primeira linha não contiver número no Celular).
+        Formatos aceitos: <strong>.csv, .xls, .xlsx</strong>.
     </p>
     <form method="POST" action="<?= APP_URL ?>/cold-contacts/import" enctype="multipart/form-data"
         class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
@@ -33,9 +34,9 @@
         <!-- Upload do arquivo -->
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">
-                Arquivo CSV
+                Arquivo
             </label>
-            <input type="file" name="csv_file" accept=".csv,text/csv" required
+            <input type="file" name="csv_file" accept=".csv,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required
                 class="w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
         </div>
 

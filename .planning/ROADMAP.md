@@ -100,4 +100,7 @@ Plans:
   1. Upload de arquivo .xls ou .xlsx é aceito pelo sistema sem erro
   2. Contatos importados via XLS/XLSX aparecem corretamente na lista mensal
   3. Importação CSV existente continua funcionando sem regressão
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 11-01-PLAN.md — CF-10: SheetJS CDN + interceptor de submit converte XLS/XLSX para CSV antes do envio ao backend
