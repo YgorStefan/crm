@@ -82,7 +82,8 @@ $interactionTypes = [
                 </div>
             </div>
 
-            <!-- Card: notas (sempre visível — D-09) -->
+            <!-- Card: nota (visível apenas se o cliente tiver nota) -->
+            <?php if (!empty($client['notes'])): ?>
             <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-900" id="notes-card">
                 <div class="flex items-center justify-between mb-2">
                     <p class="font-semibold">📝 Nota</p>
@@ -122,6 +123,7 @@ $interactionTypes = [
                     </div>
                 </div>
             </div>
+            <?php endif; ?>
 
             <!-- Card: adicionar tarefa rápida -->
             <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
