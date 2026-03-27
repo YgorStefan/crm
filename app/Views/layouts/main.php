@@ -4,6 +4,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- descomentar linha abaixo caso tenha o favicon.ico -->
+    <link rel="icon" href="data:,">
     <title><?= htmlspecialchars($title ?? APP_NAME, ENT_QUOTES, 'UTF-8') ?></title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
@@ -123,7 +125,8 @@
                     </div>
                     <div class="flex-1 min-w-0">
                         <p class="text-sm font-medium truncate">
-                            <?= htmlspecialchars($_SESSION['user']['name'] ?? '', ENT_QUOTES, 'UTF-8') ?></p>
+                            <?= htmlspecialchars($_SESSION['user']['name'] ?? '', ENT_QUOTES, 'UTF-8') ?>
+                        </p>
                         <p class="text-xs text-indigo-300 capitalize"><?= $_SESSION['user']['role'] ?? '' ?></p>
                     </div>
                     <a href="<?= APP_URL ?>/logout" title="Sair"
