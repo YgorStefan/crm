@@ -2,15 +2,15 @@
 gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Correções e Edições
-status: executing
-stopped_at: Completed 09-01-PLAN.md
-last_updated: "2026-03-27T15:25:03.755Z"
+status: verifying
+stopped_at: Completed 09-02-PLAN.md
+last_updated: "2026-03-27T15:28:42.643Z"
 last_activity: 2026-03-27
 progress:
   total_phases: 4
-  completed_phases: 1
+  completed_phases: 2
   total_plans: 5
-  completed_plans: 4
+  completed_plans: 5
 ---
 
 # Project State
@@ -26,7 +26,7 @@ See: .planning/PROJECT.md (updated 2026-03-26)
 
 Phase: 09 (calend-rio-csrf-exclus-o-e-conclus-o) — EXECUTING
 Plan: 2 of 2
-Status: Ready to execute
+Status: Phase complete — ready for verification
 Last activity: 2026-03-27
 
 ## Performance Metrics
@@ -67,6 +67,7 @@ Last activity: 2026-03-27
 | Phase 08-bugs-e-melhorias-de-contatos-frios P02 | 2 | 2 tasks | 2 files |
 | Phase 08-bugs-e-melhorias-de-contatos-frios P03 | 8 | 2 tasks | 4 files |
 | Phase 09-calend-rio-csrf-exclus-o-e-conclus-o P01 | 1 | 2 tasks | 2 files |
+| Phase 09-calend-rio-csrf-exclus-o-e-conclus-o P02 | 1 | 2 tasks | 1 files |
 
 ## Accumulated Context
 
@@ -104,6 +105,8 @@ Recent decisions affecting current work:
 - [Phase 08-bugs-e-melhorias-de-contatos-frios]: Route /cold-contacts/month/{yearMonth}/delete registered before /{id} routes to prevent pattern collision; DOM card removed via closest('.bg-white.rounded-xl').remove()
 - [Phase 09-calend-rio-csrf-exclus-o-e-conclus-o]: destroy() returns csrf_token on AJAX delete — both update() and destroy() renew token, enabling continuous editing in single session
 - [Phase 09-calend-rio-csrf-exclus-o-e-conclus-o]: findForCalendar ORDER BY CASE WHEN status='done' THEN 1 pushes done tasks after active ones without client-side sorting
+- [Phase 09-calend-rio-csrf-exclus-o-e-conclus-o]: taskActionBtns hidden via inline style\!important, overridden with .style.display='flex' in JS edit handler — avoids Tailwind specificity conflicts
+- [Phase 09-calend-rio-csrf-exclus-o-e-conclus-o]: Delete uses calendar.getEventById(id).remove() for optimistic DOM removal; toggle-done uses refetchEvents() so eventDidMount applies strikethrough styling
 
 ### Roadmap Evolution
 
@@ -119,6 +122,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-27T15:25:03.751Z
-Stopped at: Completed 09-01-PLAN.md
+Last session: 2026-03-27T15:28:42.638Z
+Stopped at: Completed 09-02-PLAN.md
 Resume file: None
