@@ -16,11 +16,10 @@ class ColdContact extends Model
     {
         $sql = "
             SELECT
-                DATE_FORMAT(imported_at, '%Y-%m')         AS mes_ano,
-                DATE_FORMAT(imported_at, '%M %Y')         AS month_label,
-                COUNT(*)                                   AS total
+                DATE_FORMAT(imported_at, '%Y-%m') AS mes_ano,
+                COUNT(*)                          AS total
             FROM cold_contacts
-            GROUP BY DATE_FORMAT(imported_at, '%Y-%m'), DATE_FORMAT(imported_at, '%M %Y')
+            GROUP BY DATE_FORMAT(imported_at, '%Y-%m')
             ORDER BY DATE_FORMAT(imported_at, '%Y-%m') DESC
         ";
         $stmt = $this->db->query($sql);
