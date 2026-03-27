@@ -516,7 +516,8 @@
                 var csvString = XLSX.utils.sheet_to_csv(sheet, { FS: ',', RS: '\n' });
 
                 // Cria File object com conteúdo CSV para substituir o arquivo original
-                var csvBlob = new Blob([csvString], { type: 'text/csv' });
+                // TextEncoder garante encoding UTF-8 explícito (evita Latin-1 de arquivos Windows-1252)
+                var csvBlob = new Blob([new TextEncoder().encode(csvString)], { type: 'text/csv;charset=utf-8' });
                 var csvFile = new File([csvBlob], file.name.replace(/\.(xls|xlsx)$/i, '.csv'), { type: 'text/csv' });
 
                 // Injeta o File convertido no input via DataTransfer
