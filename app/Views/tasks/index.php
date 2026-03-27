@@ -79,15 +79,27 @@
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
             </div>
 
-            <div class="flex justify-end gap-3 pt-2">
-                <button type="button" onclick="document.getElementById('modalTask').classList.add('hidden')"
-                    class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-100 transition-colors">
-                    Cancelar
-                </button>
-                <button id="btnSaveTask"
-                    class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg text-sm transition-colors">
-                    Salvar
-                </button>
+            <div class="flex justify-between gap-3 pt-2">
+                <div class="flex gap-2" id="taskActionBtns" style="display:none!important">
+                    <button id="btnDeleteTask"
+                        class="px-4 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg text-sm transition-colors">
+                        Excluir
+                    </button>
+                    <button id="btnToggleDone"
+                        class="px-4 py-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg text-sm transition-colors">
+                        Concluída
+                    </button>
+                </div>
+                <div class="flex gap-3 ml-auto">
+                    <button type="button" onclick="document.getElementById('modalTask').classList.add('hidden')"
+                        class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-100 transition-colors">
+                        Cancelar
+                    </button>
+                    <button id="btnSaveTask"
+                        class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg text-sm transition-colors">
+                        Salvar
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -120,7 +132,7 @@
     document.addEventListener('DOMContentLoaded', function () {
         const calendarEl = document.getElementById('fc-calendar');
         const appUrl = '<?= APP_URL ?>';
-        const csrfToken = '<?= htmlspecialchars($csrf_token, ENT_QUOTES, "UTF-8") ?>';
+        let csrfToken = '<?= htmlspecialchars($csrf_token, ENT_QUOTES, "UTF-8") ?>';
         let selectedDate = null;
 
         // Inicializa calendario FullCalendar em pt-BR com visualizacao mes/semana
@@ -182,6 +194,7 @@
             document.getElementById('task_due_date').value = dateStr + 'T08:00';
             document.getElementById('task_priority').value = 'medium';
             document.getElementById('task_description').value = '';
+            document.getElementById('taskActionBtns').style.display = 'none';
             document.getElementById('modalTask').classList.remove('hidden');
         }
 
@@ -201,6 +214,17 @@
                 const assignedEl = document.getElementById('task_assigned_to');
                 if (assignedEl && task.assigned_to) {
                     assignedEl.value = task.assigned_to;
+                }
+                // Mostra botoes de acao (Excluir / Concluida) apenas em modo edicao
+                document.getElementById('taskActionBtns').style.display = 'flex';
+                // Ajusta label do botao Concluida conforme status atual
+                const btnToggle = document.getElementById('btnToggleDone');
+                if (task.status === 'done') {
+                    btnToggle.textContent = 'Reabrir';
+                    btnToggle.dataset.nextStatus = 'pending';
+                } else {
+                    btnToggle.textContent = 'Concluída';
+                    btnToggle.dataset.nextStatus = 'done';
                 }
                 document.getElementById('modalTask').classList.remove('hidden');
             } catch (e) {
@@ -238,6 +262,8 @@
                     body: body.toString()
                 });
                 if (resp.ok) {
+                    const data = await resp.json();
+                    if (data && data.csrf_token) csrfToken = data.csrf_token;
                     document.getElementById('modalTask').classList.add('hidden');
                     calendar.refetchEvents();
                 } else {
@@ -263,6 +289,68 @@
             document.getElementById(id).addEventListener('click', function (e) {
                 if (e.target === this) this.classList.add('hidden');
             });
+        });
+
+        // Exclui tarefa via AJAX
+        document.getElementById('btnDeleteTask').addEventListener('click', async function () {
+            const taskId = document.getElementById('task_id').value;
+            if (!taskId) return;
+            if (!window.confirm('Excluir esta tarefa permanentemente?')) return;
+
+            try {
+                const body = new URLSearchParams({ _csrf_token: csrfToken });
+                const resp = await fetch(appUrl + '/tasks/' + taskId + '/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: body.toString()
+                });
+                const data = await resp.json();
+                if (data.csrf_token) csrfToken = data.csrf_token;
+                if (data.success) {
+                    const ev = calendar.getEventById(taskId);
+                    if (ev) ev.remove();
+                    document.getElementById('modalTask').classList.add('hidden');
+                } else {
+                    alert('Erro ao excluir tarefa.');
+                }
+            } catch (e) {
+                alert('Erro de rede ao excluir tarefa.');
+            }
+        });
+
+        // Alterna status da tarefa entre done e pending
+        document.getElementById('btnToggleDone').addEventListener('click', async function () {
+            const taskId = document.getElementById('task_id').value;
+            if (!taskId) return;
+            const nextStatus = this.dataset.nextStatus || 'done';
+
+            try {
+                const body = new URLSearchParams({
+                    _csrf_token: csrfToken,
+                    status: nextStatus
+                });
+                const resp = await fetch(appUrl + '/tasks/' + taskId + '/update', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: body.toString()
+                });
+                const data = await resp.json();
+                if (data.csrf_token) csrfToken = data.csrf_token;
+                if (data.success) {
+                    document.getElementById('modalTask').classList.add('hidden');
+                    calendar.refetchEvents();
+                } else {
+                    alert('Erro ao atualizar tarefa.');
+                }
+            } catch (e) {
+                alert('Erro de rede ao atualizar tarefa.');
+            }
         });
 
         // Expoe calendario
