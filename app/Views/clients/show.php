@@ -164,29 +164,55 @@ $interactionTypes = [
                         <?php foreach ($interactions as $inter):
                             $typeInfo = $interactionTypes[$inter['type']] ?? $interactionTypes['other'];
                             ?>
-                            <div class="px-5 py-4 flex gap-3">
-                                <div
-                                    class="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-base">
+                            <div class="px-5 py-4 flex gap-3" data-interaction-id="<?= $inter['id'] ?>">
+                                <!-- Ícone do tipo (sempre visível) -->
+                                <div class="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-base">
                                     <?= $typeInfo['icon'] ?>
                                 </div>
-                                <div class="flex-1 min-w-0">
+
+                                <!-- Estado: visualização (padrão) -->
+                                <div class="flex-1 min-w-0 inter-view">
                                     <div class="flex items-center justify-between gap-2">
-                                        <span class="text-xs font-semibold text-gray-500"><?= $typeInfo['label'] ?> ·
-                                            <?= htmlspecialchars($inter['user_name'] ?? '', ENT_QUOTES, 'UTF-8') ?></span>
-                                        <span class="text-xs text-gray-400 flex-shrink-0">
+                                        <span class="text-xs font-semibold text-gray-500 inter-type-label">
+                                            <?= $typeInfo['label'] ?> · <?= htmlspecialchars($inter['user_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>
+                                        </span>
+                                        <span class="text-xs text-gray-400 flex-shrink-0 inter-date-label">
                                             <?= date('d/m/Y H:i', strtotime($inter['occurred_at'])) ?>
                                         </span>
                                     </div>
-                                    <p class="text-sm text-gray-700 mt-1">
+                                    <p class="text-sm text-gray-700 mt-1 inter-description cursor-pointer hover:bg-gray-50 rounded px-1 -mx-1"
+                                       title="Clique para editar">
                                         <?= nl2br(htmlspecialchars($inter['description'], ENT_QUOTES, 'UTF-8')) ?>
                                     </p>
                                 </div>
-                                <!-- Botão de deletar interação -->
+
+                                <!-- Estado: edição (oculto) -->
+                                <div class="flex-1 min-w-0 inter-edit" style="display:none">
+                                    <div class="grid grid-cols-2 gap-2 mb-2">
+                                        <select class="inter-edit-type px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                                            <?php foreach ($interactionTypes as $key => $info): ?>
+                                                <option value="<?= $key ?>" <?= $inter['type'] === $key ? 'selected' : '' ?>>
+                                                    <?= $info['icon'] ?> <?= $info['label'] ?>
+                                                </option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                        <input type="datetime-local" class="inter-edit-date px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                                               value="<?= date('Y-m-d\TH:i', strtotime($inter['occurred_at'])) ?>">
+                                    </div>
+                                    <textarea class="inter-edit-desc w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none mb-2" rows="3"><?= htmlspecialchars($inter['description'], ENT_QUOTES, 'UTF-8') ?></textarea>
+                                    <div class="flex gap-2">
+                                        <button type="button" class="inter-save-btn bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">Salvar</button>
+                                        <button type="button" class="inter-cancel-btn border border-gray-300 text-gray-600 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">Cancelar</button>
+                                        <span class="inter-save-error text-xs text-red-500 self-center" style="display:none">Erro ao salvar.</span>
+                                    </div>
+                                </div>
+
+                                <!-- Botão deletar (sempre visível, estado view) -->
                                 <form method="POST" action="<?= APP_URL ?>/interactions/<?= $inter['id'] ?>/delete"
                                     onsubmit="return confirm('Remover esta interação?')">
                                     <input type="hidden" name="_csrf_token"
                                         value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
-                                    <button type="submit" class="text-gray-300 hover:text-red-400 text-sm"
+                                    <button type="submit" class="text-gray-300 hover:text-red-400 text-sm inter-delete-btn"
                                         title="Remover">✕</button>
                                 </form>
                             </div>
@@ -320,6 +346,136 @@ $interactionTypes = [
 
         </div>
     </div>
+
+    <script>
+    (function () {
+        const appUrl = '<?= rtrim(APP_URL, '/') ?>';
+        let csrfToken = '<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>';
+
+        // ---- CLI-10: edição inline de interações ----
+        document.querySelectorAll('[data-interaction-id]').forEach(function (row) {
+            const id        = row.dataset.interactionId;
+            const viewDiv   = row.querySelector('.inter-view');
+            const editDiv   = row.querySelector('.inter-edit');
+            const descEl    = row.querySelector('.inter-description');
+            const typeLabel = row.querySelector('.inter-type-label');
+            const dateLabel = row.querySelector('.inter-date-label');
+            const editType  = row.querySelector('.inter-edit-type');
+            const editDate  = row.querySelector('.inter-edit-date');
+            const editDesc  = row.querySelector('.inter-edit-desc');
+            const saveBtn   = row.querySelector('.inter-save-btn');
+            const cancelBtn = row.querySelector('.inter-cancel-btn');
+            const errorEl   = row.querySelector('.inter-save-error');
+            const deleteBtn = row.querySelector('.inter-delete-btn');
+
+            // Guarda valores originais para restaurar no Cancelar
+            let origType = editType ? editType.value : '';
+            let origDate = editDate ? editDate.value : '';
+            let origDesc = editDesc ? editDesc.value : '';
+
+            // Ativar edição ao clicar na descrição
+            if (descEl) {
+                descEl.addEventListener('click', function () {
+                    origType = editType.value;
+                    origDate = editDate.value;
+                    origDesc = editDesc.value;
+                    viewDiv.style.display = 'none';
+                    editDiv.style.display = '';
+                    if (deleteBtn) deleteBtn.style.display = 'none';
+                    errorEl.style.display = 'none';
+                    editDesc.focus();
+                });
+            }
+
+            // Cancelar: restaurar estado original
+            if (cancelBtn) {
+                cancelBtn.addEventListener('click', function () {
+                    editType.value = origType;
+                    editDate.value = origDate;
+                    editDesc.value = origDesc;
+                    editDiv.style.display = 'none';
+                    viewDiv.style.display = '';
+                    if (deleteBtn) deleteBtn.style.display = '';
+                });
+            }
+
+            // Salvar via AJAX
+            if (saveBtn) {
+                saveBtn.addEventListener('click', function () {
+                    const desc = editDesc.value.trim();
+                    if (!desc) { errorEl.textContent = 'Descrição não pode estar vazia.'; errorEl.style.display = ''; return; }
+
+                    saveBtn.disabled = true;
+                    saveBtn.textContent = 'Salvando...';
+                    errorEl.style.display = 'none';
+
+                    const body = new URLSearchParams({
+                        description: desc,
+                        type:        editType.value,
+                        occurred_at: editDate.value,
+                    });
+
+                    fetch(appUrl + '/interactions/' + id + '/update', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRF-Token': csrfToken,
+                        },
+                        body: body.toString(),
+                    })
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        if (data.csrf_token) csrfToken = data.csrf_token;
+                        saveBtn.disabled = false;
+                        saveBtn.textContent = 'Salvar';
+
+                        if (!data.success) {
+                            errorEl.textContent = 'Erro ao salvar.';
+                            errorEl.style.display = '';
+                            return;
+                        }
+
+                        // Re-renderizar row com novos valores
+                        const typeLabels = {
+                            call: 'Ligação', email: 'E-mail', meeting: 'Reunião',
+                            whatsapp: 'WhatsApp', note: 'Nota', other: 'Outro'
+                        };
+                        const newType = editType.value;
+                        const userName = typeLabel.textContent.trim().split(' · ')[1] || '';
+                        typeLabel.textContent = (typeLabels[newType] || newType) + ' · ' + userName;
+
+                        // Atualizar data exibida — formatar YYYY-MM-DDTHH:MM para DD/MM/YYYY HH:MM
+                        const dt = editDate.value;
+                        if (dt && dt.length >= 16) {
+                            const [datePart, timePart] = dt.split('T');
+                            const [y, m, d] = datePart.split('-');
+                            dateLabel.textContent = d + '/' + m + '/' + y + ' ' + timePart;
+                        }
+
+                        // Atualizar descrição exibida
+                        descEl.textContent = desc;
+
+                        // Atualizar valores originais
+                        origType = newType;
+                        origDate = editDate.value;
+                        origDesc = desc;
+
+                        // Voltar para view
+                        editDiv.style.display = 'none';
+                        viewDiv.style.display = '';
+                        if (deleteBtn) deleteBtn.style.display = '';
+                    })
+                    .catch(function () {
+                        saveBtn.disabled = false;
+                        saveBtn.textContent = 'Salvar';
+                        errorEl.textContent = 'Erro de conexão.';
+                        errorEl.style.display = '';
+                    });
+                });
+            }
+        });
+    })();
+    </script>
 
     <?php if ($isVendaFechada): ?>
         <!-- Modal: Adicionar cota de consórcio -->
