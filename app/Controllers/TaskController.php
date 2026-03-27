@@ -188,7 +188,7 @@ class TaskController extends Controller
 
         // Se for requisição AJAX, retorna JSON; senão, redireciona
         if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-            $this->json(['success' => true]);
+            $this->json(['success' => true, 'csrf_token' => CsrfMiddleware::getToken()]);
         } else {
             $this->flash('success', 'Tarefa atualizada!');
             $this->redirect('/tasks');
@@ -201,7 +201,11 @@ class TaskController extends Controller
         $taskModel = new Task();
         $taskModel->delete($id);
 
-        $this->flash('success', 'Tarefa removida.');
-        $this->redirect('/tasks');
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+            $this->json(['success' => true, 'csrf_token' => CsrfMiddleware::getToken()]);
+        } else {
+            $this->flash('success', 'Tarefa removida.');
+            $this->redirect('/tasks');
+        }
     }
 }
