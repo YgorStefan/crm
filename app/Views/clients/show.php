@@ -86,10 +86,16 @@ $interactionTypes = [
             <div class="bg-yellow-50 border border-yellow-200 rounded-xl p-4 text-sm text-yellow-900" id="notes-card">
                 <div class="flex items-center justify-between mb-2">
                     <p class="font-semibold">📝 Notas</p>
-                    <button type="button" id="btn-edit-notes"
-                        class="text-xs text-yellow-700 hover:text-yellow-900 underline">
-                        Editar Notas
-                    </button>
+                    <div class="flex gap-3">
+                        <button type="button" id="btn-edit-notes"
+                            class="text-xs text-yellow-700 hover:text-yellow-900 underline">
+                            Editar Notas
+                        </button>
+                        <button type="button" id="btn-delete-notes"
+                            class="text-xs text-red-500 hover:text-red-700 underline">
+                            Excluir Notas
+                        </button>
+                    </div>
                 </div>
                 <!-- Estado: visualização -->
                 <div id="notes-view">
@@ -517,8 +523,9 @@ $interactionTypes = [
         const notesText = document.getElementById('notes-text');
         const textarea  = document.getElementById('notes-textarea');
         const saveBtn   = document.getElementById('notes-save-btn');
-        const cancelBtn = document.getElementById('notes-cancel-btn');
-        const errorEl   = document.getElementById('notes-save-error');
+        const cancelBtn  = document.getElementById('notes-cancel-btn');
+        const errorEl    = document.getElementById('notes-save-error');
+        const deleteBtn  = document.getElementById('btn-delete-notes');
 
         if (!btnEdit) return;
 
@@ -580,6 +587,34 @@ $interactionTypes = [
                 errorEl.style.display = '';
             });
         });
+        if (deleteBtn) {
+            deleteBtn.addEventListener('click', function () {
+                if (!confirm('Excluir todas as notas deste cliente?')) return;
+                deleteBtn.disabled = true;
+
+                fetch(appUrl + '/clients/' + clientId + '/update-notes', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-CSRF-Token': csrfToken,
+                    },
+                    body: new URLSearchParams({ notes: '' }).toString(),
+                })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    deleteBtn.disabled = false;
+                    if (data.csrf_token) csrfToken = data.csrf_token;
+                    if (data.success) {
+                        notesText.textContent = '';
+                        textarea.value = '';
+                        origNotes = '';
+                        notesEdit.style.display = 'none';
+                        notesView.style.display = '';
+                    }
+                })
+                .catch(function () { deleteBtn.disabled = false; });
+            });
+        }
     })();
     </script>
 
