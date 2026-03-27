@@ -315,4 +315,29 @@ class ClientController extends Controller
         ]);
         exit;
     }
+
+    /**
+     * Atualiza o campo notes do cliente. Retorna JSON.
+     */
+    public function updateNotes(array $params = []): void
+    {
+        header('Content-Type: application/json');
+        $id = (int) ($params['id'] ?? 0);
+
+        if (!$id) {
+            echo json_encode(['success' => false, 'error' => 'Cliente inválido.']);
+            exit;
+        }
+
+        $notes = $_POST['notes'] ?? '';
+
+        $clientModel = new Client();
+        $ok = $clientModel->updateNotes($id, $notes);
+
+        echo json_encode([
+            'success'    => $ok,
+            'csrf_token' => CsrfMiddleware::getToken(),
+        ]);
+        exit;
+    }
 }
