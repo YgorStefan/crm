@@ -3,14 +3,14 @@ gsd_state_version: 1.0
 milestone: v1.1
 milestone_name: Correções e Edições
 status: executing
-stopped_at: Completed 08-01-PLAN.md
-last_updated: "2026-03-27T01:48:44.114Z"
+stopped_at: Completed 08-02-PLAN.md
+last_updated: "2026-03-27T01:49:35.113Z"
 last_activity: 2026-03-27
 progress:
   total_phases: 4
   completed_phases: 0
   total_plans: 3
-  completed_plans: 1
+  completed_plans: 2
 ---
 
 # Project State
@@ -25,7 +25,7 @@ See: .planning/PROJECT.md (updated 2026-03-26)
 ## Current Position
 
 Phase: 08 (bugs-e-melhorias-de-contatos-frios) — EXECUTING
-Plan: 2 of 3
+Plan: 3 of 3
 Status: Ready to execute
 Last activity: 2026-03-27
 
@@ -64,6 +64,7 @@ Last activity: 2026-03-27
 | Phase 06-m-dulo-de-contatos-frios P03 | 8 | 2 tasks | 3 files |
 | Phase 07-dashboard-de-acompanhamento P01 | 2 | 2 tasks | 4 files |
 | Phase 08-bugs-e-melhorias-de-contatos-frios P01 | 5 | 1 tasks | 1 files |
+| Phase 08-bugs-e-melhorias-de-contatos-frios P02 | 2 | 2 tasks | 2 files |
 
 ## Accumulated Context
 
@@ -96,6 +97,8 @@ Recent decisions affecting current work:
 - [Phase 06-m-dulo-de-contatos-frios]: CSRF token rotated on each mutation response and stored in window.CSRF_TOKEN to allow multiple edits/deletes in same modal session
 - [Phase 07-dashboard-de-acompanhamento]: weeklyStats() returns zeros for all weeks — no week omitted — to align Chart.js x-axis labels; navLink outside admin guard per D-09
 - [Phase 08-bugs-e-melhorias-de-contatos-frios]: CsrfMiddleware aceita token via header X-CSRF-Token (prioridade) com fallback para \['_csrf_token'] — backward-compatible com todos os formulários existentes
+- [Phase 08-bugs-e-melhorias-de-contatos-frios]: try/catch Throwable em listJson garante JSON valido mesmo em exceptions PHP — evita HTML de erro poluir resposta AJAX
+- [Phase 08-bugs-e-melhorias-de-contatos-frios]: month_label calculado em PHP com array pt-BR hardcoded — independente do locale MySQL do Hostinger
 
 ### Roadmap Evolution
 
@@ -111,6 +114,6 @@ None yet.
 
 ## Session Continuity
 
-Last session: 2026-03-27T01:48:44.109Z
-Stopped at: Completed 08-01-PLAN.md
+Last session: 2026-03-27T01:49:35.109Z
+Stopped at: Completed 08-02-PLAN.md
 Resume file: None

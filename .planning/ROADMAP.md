@@ -44,7 +44,7 @@ Full details: `.planning/milestones/v1.0-ROADMAP.md`
 
 Plans:
 - [x] 08-01-PLAN.md — BUG-02: CSRF middleware aceita header X-CSRF-Token (Kanban fix)
-- [ ] 08-02-PLAN.md — BUG-01: listJson com try/catch + CF-08: meses em pt-BR
+- [x] 08-02-PLAN.md — BUG-01: listJson com try/catch + CF-08: meses em pt-BR
 - [ ] 08-03-PLAN.md — CF-09: exclusão de mês com botão, confirmação e remoção do DOM
 
 ### Phase 9: Calendário — CSRF, Exclusão e Conclusão
@@ -80,7 +80,7 @@ Plans:
 | 5. Acesso Rápido | v1.0 | 1/1 | Complete | 2026-03-26 |
 | 6. Módulo de Contatos Frios | v1.0 | 3/3 | Complete | 2026-03-26 |
 | 7. Dashboard de Acompanhamento | v1.0 | 2/2 | Complete | 2026-03-26 |
-| 8. Bugs de Pipeline e Contatos Frios | v1.1 | 1/3 | In Progress|  |
+| 8. Bugs de Pipeline e Contatos Frios | v1.1 | 2/3 | In Progress|  |
 | 9. Calendário — CSRF, Exclusão e Conclusão | v1.1 | 0/? | Not started | - |
 | 10. Edição de Histórico de Contatos | v1.1 | 0/? | Not started | - |
 
