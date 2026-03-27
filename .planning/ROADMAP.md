@@ -60,7 +60,7 @@ Plans:
 
 Plans:
 - [x] 09-01-PLAN.md — BUG-03 + CAL-10 + CAL-11: backend — update() e destroy() retornam csrf_token; findForCalendar() inclui done
-- [ ] 09-02-PLAN.md — BUG-03 + CAL-10 + CAL-11: frontend — renovação CSRF, botões Excluir/Concluída, strikethrough no calendário
+- [x] 09-02-PLAN.md — BUG-03 + CAL-10 + CAL-11: frontend — renovação CSRF, botões Excluir/Concluída, strikethrough no calendário
 
 ### Phase 10: Edição de Histórico de Contatos
 **Goal**: Usuário pode corrigir ou atualizar entradas existentes de histórico na ficha do cliente
