@@ -112,6 +112,19 @@ class ColdContact extends Model
     }
 
     /**
+     * Deleta todos os contatos de um mês (formato YYYY-MM).
+     * Retorna o número de linhas deletadas.
+     */
+    public function deleteByMonth(string $yearMonth): int
+    {
+        $stmt = $this->db->prepare(
+            "DELETE FROM cold_contacts WHERE DATE_FORMAT(imported_at, '%Y-%m') = :year_month"
+        );
+        $stmt->execute([':year_month' => $yearMonth]);
+        return $stmt->rowCount();
+    }
+
+    /**
      * Atualiza telefone_enviado em lote para os IDs fornecidos.
      * Retorna número de linhas afetadas.
      */
