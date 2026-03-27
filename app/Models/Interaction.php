@@ -52,6 +52,30 @@ class Interaction extends Model
     }
 
     /**
+     * Atualiza os campos de uma interação existente.
+     *
+     * @param  int    $id
+     * @param  array  $data  ['description', 'type', 'occurred_at'] — todos opcionais, apenas campos presentes são atualizados
+     * @return bool
+     */
+    public function update(int $id, array $data): bool
+    {
+        $stmt = $this->db->prepare("
+            UPDATE interactions
+            SET description  = :description,
+                type         = :type,
+                occurred_at  = :occurred_at
+            WHERE id = :id
+        ");
+        return $stmt->execute([
+            ':description' => $data['description'],
+            ':type'        => $data['type'],
+            ':occurred_at' => $data['occurred_at'],
+            ':id'          => $id,
+        ]);
+    }
+
+    /**
      * Retorna as interações recentes de todos os clientes (para o dashboard).
      *
      * @param  int  $limit  Quantidade máxima de registros
