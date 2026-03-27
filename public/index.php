@@ -75,6 +75,7 @@ $router->get('/clients/{id}', 'ClientController', 'show', ['AuthMiddleware']);
 $router->get('/clients/{id}/edit', 'ClientController', 'edit', ['AuthMiddleware']);
 $router->post('/clients/{id}/update', 'ClientController', 'update', ['AuthMiddleware', 'CsrfMiddleware']);
 $router->post('/clients/{id}/delete', 'ClientController', 'destroy', ['AuthMiddleware', 'CsrfMiddleware']);
+$router->post('/clients/{id}/update-notes', 'ClientController', 'updateNotes', ['AuthMiddleware', 'CsrfMiddleware']);
 
 // ---- Cotas de Consórcio (AJAX) ----
 $router->post('/clients/{id}/sales', 'ClientController', 'storeSale', ['AuthMiddleware', 'CsrfMiddleware']);
@@ -92,6 +93,7 @@ $router->post('/pipeline/stages/{id}/move', 'PipelineController', 'moveStage', [
 
 // ---- Interações ----
 $router->post('/interactions/store', 'InteractionController', 'store', ['AuthMiddleware', 'CsrfMiddleware']);
+$router->post('/interactions/{id}/update', 'InteractionController', 'update', ['AuthMiddleware', 'CsrfMiddleware']);
 $router->post('/interactions/{id}/delete', 'InteractionController', 'destroy', ['AuthMiddleware', 'CsrfMiddleware']);
 
 // ---- Tarefas ----
