@@ -13,7 +13,7 @@
 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-8">
     <h4 class="font-semibold text-gray-700 mb-4">Importar lista CSV</h4>
     <p class="text-sm text-gray-500 mb-4">
-        O arquivo CSV deve ter: <strong>coluna A = Celular</strong>, <strong>coluna B = Nome</strong>.
+        O arquivo CSV deve ter: <strong>coluna A = Nome</strong>, <strong>coluna B = Celular</strong>.
         Header é opcional (será ignorado automaticamente se a primeira linha não contiver número no Celular).
     </p>
     <form method="POST" action="<?= APP_URL ?>/cold-contacts/import" enctype="multipart/form-data"
@@ -66,18 +66,27 @@
                             <?= htmlspecialchars($s['month_label'], ENT_QUOTES, 'UTF-8') ?>
                         </h5>
                     </div>
-                    <div class="px-5 py-4 flex items-center justify-between">
+                    <div class="px-5 py-4 flex items-center justify-between gap-2">
                         <div>
                             <p class="text-3xl font-bold text-indigo-600"><?= (int) $s['total'] ?></p>
                             <p class="text-xs text-gray-500 mt-0.5">contato(s)</p>
                         </div>
-                        <!-- Botão abre modal -->
-                        <button type="button"
-                            class="btn-open-modal bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium px-3 py-2 rounded-lg text-sm transition-colors"
-                            data-year-month="<?= htmlspecialchars($s['mes_ano'], ENT_QUOTES, 'UTF-8') ?>"
-                            data-month-label="<?= htmlspecialchars($s['month_label'], ENT_QUOTES, 'UTF-8') ?>">
-                            Ver lista
-                        </button>
+                        <div class="flex flex-col gap-2">
+                            <!-- Botão abre modal -->
+                            <button type="button"
+                                class="btn-open-modal bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium px-3 py-2 rounded-lg text-sm transition-colors"
+                                data-year-month="<?= htmlspecialchars($s['mes_ano'], ENT_QUOTES, 'UTF-8') ?>"
+                                data-month-label="<?= htmlspecialchars($s['month_label'], ENT_QUOTES, 'UTF-8') ?>">
+                                Ver lista
+                            </button>
+                            <!-- Botão excluir mês -->
+                            <button type="button"
+                                class="btn-delete-month bg-red-50 hover:bg-red-100 text-red-600 font-medium px-3 py-2 rounded-lg text-sm transition-colors"
+                                data-year-month="<?= htmlspecialchars($s['mes_ano'], ENT_QUOTES, 'UTF-8') ?>"
+                                data-month-label="<?= htmlspecialchars($s['month_label'], ENT_QUOTES, 'UTF-8') ?>">
+                                Excluir
+                            </button>
+                        </div>
                     </div>
                 </div>
             <?php endforeach; ?>
@@ -185,6 +194,36 @@
                 hideBulkBar();
                 modal.classList.remove('hidden');
                 loadContacts();
+            });
+        });
+
+        // ----- Excluir mês ao clicar no botão Excluir -----
+        document.querySelectorAll('.btn-delete-month').forEach(function (btn) {
+            btn.addEventListener('click', async function () {
+                const yearMonth = this.dataset.yearMonth;
+                const monthLabel = this.dataset.monthLabel;
+                if (!window.confirm('Excluir todos os contatos de ' + monthLabel + '? Esta ação não pode ser desfeita.')) {
+                    return;
+                }
+                const card = this.closest('.bg-white.rounded-xl');
+                const formData = new FormData();
+                formData.append('_csrf_token', window.CSRF_TOKEN);
+                try {
+                    const resp = await fetch(window.APP_URL + '/cold-contacts/month/' + encodeURIComponent(yearMonth) + '/delete', {
+                        method: 'POST',
+                        body: formData,
+                        credentials: 'same-origin',
+                    });
+                    const data = await resp.json();
+                    if (data.success) {
+                        if (data.csrf_token) window.CSRF_TOKEN = data.csrf_token;
+                        if (card) card.remove();
+                    } else {
+                        alert('Erro ao excluir: ' + (data.error || 'Tente novamente.'));
+                    }
+                } catch (e) {
+                    alert('Erro de rede ao excluir mês. Tente novamente.');
+                }
             });
         });
 
