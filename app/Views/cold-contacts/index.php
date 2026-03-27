@@ -515,18 +515,22 @@
                 // Converte para CSV com separador vírgula (backend autodetecta)
                 var csvString = XLSX.utils.sheet_to_csv(sheet, { FS: ',', RS: '\n' });
 
-                // Cria File object com conteúdo CSV para substituir o arquivo original
-                // TextEncoder garante encoding UTF-8 explícito (evita Latin-1 de arquivos Windows-1252)
+                // Converte para File UTF-8 e envia via fetch (evita problemas de DataTransfer API)
                 var csvBlob = new Blob([new TextEncoder().encode(csvString)], { type: 'text/csv;charset=utf-8' });
                 var csvFile = new File([csvBlob], file.name.replace(/\.(xls|xlsx)$/i, '.csv'), { type: 'text/csv' });
 
-                // Injeta o File convertido no input via DataTransfer
-                var dt = new DataTransfer();
-                dt.items.add(csvFile);
-                fileInput.files = dt.files;
+                var fd = new FormData();
+                fd.append('_csrf_token', (importForm.querySelector('[name="_csrf_token"]') || {value: ''}).value);
+                fd.append('tipo_lista', (importForm.querySelector('[name="tipo_lista"]') || {value: ''}).value);
+                fd.append('csv_file', csvFile);
 
-                // Submit nativo — envia ao backend como multipart/form-data normal
-                importForm.submit();
+                fetch(importForm.action, { method: 'POST', body: fd, redirect: 'follow' })
+                    .then(function () {
+                        window.location.href = (window.APP_URL || '') + '/cold-contacts';
+                    })
+                    .catch(function () {
+                        alert('Erro ao enviar o arquivo. Tente novamente.');
+                    });
             } catch (err) {
                 alert('Erro ao ler o arquivo: ' + (err.message || 'Formato inválido. Use .csv, .xls ou .xlsx com coluna A = Nome, coluna B = Celular.'));
             }
