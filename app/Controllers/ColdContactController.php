@@ -337,10 +337,15 @@ class ColdContactController extends Controller
         try {
             $model = new ColdContact();
             $contacts = $model->findByMonth($yearMonth, $filters);
-            echo json_encode(['contacts' => $contacts]);
+            // JSON_INVALID_UTF8_SUBSTITUTE substitui bytes inválidos em vez de retornar false
+            $json = json_encode(
+                ['contacts' => $contacts],
+                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE
+            );
+            echo $json !== false ? $json : json_encode(['contacts' => []]);
         } catch (\Throwable $e) {
-            http_response_code(500);
-            echo json_encode(['contacts' => [], 'error' => 'Erro ao carregar contatos.']);
+            // Retorna 200 com array vazio para que o JS não rejeite pelo status HTTP
+            echo json_encode(['contacts' => [], 'error' => 'Erro interno ao carregar contatos.']);
         }
         exit;
     }
