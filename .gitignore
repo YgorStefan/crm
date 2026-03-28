@@ -42,6 +42,7 @@ error_log
 # --- Claude Code e planejamento GSD ---
 .claude/
 .planning/
+CLAUDE.md
 
 # --- Scripts de Infra ---
 deploy.sh
