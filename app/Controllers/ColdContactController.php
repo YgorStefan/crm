@@ -210,7 +210,7 @@ class ColdContactController extends Controller
     public function deleteMonth(array $params = []): void
     {
         header('Content-Type: application/json');
-        $yearMonth = trim($params['yearMonth'] ?? '');
+        $yearMonth = trim($params['year_month'] ?? '');
 
         if (empty($yearMonth) || !preg_match('/^\d{4}-\d{2}$/', $yearMonth)) {
             echo json_encode(['success' => false, 'error' => 'Mês inválido.']);
@@ -339,13 +339,14 @@ class ColdContactController extends Controller
             $contacts = $model->findByMonth($yearMonth, $filters);
             // JSON_INVALID_UTF8_SUBSTITUTE substitui bytes inválidos em vez de retornar false
             $json = json_encode(
-                ['contacts' => $contacts],
+                ['contacts' => $contacts, 'debug_count' => count($contacts), 'debug_month' => $yearMonth],
                 JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE
             );
             echo $json !== false ? $json : json_encode(['contacts' => []]);
         } catch (\Throwable $e) {
-            // Retorna 200 com array vazio para que o JS não rejeite pelo status HTTP
-            echo json_encode(['contacts' => [], 'error' => 'Erro interno ao carregar contatos.']);
+            // Loga a exceção real para diagnóstico; retorna 200 com array vazio
+            error_log('[ColdContact listJson] yearMonth=' . $yearMonth . ' exception: ' . $e->getMessage());
+            echo json_encode(['contacts' => [], 'error' => 'Erro interno ao carregar contatos.', 'debug_month' => $yearMonth]);
         }
         exit;
     }
