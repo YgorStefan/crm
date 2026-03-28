@@ -220,16 +220,18 @@
                         body: '_csrf_token=' + encodeURIComponent(window.CSRF_TOKEN),
                         credentials: 'same-origin',
                     });
+                    let data = null;
+                    try { data = await resp.json(); } catch (_) {}
                     if (!resp.ok) {
                         if (resp.status === 403) {
                             alert('Sessão expirada ou token inválido. Recarregue a página e tente novamente.');
                         } else {
-                            alert('Erro ao excluir mês (HTTP ' + resp.status + '). Tente novamente.');
+                            const detail = data && data.debug_error ? '\n\nDetalhe: ' + data.debug_error : '';
+                            alert('Erro ao excluir mês (HTTP ' + resp.status + ').' + detail);
                         }
                         return;
                     }
-                    const data = await resp.json();
-                    if (data.success) {
+                    if (data && data.success) {
                         if (data.csrf_token) window.CSRF_TOKEN = data.csrf_token;
                         if (card) card.remove();
                     } else {
