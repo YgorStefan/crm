@@ -210,14 +210,24 @@
                     return;
                 }
                 const card = this.closest('.bg-white.rounded-xl');
-                const formData = new FormData();
-                formData.append('_csrf_token', window.CSRF_TOKEN);
                 try {
                     const resp = await fetch(window.APP_URL + '/cold-contacts/month/' + encodeURIComponent(yearMonth) + '/delete', {
                         method: 'POST',
-                        body: formData,
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded',
+                            'X-CSRF-TOKEN': window.CSRF_TOKEN,
+                        },
+                        body: '_csrf_token=' + encodeURIComponent(window.CSRF_TOKEN),
                         credentials: 'same-origin',
                     });
+                    if (!resp.ok) {
+                        if (resp.status === 403) {
+                            alert('Sessão expirada ou token inválido. Recarregue a página e tente novamente.');
+                        } else {
+                            alert('Erro ao excluir mês (HTTP ' + resp.status + '). Tente novamente.');
+                        }
+                        return;
+                    }
                     const data = await resp.json();
                     if (data.success) {
                         if (data.csrf_token) window.CSRF_TOKEN = data.csrf_token;
@@ -226,7 +236,7 @@
                         alert('Erro ao excluir: ' + (data.error || 'Tente novamente.'));
                     }
                 } catch (e) {
-                    alert('Erro de rede ao excluir mês. Tente novamente.');
+                    alert('Não foi possível excluir o mês. Verifique sua conexão ou recarregue a página e tente novamente.');
                 }
             });
         });
