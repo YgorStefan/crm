@@ -38,3 +38,14 @@ desktop.ini
 # --- Logs ---
 *.log
 error_log
+
+# --- Claude Code e planejamento GSD ---
+.claude/
+.planning/
+
+# --- Scripts de Infra ---
+deploy.sh
+
+# --- Configurações de Servidor PHP ---
+public/.user.ini
+.user.ini
