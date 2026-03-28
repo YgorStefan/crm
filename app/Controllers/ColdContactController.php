@@ -226,8 +226,9 @@ class ColdContactController extends Controller
                 'csrf_token' => CsrfMiddleware::getToken(),
             ]);
         } catch (\Throwable $e) {
+            error_log('[ColdContact deleteMonth] yearMonth=' . $yearMonth . ' exception: ' . $e->getMessage());
             http_response_code(500);
-            echo json_encode(['success' => false, 'error' => 'Erro ao excluir mês.']);
+            echo json_encode(['success' => false, 'error' => 'Erro ao excluir mês.', 'debug_error' => $e->getMessage()]);
         }
         exit;
     }
@@ -345,8 +346,8 @@ class ColdContactController extends Controller
             echo $json !== false ? $json : json_encode(['contacts' => []]);
         } catch (\Throwable $e) {
             // Loga a exceção real para diagnóstico; retorna 200 com array vazio
-            error_log('[ColdContact listJson] yearMonth=' . $yearMonth . ' exception: ' . $e->getMessage());
-            echo json_encode(['contacts' => [], 'error' => 'Erro interno ao carregar contatos.', 'debug_month' => $yearMonth]);
+            error_log('[ColdContact listJson] yearMonth=' . $yearMonth . ' exception: ' . $e->getMessage() . ' | ' . $e->getTraceAsString());
+            echo json_encode(['contacts' => [], 'error' => 'Erro interno ao carregar contatos.', 'debug_month' => $yearMonth, 'debug_error' => $e->getMessage()]);
         }
         exit;
     }
