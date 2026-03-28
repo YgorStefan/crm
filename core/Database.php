@@ -75,6 +75,11 @@ class Database
                 // Desativa o modo ONLY_FULL_GROUP_BY para compatibilidade com queries legadas
                 self::$instance->exec("SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))");
 
+                // Garante que charset e collation da conexão correspondam ao schema do banco.
+                // Sem COLLATE explícito o MySQL usa utf8mb4_general_ci como padrão da conexão,
+                // enquanto colunas criadas com utf8mb4_unicode_ci causam "Illegal mix of collations".
+                self::$instance->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
+
             } catch (PDOException $e) {
                 // Em produção não tem mensagens de erro do banco para o usuário.
                 // Logamos internamente e mostramos uma mensagem genérica.
