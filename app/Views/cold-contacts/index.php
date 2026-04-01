@@ -17,32 +17,51 @@
         Header é opcional (será ignorado automaticamente se a primeira linha não contiver número no Celular).
         Formatos aceitos: <strong>.csv, .xls, .xlsx</strong>.
     </p>
-    <form method="POST" action="<?= APP_URL ?>/cold-contacts/import" enctype="multipart/form-data"
-        class="grid grid-cols-1 sm:grid-cols-3 gap-4 items-end">
+    <form method="POST" action="<?= APP_URL ?>/cold-contacts/import" enctype="multipart/form-data">
         <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
 
-        <!-- Tipo de lista -->
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-                Tipo de lista <span class="text-red-500">*</span>
-            </label>
-            <input type="text" name="tipo_lista" required maxlength="100"
-                placeholder="Ex: Lista Webinar Jan, Lote Evento Março"
-                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end mb-4">
+            <!-- Tipo de lista -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Tipo de lista <span class="text-red-500">*</span>
+                </label>
+                <input type="text" name="tipo_lista" required maxlength="100"
+                    placeholder="Ex: Lista Webinar Jan"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </div>
+
+            <!-- Upload do arquivo -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Arquivo CSV/XLSX
+                </label>
+                <input type="file" name="csv_file" accept=".csv,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required
+                    class="w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+            </div>
+
+            <!-- Telefone enviado -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Final Tel. Enviado
+                </label>
+                <input type="text" name="telefone_enviado" maxlength="4" placeholder="Ex: 1234"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </div>
+
+            <!-- Data Mensagem -->
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">
+                    Data do Envio
+                </label>
+                <input type="date" name="data_mensagem"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </div>
         </div>
 
-        <!-- Upload do arquivo -->
-        <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">
-                Arquivo
-            </label>
-            <input type="file" name="csv_file" accept=".csv,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required
-                class="w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
-        </div>
-
-        <div>
+        <div class="flex justify-end">
             <button type="submit"
-                class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors">
+                class="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2 rounded-lg text-sm transition-colors">
                 Importar contatos
             </button>
         </div>
@@ -134,16 +153,24 @@
             </button>
         </div>
 
-        <!-- Barra de ação em lote (aparece quando há selecionados) -->
+        <!-- Barra de ação em lote -->
         <div id="bulkBar"
             class="hidden px-6 py-2 bg-indigo-50 border-b border-indigo-100 flex flex-wrap items-center gap-3 flex-shrink-0">
             <span id="bulkCount" class="text-sm font-medium text-indigo-700"></span>
-            <label class="text-sm text-gray-600">Tel. enviado:</label>
+            
+            <label class="text-sm text-gray-600 font-medium">Tel:</label>
             <input type="text" id="bulkTelEnviado" maxlength="4" placeholder="Ex: 1234"
-                class="w-24 px-2 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                title="Deixe em branco para manter, ou preencha para alterar em todos"
+                class="w-20 px-2 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                
+            <label class="text-sm text-gray-600 font-medium ml-2">Data:</label>
+            <input type="date" id="bulkDataMensagem"
+                title="Deixe em branco para manter, ou preencha para alterar em todos"
+                class="w-32 px-2 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+
             <button id="btnBulkSave"
-                class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-1 rounded-lg text-sm transition-colors">
-                Marcar selecionados
+                class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-1 rounded-lg text-sm transition-colors ml-auto">
+                Atualizar Marcados
             </button>
             <button id="btnBulkCancel" class="text-gray-500 hover:text-gray-700 text-sm font-medium">
                 Cancelar
@@ -183,6 +210,7 @@
         const bulkBar = document.getElementById('bulkBar');
         const bulkCount = document.getElementById('bulkCount');
         const bulkTelEnviado = document.getElementById('bulkTelEnviado');
+        const bulkDataMensagem = document.getElementById('bulkDataMensagem');
 
         let currentYearMonth = '';
         let currentMonthLabel = '';
@@ -275,6 +303,7 @@
         function hideBulkBar() {
             bulkBar.classList.add('hidden');
             bulkTelEnviado.value = '';
+            bulkDataMensagem.value = '';
         }
 
         function updateBulkBar() {
@@ -294,16 +323,24 @@
 
         document.getElementById('btnBulkSave').addEventListener('click', async function () {
             const tel = bulkTelEnviado.value.trim();
-            if (!tel || !/^\d{1,4}$/.test(tel)) {
+            const dataMsg = bulkDataMensagem.value.trim();
+            
+            if (tel && !/^\d{1,4}$/.test(tel)) {
                 alert('Tel. enviado deve ser numérico com até 4 dígitos.');
                 return;
             }
+            if (!tel && !dataMsg) {
+                alert('Preencha ao menos um dos campos para atualizar em lote.');
+                return;
+            }
+
             const ids = Array.from(document.querySelectorAll('.row-check:checked')).map(function (cb) { return cb.dataset.id; });
             if (ids.length === 0) return;
 
             const formData = new FormData();
             formData.append('_csrf_token', window.CSRF_TOKEN);
             formData.append('telefone_enviado', tel);
+            formData.append('data_mensagem', dataMsg);
             ids.forEach(function (id) { formData.append('ids[]', id); });
 
             try {
@@ -534,6 +571,8 @@
                 var fd = new FormData();
                 fd.append('_csrf_token', window.CSRF_TOKEN || '');
                 fd.append('tipo_lista', (importForm.querySelector('[name="tipo_lista"]') || {value: ''}).value);
+                fd.append('telefone_enviado', (importForm.querySelector('[name="telefone_enviado"]') || {value: ''}).value);
+                fd.append('data_mensagem', (importForm.querySelector('[name="data_mensagem"]') || {value: ''}).value);
                 fd.append('csv_file', csvFile);
 
                 fetch(importForm.action, { method: 'POST', body: fd, redirect: 'follow' })
