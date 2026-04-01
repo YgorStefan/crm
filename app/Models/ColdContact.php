@@ -125,18 +125,32 @@ class ColdContact extends Model
     }
 
     /**
-     * Atualiza telefone_enviado em lote para os IDs fornecidos.
+     * Atualiza telefone_enviado e/ou data_mensagem em lote para os IDs fornecidos.
      * Retorna número de linhas afetadas.
      */
-    public function bulkSetTelefoneEnviado(array $ids, string $telefone): int
+    public function bulkAtualizarExtras(array $ids, ?string $telefone, ?string $dataMensagem): int
     {
-        if (empty($ids))
-            return 0;
+        if (empty($ids)) return 0;
+        
+        $setClauses = [];
+        $params = [];
+        
+        if ($telefone !== null) {
+            $setClauses[] = "telefone_enviado = ?";
+            $params[] = $telefone === '' ? null : $telefone;
+        }
+        if ($dataMensagem !== null) {
+            $setClauses[] = "data_mensagem = ?";
+            $params[] = $dataMensagem === '' ? null : $dataMensagem;
+        }
+
+        if (empty($setClauses)) return 0;
+
         $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        $stmt = $this->db->prepare(
-            "UPDATE cold_contacts SET telefone_enviado = ? WHERE id IN ($placeholders)"
-        );
-        $stmt->execute(array_merge([$telefone], array_map('intval', $ids)));
+        $sql = "UPDATE cold_contacts SET " . implode(', ', $setClauses) . " WHERE id IN ($placeholders)";
+        
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute(array_merge($params, array_map('intval', $ids)));
         return $stmt->rowCount();
     }
 

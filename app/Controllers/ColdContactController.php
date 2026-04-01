@@ -44,10 +44,26 @@ class ColdContactController extends Controller
     public function import(array $params = []): void
     {
         $tipoLista = trim($_POST['tipo_lista'] ?? '');
+        $telefoneEnviado = trim($_POST['telefone_enviado'] ?? '');
+        $dataMensagem = trim($_POST['data_mensagem'] ?? '');
+
         if (empty($tipoLista)) {
             $this->flash('error', 'O campo "Tipo de lista" é obrigatório para importar.');
             $this->redirect('/cold-contacts');
             return;
+        }
+
+        if (!empty($telefoneEnviado) && (!ctype_digit($telefoneEnviado) || strlen($telefoneEnviado) > 4)) {
+            $this->flash('error', 'Telefone enviado deve ser numérico com até 4 dígitos.');
+            $this->redirect('/cold-contacts');
+            return;
+        }
+
+        $dataNormalizada = null;
+        if (!empty($dataMensagem)) {
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $dataMensagem)) {
+                $dataNormalizada = $dataMensagem;
+            }
         }
 
         // Valida upload do arquivo
@@ -109,8 +125,8 @@ class ColdContactController extends Controller
                 'phone' => $phone,
                 'name' => $name,
                 'tipo_lista' => $tipoLista,
-                'telefone_enviado' => null,
-                'data_mensagem' => null,
+                'telefone_enviado' => !empty($telefoneEnviado) ? $telefoneEnviado : null,
+                'data_mensagem' => $dataNormalizada,
             ]);
             $inserted++;
         }
@@ -149,13 +165,11 @@ class ColdContactController extends Controller
             exit;
         }
 
-        // Valida telefone_enviado se preenchido, deve ser numérico, máx 4 dígitos
         if (!empty($telefoneEnviado) && (!ctype_digit($telefoneEnviado) || strlen($telefoneEnviado) > 4)) {
             echo json_encode(['success' => false, 'error' => 'Telefone enviado deve ser numérico com até 4 dígitos.']);
             exit;
         }
 
-        // Normaliza data_mensagem aceita YYYY-MM-DD ou DD/MM/YYYY, converte para YYYY-MM-DD
         $dataNormalizada = null;
         if (!empty($dataMensagem)) {
             if (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $dataMensagem)) {
@@ -289,16 +303,25 @@ class ColdContactController extends Controller
     }
 
     /**
-     * Marca telefone_enviado em lote para os IDs selecionados. Retorna JSON.
+     * Atualiza telefone enviado e data em lote para os IDs selecionados.
      */
     public function bulkUpdate(array $params = []): void
     {
         header('Content-Type: application/json');
 
         $telefone = trim($_POST['telefone_enviado'] ?? '');
-        if (empty($telefone) || !ctype_digit($telefone) || strlen($telefone) > 4) {
+        $dataMsg = trim($_POST['data_mensagem'] ?? '');
+
+        if (!empty($telefone) && (!ctype_digit($telefone) || strlen($telefone) > 4)) {
             echo json_encode(['success' => false, 'error' => 'Tel. enviado deve ser numérico com até 4 dígitos.']);
             exit;
+        }
+
+        $dataNormalizada = null;
+        if (!empty($dataMsg)) {
+            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $dataMsg)) {
+                $dataNormalizada = $dataMsg;
+            }
         }
 
         $ids = array_filter(array_map('intval', (array) ($_POST['ids'] ?? [])));
@@ -306,9 +329,14 @@ class ColdContactController extends Controller
             echo json_encode(['success' => false, 'error' => 'Nenhum contato selecionado.']);
             exit;
         }
+        
+        if ($telefone === '' && $dataMsg === '') {
+            echo json_encode(['success' => false, 'error' => 'Nenhum dado informado para atualizar.']);
+            exit;
+        }
 
         $model = new ColdContact();
-        $updated = $model->bulkSetTelefoneEnviado($ids, $telefone);
+        $updated = $model->bulkAtualizarExtras($ids, $telefone === '' ? null : $telefone, $dataMsg === '' ? null : $dataNormalizada);
 
         echo json_encode([
             'success' => $updated > 0,
