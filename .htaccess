@@ -11,7 +11,7 @@
     RewriteEngine On
 
     # Redireciona tudo para public/ mantendo a URL amigável
-    RewriteCond %{REQUEST_URI} !^/public/
+    RewriteRule ^public/ - [L]
     RewriteRule ^(.*)$ public/$1 [L]
 </IfModule>
 
