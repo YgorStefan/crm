@@ -363,12 +363,10 @@ class Client extends Model
      */
     public function updateSalePaidAt(int $saleId, int $clientId): bool
     {
-        $ref = $this->computeRefMonth();
-        $refDate = sprintf('%04d-%02d-15 12:00:00', $ref['ano'], $ref['mes']);
         $stmt = $this->db->prepare(
-            "UPDATE client_sales SET paid_at = :paid_at WHERE id = :id AND client_id = :client_id"
+            "UPDATE client_sales SET paid_at = NOW() WHERE id = :id AND client_id = :client_id"
         );
-        $stmt->execute([':paid_at' => $refDate, ':id' => $saleId, ':client_id' => $clientId]);
+        $stmt->execute([':id' => $saleId, ':client_id' => $clientId]);
         return $stmt->rowCount() > 0;
     }
 
