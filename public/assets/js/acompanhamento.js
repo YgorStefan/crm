@@ -14,19 +14,17 @@
     Chart.defaults.font.family = "'Inter', sans-serif";
     Chart.defaults.color = '#6b7280';
 
-    const abordados = typeof acompanhamentoAbordados !== 'undefined' ? acompanhamentoAbordados : 0;
-
-    // Abordados primeiro, depois as etapas
-    const labels      = ['Abordados'].concat(acompanhamentoData.map(function (s) { return s.name; }));
-    const totals      = [abordados].concat(acompanhamentoData.map(function (s) { return parseInt(s.total, 10); }));
-    const bgColors    = ['rgba(20,184,166,0.75)'].concat(acompanhamentoData.map(function (s) {
+    // Apenas as etapas do pipeline
+    const labels      = acompanhamentoData.map(function (s) { return s.name; });
+    const totals      = acompanhamentoData.map(function (s) { return parseInt(s.total, 10); });
+    const bgColors    = acompanhamentoData.map(function (s) {
         var hex = s.color.replace('#', '');
         var r = parseInt(hex.substring(0, 2), 16);
         var g = parseInt(hex.substring(2, 4), 16);
         var b = parseInt(hex.substring(4, 6), 16);
         return 'rgba(' + r + ',' + g + ',' + b + ',0.75)';
-    }));
-    const borderColors = ['#14b8a6'].concat(acompanhamentoData.map(function (s) { return s.color; }));
+    });
+    const borderColors = acompanhamentoData.map(function (s) { return s.color; });
 
     // Altura dinâmica: 52px por barra
     canvas.height = labels.length * 52;
