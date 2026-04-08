@@ -5,12 +5,16 @@
     const board = document.getElementById('kanbanBoard');
     const toast = document.getElementById('kanbanToast');
     const moveUrl = board?.dataset.moveUrl;   // URL da rota POST /pipeline/move
-    let csrfToken = board?.dataset.csrf;        // Token CSRF da sessão (atualizado após cada move)
+    const statsUrl = board?.dataset.statsUrl; // URL da rota GET /api/dashboard/stats
+    const csrfToken = board?.dataset.csrf;    // Token CSRF da sessão (estável, sem rotação)
 
     if (!board) return; // Sai silenciosamente se o board não existir na página
 
     // Cartão que está sendo arrastado no momento
     let draggedCard = null;
+
+    // Flag para evitar múltiplas requisições simultâneas (race condition CSRF)
+    let isMoving = false;
 
     // EVENTOS NOS CARTÕES
 
@@ -80,7 +84,7 @@
             e.preventDefault();
             this.classList.remove('drag-over');
 
-            if (!draggedCard) return;
+            if (!draggedCard || isMoving) return;
 
             const newStageId = parseInt(this.dataset.stageId, 10);
             const oldStageId = parseInt(draggedCard.dataset.currentStage, 10);
@@ -95,7 +99,7 @@
             this.appendChild(draggedCard);
             draggedCard.dataset.currentStage = newStageId;
 
-            // Atualiza os contadores das colunas
+            // Atualiza os contadores e totais das colunas
             updateColumnCounters();
 
             // 2. Persiste a mudança via AJAX
@@ -111,50 +115,76 @@
      * @param {number} stageId   ID da nova etapa
      */
     async function moveClient(clientId, stageId) {
+        isMoving = true;
         try {
             const response = await fetch(moveUrl, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
-                    // O token CSRF é enviado tanto no corpo
                     'X-CSRF-Token': csrfToken,
                 },
-                // Corpo da requisição em JSON
                 body: JSON.stringify({
                     client_id: clientId,
                     stage_id: stageId,
-                    _csrf_token: csrfToken, // também no body para o middleware PHP
+                    _csrf_token: csrfToken,
                 }),
             });
 
             const data = await response.json();
 
-            if (data.csrf_token) csrfToken = data.csrf_token;
-
             if (data.success) {
                 showToast('✅ Cliente movido com sucesso!', 'success');
+                refreshCharts();
             } else {
                 showToast('❌ Erro ao mover. Tente novamente.', 'error');
-                // Em produção, poderíamos reverter o movimento no DOM aqui
             }
         } catch (err) {
             console.error('[Kanban] Erro na requisição:', err);
-            showToast('❌ Falha de rede. Recarregue a página.', 'error');
+            showToast('❌ Falha de rede. Tente novamente.', 'error');
+        } finally {
+            isMoving = false;
         }
     }
 
     /**
-     * Atualiza o contador de cartões no cabeçalho de cada coluna.
-     * Chamado após cada movimento para manter os números corretos
-     * sem precisar recarregar a página.
+     * Atualiza o contador de cartões e o total de valores no cabeçalho de cada coluna.
+     * Chamado após cada movimento para manter os dados corretos sem recarregar a página.
      */
     function updateColumnCounters() {
         document.querySelectorAll('.kanban-column').forEach(col => {
             const zone = col.querySelector('.kanban-drop-zone');
             const counter = col.querySelector('[class*="rounded-full"]');
-            const count = zone.querySelectorAll('.kanban-card').length;
+            const cards = zone.querySelectorAll('.kanban-card');
+            const count = cards.length;
 
             if (counter) counter.textContent = count;
+
+            // Soma o deal_value de todos os cartões da coluna
+            let total = 0;
+            cards.forEach(card => {
+                total += parseFloat(card.dataset.dealValue) || 0;
+            });
+
+            // Atualiza ou cria/remove o elemento de total de valores no cabeçalho
+            const header = col.querySelector('.rounded-t-xl');
+            let valueEl = col.querySelector('.kanban-value-total');
+
+            if (total > 0) {
+                const formatted = 'R$ ' + total.toLocaleString('pt-BR', {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: 2,
+                });
+                if (valueEl) {
+                    valueEl.textContent = formatted;
+                } else if (header) {
+                    const div = document.createElement('div');
+                    div.className = 'kanban-value-total text-xs opacity-80 mt-0.5';
+                    div.textContent = formatted;
+                    header.querySelector('.text-right').appendChild(div);
+                }
+            } else if (valueEl) {
+                valueEl.remove();
+            }
 
             // Mostra placeholder se a coluna ficou vazia
             if (count === 0 && !zone.querySelector('.kanban-empty')) {
@@ -164,6 +194,39 @@
                 zone.appendChild(empty);
             }
         });
+    }
+
+    /**
+     * Atualiza os gráficos Chart.js da página (se existirem) via API.
+     * Opera nos charts de ID "chartPipeline" e "chartValues".
+     * No-op se Chart.js não estiver carregado ou os charts não existirem na página.
+     */
+    function refreshCharts() {
+        if (typeof Chart === 'undefined' || !statsUrl) return;
+
+        const chartBar = Chart.getChart('chartPipeline');
+        const chartDoughnut = Chart.getChart('chartValues');
+        if (!chartBar && !chartDoughnut) return;
+
+        fetch(statsUrl)
+            .then(r => r.json())
+            .then(({ pipeline: p }) => {
+                if (chartBar) {
+                    chartBar.data.labels = p.labels;
+                    chartBar.data.datasets[0].data = p.counts.map(Number);
+                    chartBar.data.datasets[0].backgroundColor = p.colors.map(c => c + 'cc');
+                    chartBar.data.datasets[0].borderColor = p.colors;
+                    chartBar.update();
+                }
+                if (chartDoughnut) {
+                    chartDoughnut.data.labels = p.labels;
+                    chartDoughnut.data.datasets[0].data = p.values.map(Number);
+                    chartDoughnut.data.datasets[0].backgroundColor = p.colors.map(c => c + 'cc');
+                    chartDoughnut.data.datasets[0].borderColor = p.colors;
+                    chartDoughnut.update();
+                }
+            })
+            .catch(() => {}); // silencia erros de rede no refresh dos gráficos
     }
 
     /**

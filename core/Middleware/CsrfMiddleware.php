@@ -34,9 +34,8 @@ class CsrfMiddleware
             die('Ação bloqueada: token CSRF inválido. Por favor, recarregue a página e tente novamente.');
         }
 
-        // Após validação bem-sucedida, regenera o token para a próxima requisição.
-        // Isso implementa o padrão "Synchronizer Token"
-        $_SESSION['csrf_token'] = self::generateToken();
+        // Token mantido estável por toda a sessão (padrão adotado por Laravel, Django, Rails).
+        // A rotação por requisição causa race conditions em múltiplos fetch() AJAX simultâneos.
     }
 
     /**
