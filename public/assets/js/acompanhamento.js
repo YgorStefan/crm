@@ -113,12 +113,6 @@
                         callback: function (val) { return Number.isInteger(val) ? val : null; }
                     },
                     grid: { drawOnChartArea: false },
-                    title: {
-                        display: true,
-                        text: 'Abordados',
-                        font: { size: 11 },
-                        color: '#14b8a6',
-                    }
                 }
             }
         }
