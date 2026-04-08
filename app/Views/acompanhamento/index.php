@@ -42,12 +42,32 @@ $temDados = $totalClientes > 0 || $abordados > 0;
         </div>
     <?php else: ?>
 
+        <!-- Métrica: Abordados -->
+        <div class="bg-white rounded-xl shadow-sm border border-gray-100 px-6 py-4 flex items-center gap-4 mb-4">
+            <span class="inline-block w-3 h-3 rounded-full flex-shrink-0" style="background-color:#14b8a6"></span>
+            <div>
+                <p class="text-xs text-gray-500 uppercase tracking-wide font-medium">Abordados no mês</p>
+                <p class="text-3xl font-bold text-gray-800"><?= (int)$abordados ?></p>
+            </div>
+            <p class="text-xs text-gray-400 ml-2 self-end pb-1">contatos frios importados em <?= htmlspecialchars($mesLabel, ENT_QUOTES, 'UTF-8') ?></p>
+        </div>
+
+        <!-- Gráfico: Abordados + etapas do pipeline -->
         <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-            <canvas id="chartAcompanhamento" height="280"></canvas>
+            <canvas id="chartAcompanhamento"></canvas>
         </div>
 
         <!-- Cards de resumo -->
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
+
+            <!-- Card: Abordados -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center gap-3">
+                <span class="inline-block w-3 h-3 rounded-full flex-shrink-0" style="background-color:#14b8a6"></span>
+                <div class="min-w-0">
+                    <p class="text-xs text-gray-500 truncate">Abordados</p>
+                    <p class="text-lg font-bold text-gray-800"><?= (int)$abordados ?></p>
+                </div>
+            </div>
 
             <?php foreach ($stages as $stage): ?>
                 <?php if ((int)$stage['total'] === 0) continue; ?>
@@ -70,4 +90,4 @@ $temDados = $totalClientes > 0 || $abordados > 0;
     const acompanhamentoData = <?= json_encode(array_values($stages), JSON_HEX_TAG | JSON_HEX_AMP) ?>;
     const acompanhamentoAbordados = <?= (int)$abordados ?>;
 </script>
-<script src="<?= APP_URL ?>/assets/js/acompanhamento.js?v=4"></script>
+<script src="<?= APP_URL ?>/assets/js/acompanhamento.js?v=6"></script>
