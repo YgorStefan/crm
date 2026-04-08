@@ -458,19 +458,25 @@ class Client extends Model
         ");
         $rows = $stmt->fetchAll();
 
+        // Só exibe em atraso a partir do dia 20 sem pagamento
+        $hoje    = new \DateTimeImmutable('now');
+        $diaHoje = (int) $hoje->format('j');
+        if ($diaHoje < 20) {
+            return [];
+        }
+
+        $refStart = new \DateTimeImmutable(sprintf('%04d-%02d-01 00:00:00', $refAno, $refMes));
+
         $overdueSet = [];
         foreach ($rows as $row) {
             $clientId = (int) $row['client_id'];
-            // Se o client_id já marcado como overdue, não precisa checar mais cotas
             if (isset($overdueSet[$clientId]))
                 continue;
 
             $isPaid = false;
             if (!empty($row['paid_at'])) {
                 $paidDt = new \DateTimeImmutable($row['paid_at']);
-                $paidMes = (int) $paidDt->format('n');
-                $paidAno = (int) $paidDt->format('Y');
-                if ($paidMes === $refMes && $paidAno === $refAno) {
+                if ($paidDt >= $refStart && $paidDt <= $hoje) {
                     $isPaid = true;
                 }
             }
