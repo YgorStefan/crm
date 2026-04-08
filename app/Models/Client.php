@@ -338,11 +338,11 @@ class Client extends Model
             $paidFormatted = null;
 
             if (!empty($sale['paid_at'])) {
-                $paidDt = new \DateTimeImmutable($sale['paid_at']);
-                $paidMes = (int) $paidDt->format('n');
-                $paidAno = (int) $paidDt->format('Y');
+                $paidDt  = new \DateTimeImmutable($sale['paid_at']);
+                $refStart = new \DateTimeImmutable(sprintf('%04d-%02d-01 00:00:00', $refAno, $refMes));
+                $now      = new \DateTimeImmutable('now');
 
-                if ($paidMes === $refMes && $paidAno === $refAno) {
+                if ($paidDt >= $refStart && $paidDt <= $now) {
                     $isPaid = true;
                     $paidFormatted = $paidDt->format('d/m/Y H:i');
                 }
