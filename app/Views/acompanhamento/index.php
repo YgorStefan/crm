@@ -49,15 +49,6 @@ $temDados = $totalClientes > 0 || $abordados > 0;
         <!-- Cards de resumo -->
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
 
-            <!-- Card: Abordados -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center gap-3">
-                <span class="inline-block w-3 h-3 rounded-full flex-shrink-0" style="background-color: #14b8a6"></span>
-                <div class="min-w-0">
-                    <p class="text-xs text-gray-500 truncate">Abordados</p>
-                    <p class="text-lg font-bold text-gray-800"><?= (int)$abordados ?></p>
-                </div>
-            </div>
-
             <?php foreach ($stages as $stage): ?>
                 <?php if ((int)$stage['total'] === 0) continue; ?>
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center gap-3">
