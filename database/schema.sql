@@ -97,6 +97,7 @@ CREATE TABLE IF NOT EXISTS clients (
     notes             TEXT            NULL,
     birth_date        DATE            NULL     COMMENT 'Data de nascimento — formato YYYY-MM-DD',
     referido_por      VARCHAR(150)    NULL     COMMENT 'Nome de quem indicou (quando source = Indicação)',
+    closed_at         DATE            NULL     COMMENT 'Data de fechamento da venda (preenchido apenas na etapa Venda Fechada)',
     is_active         TINYINT(1)      NOT NULL DEFAULT 1 COMMENT '0 = cliente arquivado (soft-delete)',
     created_at        TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at        TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP
@@ -261,6 +262,17 @@ INSERT INTO users (name, email, password_hash, role) VALUES (
 );
 
 SET FOREIGN_KEY_CHECKS = 1;
+
+-- ============================================================
+-- MIGRAÇÕES INCREMENTAIS
+-- Execute manualmente em bancos já existentes (não afeta instalações novas)
+-- ============================================================
+
+-- v1.1: Data de fechamento de venda na tabela clients
+ALTER TABLE clients
+    ADD COLUMN IF NOT EXISTS closed_at DATE NULL
+    COMMENT 'Data de fechamento da venda (preenchido apenas na etapa Venda Fechada)'
+    AFTER referido_por;
 
 -- ============================================================
 -- FIM DO SCHEMA

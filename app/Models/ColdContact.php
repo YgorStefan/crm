@@ -155,6 +155,19 @@ class ColdContact extends Model
     }
 
     /**
+     * Conta contatos frios importados em um mês específico (YYYY-MM).
+     * Usado pelo Acompanhamento de Prospecção como métrica "Abordados".
+     */
+    public function countByMonth(string $yearMonth): int
+    {
+        $stmt = $this->db->prepare(
+            "SELECT COUNT(*) FROM cold_contacts WHERE DATE_FORMAT(imported_at, '%Y-%m') = :year_month"
+        );
+        $stmt->execute([':year_month' => $yearMonth]);
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
      * Alias findByMonth para exportação — mesma query, usada pelo export endpoint.
      */
     public function findForExport(string $yearMonth, array $filters = []): array

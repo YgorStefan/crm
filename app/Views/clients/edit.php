@@ -106,14 +106,34 @@ function val(array $client, string $key): string
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Etapa do Funil <span
                             class="text-red-500">*</span></label>
-                    <select name="pipeline_stage_id" required
+                    <select name="pipeline_stage_id" id="pipeline_stage_select" required
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                         <?php foreach ($stages as $stage): ?>
-                            <option value="<?= $stage['id'] ?>" <?= $client['pipeline_stage_id'] == $stage['id'] ? 'selected' : '' ?>>
+                            <option value="<?= $stage['id'] ?>"
+                                data-venda-fechada="<?= stripos($stage['name'], 'venda fechada') !== false ? '1' : '0' ?>"
+                                <?= $client['pipeline_stage_id'] == $stage['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($stage['name'], ENT_QUOTES, 'UTF-8') ?>
                             </option>
                         <?php endforeach; ?>
                     </select>
+                </div>
+
+                <?php
+                $currentStage = array_values(array_filter($stages, fn($s) => $s['id'] == $client['pipeline_stage_id']));
+                $currentIsVF  = !empty($currentStage) && stripos($currentStage[0]['name'], 'venda fechada') !== false;
+                ?>
+                <div id="closed_at_wrapper" <?= $currentIsVF ? '' : 'style="display:none;"' ?>>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Data de Fechamento</label>
+                    <input type="text" name="closed_at" id="closed_at" maxlength="10"
+                        placeholder="DD/MM/AAAA"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                        value="<?php
+                            $ca = $client['closed_at'] ?? '';
+                            if ($ca && strlen($ca) === 10) {
+                                $p = explode('-', $ca);
+                                echo $p[2] . '/' . $p[1] . '/' . $p[0];
+                            }
+                        ?>">
                 </div>
 
                 <div>
@@ -242,6 +262,24 @@ function val(array $client, string $key): string
         indicacaoWrapper.style.display = this.value === 'Indicação' ? 'block' : 'none';
     });
 
+    // Campo condicional: Data de Fechamento (só para etapa "Venda Fechada")
+    const stageSelect = document.getElementById('pipeline_stage_select');
+    const closedAtWrapper = document.getElementById('closed_at_wrapper');
+    stageSelect.addEventListener('change', function () {
+        const opt = this.options[this.selectedIndex];
+        const isVF = opt && opt.dataset.vendaFechada === '1';
+        closedAtWrapper.style.display = isVF ? 'block' : 'none';
+        if (!isVF) document.getElementById('closed_at').value = '';
+    });
+
+    // Máscara: Data de fechamento DD/MM/AAAA
+    document.getElementById('closed_at').addEventListener('input', function () {
+        let v = this.value.replace(/\D/g, '').substring(0, 8);
+        if (v.length > 4) v = v.substring(0, 2) + '/' + v.substring(2, 4) + '/' + v.substring(4);
+        else if (v.length > 2) v = v.substring(0, 2) + '/' + v.substring(2);
+        this.value = v;
+    });
+
     // Remove máscaras antes do submit: envia apenas dígitos ao servidor
     // Seleciona apenas o form principal de edição (não o form de delete)
     document.querySelector('form[action$="/update"]').addEventListener('submit', function () {
@@ -257,6 +295,14 @@ function val(array $client, string $key): string
             bd.value = parts[2] + '-' + parts[1] + '-' + parts[0];
         } else if (bd && !bd.value.includes('-')) {
             bd.value = '';
+        }
+        // closed_at: converter DD/MM/AAAA para YYYY-MM-DD
+        const ca = document.getElementById('closed_at');
+        if (ca && ca.value.includes('/') && ca.value.length === 10) {
+            const parts = ca.value.split('/');
+            ca.value = parts[2] + '-' + parts[1] + '-' + parts[0];
+        } else if (ca && ca.value && !ca.value.includes('-')) {
+            ca.value = '';
         }
     });
 </script>
