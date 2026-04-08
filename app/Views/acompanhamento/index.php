@@ -50,11 +50,11 @@ $temDados = $totalClientes > 0 || $abordados > 0;
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 mt-4">
 
             <!-- Card: Abordados -->
-            <div class="bg-teal-50 border border-teal-200 rounded-xl p-4 flex items-center gap-3">
-                <span class="inline-block w-3 h-3 rounded-full flex-shrink-0 bg-teal-500"></span>
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 flex items-center gap-3">
+                <span class="inline-block w-3 h-3 rounded-full flex-shrink-0" style="background-color: #14b8a6"></span>
                 <div class="min-w-0">
-                    <p class="text-xs text-teal-600 truncate font-medium">Abordados</p>
-                    <p class="text-lg font-bold text-teal-800"><?= (int)$abordados ?></p>
+                    <p class="text-xs text-gray-500 truncate">Abordados</p>
+                    <p class="text-lg font-bold text-gray-800"><?= (int)$abordados ?></p>
                 </div>
             </div>
 
@@ -79,4 +79,4 @@ $temDados = $totalClientes > 0 || $abordados > 0;
     const acompanhamentoData = <?= json_encode(array_values($stages), JSON_HEX_TAG | JSON_HEX_AMP) ?>;
     const acompanhamentoAbordados = <?= (int)$abordados ?>;
 </script>
-<script src="<?= APP_URL ?>/assets/js/acompanhamento.js?v=2"></script>
+<script src="<?= APP_URL ?>/assets/js/acompanhamento.js?v=3"></script>
