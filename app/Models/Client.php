@@ -112,11 +112,11 @@ class Client extends Model
             INSERT INTO clients
                 (name, email, phone, company, cnpj_cpf, address, city, state,
                  zip_code, pipeline_stage_id, assigned_to, deal_value, source, notes,
-                 birth_date, referido_por)
+                 birth_date, referido_por, closed_at)
             VALUES
                 (:name, :email, :phone, :company, :cnpj_cpf, :address, :city, :state,
                  :zip_code, :pipeline_stage_id, :assigned_to, :deal_value, :source, :notes,
-                 :birth_date, :referido_por)
+                 :birth_date, :referido_por, :closed_at)
         ");
         $stmt->execute([
             ':name' => $data['name'],
@@ -135,6 +135,7 @@ class Client extends Model
             ':notes' => $data['notes'] ?: null,
             ':birth_date' => !empty($data['birth_date']) ? $data['birth_date'] : null,
             ':referido_por' => $data['referido_por'] ?: null,
+            ':closed_at' => !empty($data['closed_at']) ? $data['closed_at'] : null,
         ]);
         return (int) $this->db->lastInsertId();
     }
@@ -151,7 +152,8 @@ class Client extends Model
                 zip_code = :zip_code, pipeline_stage_id = :pipeline_stage_id,
                 assigned_to = :assigned_to, deal_value = :deal_value,
                 source = :source, notes = :notes,
-                birth_date = :birth_date, referido_por = :referido_por
+                birth_date = :birth_date, referido_por = :referido_por,
+                closed_at = :closed_at
             WHERE id = :id
         ");
         $stmt->execute([
@@ -171,6 +173,7 @@ class Client extends Model
             ':notes' => $data['notes'] ?: null,
             ':birth_date' => !empty($data['birth_date']) ? $data['birth_date'] : null,
             ':referido_por' => $data['referido_por'] ?: null,
+            ':closed_at' => !empty($data['closed_at']) ? $data['closed_at'] : null,
             ':id' => $id,
         ]);
         return $stmt->rowCount() > 0;
@@ -238,6 +241,25 @@ class Client extends Model
             GROUP BY ps.id, ps.name, ps.color
             ORDER BY ps.position
         ");
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Conta clientes por etapa filtrados pelo mês de criação (YYYY-MM).
+     * Usado pelo Acompanhamento de Prospecção com histórico mensal.
+     */
+    public function countByStageAndMonth(string $yearMonth): array
+    {
+        $stmt = $this->db->prepare("
+            SELECT ps.name, ps.color, COUNT(c.id) AS total, COALESCE(SUM(c.deal_value), 0) AS total_value
+            FROM pipeline_stages ps
+            LEFT JOIN clients c ON c.pipeline_stage_id = ps.id
+                AND c.is_active = 1
+                AND DATE_FORMAT(c.created_at, '%Y-%m') = :year_month
+            GROUP BY ps.id, ps.name, ps.color
+            ORDER BY ps.position
+        ");
+        $stmt->execute([':year_month' => $yearMonth]);
         return $stmt->fetchAll();
     }
 

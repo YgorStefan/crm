@@ -75,6 +75,10 @@ class ClientController extends Controller
             return;
         }
 
+        $stageModel = new PipelineStage();
+        $stage = $stageModel->findById((int) $stageId);
+        $isVendaFechada = $stage && stripos($stage['name'], 'venda fechada') !== false;
+
         $data = [
             'name' => $name,
             'email' => $this->input('email'),
@@ -92,6 +96,7 @@ class ClientController extends Controller
             'notes' => $this->input('notes'),
             'birth_date' => $this->inputRaw('birth_date'),
             'referido_por' => $this->input('referido_por'),
+            'closed_at' => $isVendaFechada ? ($this->inputRaw('closed_at') ?: null) : null,
         ];
 
         $clientModel = new Client();
@@ -185,6 +190,11 @@ class ClientController extends Controller
             return;
         }
 
+        $stageId = (int) $this->inputRaw('pipeline_stage_id');
+        $stageModel = new PipelineStage();
+        $stage = $stageModel->findById($stageId);
+        $isVendaFechada = $stage && stripos($stage['name'], 'venda fechada') !== false;
+
         $data = [
             'name' => $name,
             'email' => $this->input('email'),
@@ -195,13 +205,14 @@ class ClientController extends Controller
             'city' => $this->input('city'),
             'state' => $this->input('state'),
             'zip_code' => $this->input('zip_code'),
-            'pipeline_stage_id' => $this->inputRaw('pipeline_stage_id'),
+            'pipeline_stage_id' => $stageId,
             'assigned_to' => $this->inputRaw('assigned_to'),
             'deal_value' => $this->inputRaw('deal_value', '0'),
             'source' => $this->input('source'),
             'notes' => $this->input('notes'),
             'birth_date' => $this->inputRaw('birth_date'),
             'referido_por' => $this->input('referido_por'),
+            'closed_at' => $isVendaFechada ? ($this->inputRaw('closed_at') ?: null) : null,
         ];
 
         $clientModel = new Client();

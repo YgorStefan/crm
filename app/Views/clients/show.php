@@ -55,6 +55,9 @@ $interactionTypes = [
                         '🎂 Nascimento' => !empty($client['birth_date'])
                             ? date('d/m/Y', strtotime($client['birth_date']))
                             : null,
+                        '🏆 Fechamento' => !empty($client['closed_at'])
+                            ? date('d/m/Y', strtotime($client['closed_at']))
+                            : null,
                         '🤝 Indicado por' => $client['referido_por'] ?? null,
                         '📍 Cidade/UF' => trim(($client['city'] ?? '') . ' ' . ($client['state'] ?? '')),
                         '📦 Origem' => $client['source'],
