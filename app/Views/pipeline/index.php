@@ -24,6 +24,7 @@
 <!-- Board Kanban (quebra de linha automática) -->
 <div class="flex flex-wrap items-start gap-4 pb-6" id="kanbanBoard"
      data-move-url="<?= APP_URL ?>/pipeline/move"
+     data-stats-url="<?= APP_URL ?>/api/dashboard/stats"
      data-csrf="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
 
     <?php foreach ($stages as $stage):
@@ -45,7 +46,7 @@
                     <?= count($stageClients) ?>
                 </span>
                 <?php if ($totalValue > 0): ?>
-                <div class="text-xs opacity-80 mt-0.5">R$ <?= number_format($totalValue, 2, ',', '.') ?></div>
+                <div class="kanban-value-total text-xs opacity-80 mt-0.5">R$ <?= number_format($totalValue, 2, ',', '.') ?></div>
                 <?php endif; ?>
             </div>
         </div>
@@ -60,7 +61,8 @@
                         hover:shadow-md transition-shadow"
                  draggable="true"
                  data-client-id="<?= $client['id'] ?>"
-                 data-current-stage="<?= $client['pipeline_stage_id'] ?>">
+                 data-current-stage="<?= $client['pipeline_stage_id'] ?>"
+                 data-deal-value="<?= (float)($client['deal_value'] ?? 0) ?>">
 
                 <!-- Nome e empresa -->
                 <a href="<?= APP_URL ?>/clients/<?= $client['id'] ?>"
