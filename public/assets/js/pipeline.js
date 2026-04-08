@@ -5,7 +5,7 @@
     const board = document.getElementById('kanbanBoard');
     const toast = document.getElementById('kanbanToast');
     const moveUrl = board?.dataset.moveUrl;   // URL da rota POST /pipeline/move
-    const csrfToken = board?.dataset.csrf;      // Token CSRF da sessão
+    let csrfToken = board?.dataset.csrf;        // Token CSRF da sessão (atualizado após cada move)
 
     if (!board) return; // Sai silenciosamente se o board não existir na página
 
@@ -128,6 +128,8 @@
             });
 
             const data = await response.json();
+
+            if (data.csrf_token) csrfToken = data.csrf_token;
 
             if (data.success) {
                 showToast('✅ Cliente movido com sucesso!', 'success');

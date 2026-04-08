@@ -145,7 +145,7 @@ class Task extends Model
             FROM tasks t
             LEFT JOIN clients c ON c.id = t.client_id
             LEFT JOIN users   u ON u.id = t.assigned_to
-            WHERE t.due_date < COALESCE(CONVERT_TZ(NOW(), @@session.time_zone, 'America/Sao_Paulo'), NOW())
+            WHERE t.due_date < NOW()
               AND t.status IN ('pending','in_progress')
         ";
         $params = [];

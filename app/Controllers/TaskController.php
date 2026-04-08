@@ -156,6 +156,11 @@ class TaskController extends Controller
             'created_by' => $_SESSION['user']['id'],
         ]);
 
+        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+            $this->json(['success' => true, 'csrf_token' => CsrfMiddleware::getToken()]);
+            return;
+        }
+
         $this->flash('success', 'Tarefa criada com sucesso!');
 
         // Se veio da tela do cliente, volta para ela

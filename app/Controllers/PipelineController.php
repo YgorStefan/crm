@@ -47,7 +47,7 @@ class PipelineController extends Controller
         $clientModel = new Client();
         $ok = $clientModel->updateStage($clientId, $stageId);
 
-        $this->json(['success' => $ok]);
+        $this->json(['success' => $ok, 'csrf_token' => CsrfMiddleware::getToken()]);
     }
 
     /**
