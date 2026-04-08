@@ -95,6 +95,16 @@ class ClientController extends Controller
         ];
 
         $clientModel = new Client();
+
+        if (!empty($data['phone'])) {
+            $existing = $clientModel->findByPhone($data['phone']);
+            if ($existing) {
+                $this->flash('error', 'Já existe um cliente cadastrado com este telefone: ' . htmlspecialchars($existing['name'], ENT_QUOTES, 'UTF-8') . '.');
+                $this->redirect('/clients/create');
+                return;
+            }
+        }
+
         $id = $clientModel->create($data);
 
         $this->flash('success', 'Cliente cadastrado com sucesso!');

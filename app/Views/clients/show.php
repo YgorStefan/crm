@@ -712,7 +712,7 @@ $interactionTypes = [
                         grupo: document.getElementById('cota-grupo').value.trim(),
                         cota: document.getElementById('cota-cota').value.trim(),
                         tipo: tipo,
-                        credito_contratado: document.getElementById('cota-credito').value.trim().replace(',', '.'),
+                        credito_contratado: document.getElementById('cota-credito').value.trim().replace(/\./g, '').replace(',', '.'),
                     });
 
                     fetch(appUrl + '/clients/' + clientId + '/sales', {

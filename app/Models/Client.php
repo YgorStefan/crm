@@ -130,7 +130,7 @@ class Client extends Model
             ':zip_code' => $data['zip_code'] ?: null,
             ':pipeline_stage_id' => (int) $data['pipeline_stage_id'],
             ':assigned_to' => !empty($data['assigned_to']) ? (int) $data['assigned_to'] : null,
-            ':deal_value' => !empty($data['deal_value']) ? (float) str_replace(',', '.', $data['deal_value']) : 0,
+            ':deal_value' => !empty($data['deal_value']) ? self::parseMoney($data['deal_value']) : 0,
             ':source' => $data['source'] ?: null,
             ':notes' => $data['notes'] ?: null,
             ':birth_date' => !empty($data['birth_date']) ? $data['birth_date'] : null,
@@ -166,7 +166,7 @@ class Client extends Model
             ':zip_code' => $data['zip_code'] ?: null,
             ':pipeline_stage_id' => (int) $data['pipeline_stage_id'],
             ':assigned_to' => !empty($data['assigned_to']) ? (int) $data['assigned_to'] : null,
-            ':deal_value' => !empty($data['deal_value']) ? (float) str_replace(',', '.', $data['deal_value']) : 0,
+            ':deal_value' => !empty($data['deal_value']) ? self::parseMoney($data['deal_value']) : 0,
             ':source' => $data['source'] ?: null,
             ':notes' => $data['notes'] ?: null,
             ':birth_date' => !empty($data['birth_date']) ? $data['birth_date'] : null,
@@ -272,7 +272,7 @@ class Client extends Model
             ':cota' => $data['cota'] ?: null,
             ':tipo' => $data['tipo'],
             ':credito_contratado' => !empty($data['credito_contratado'])
-                ? (float) str_replace(',', '.', $data['credito_contratado'])
+                ? self::parseMoney($data['credito_contratado'])
                 : 0,
         ]);
         return (int) $this->db->lastInsertId();
@@ -335,20 +335,50 @@ class Client extends Model
     }
 
     /**
-     * Registra o timestamp de pagamento da cota (marca como pago no ciclo vigente).
-     * Verifica que a cota pertence ao cliente antes de atualizar.
-     *
-     * @param  int  $saleId
-     * @param  int  $clientId
-     * @return bool
+     * Registra o pagamento da cota no mês de referência do ciclo vigente.
+     * Grava paid_at com uma data dentro do mês de referência para que
+     * findSalesWithPaymentStatus reconheça como pago corretamente.
      */
     public function updateSalePaidAt(int $saleId, int $clientId): bool
     {
+        $ref = $this->computeRefMonth();
+        $refDate = sprintf('%04d-%02d-15 12:00:00', $ref['ano'], $ref['mes']);
         $stmt = $this->db->prepare(
-            "UPDATE client_sales SET paid_at = NOW() WHERE id = :id AND client_id = :client_id"
+            "UPDATE client_sales SET paid_at = :paid_at WHERE id = :id AND client_id = :client_id"
         );
-        $stmt->execute([':id' => $saleId, ':client_id' => $clientId]);
+        $stmt->execute([':paid_at' => $refDate, ':id' => $saleId, ':client_id' => $clientId]);
         return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Busca cliente ativo pelo telefone (para verificar duplicata).
+     */
+    public function findByPhone(string $phone): array|bool
+    {
+        $stmt = $this->db->prepare(
+            "SELECT id, name FROM clients WHERE phone = :phone AND is_active = 1 LIMIT 1"
+        );
+        $stmt->execute([':phone' => $phone]);
+        return $stmt->fetch();
+    }
+
+    /**
+     * Normaliza valor monetário para float.
+     * - Com vírgula (BR): "60.000,00" ou "60000,00" → remove pontos, troca vírgula
+     * - Sem vírgula (JS pré-processou): "60000.00" ou "60000" → usa direto
+     */
+    public static function parseMoney(string $value): float
+    {
+        $value = trim($value);
+        if ($value === '') return 0.0;
+
+        if (str_contains($value, ',')) {
+            // Formato brasileiro: remove separador de milhar, converte decimal
+            $value = str_replace('.', '', $value);
+            $value = str_replace(',', '.', $value);
+        }
+        // Sem vírgula: já está em formato neutro (ex: "60000.00" ou "60000")
+        return (float) $value;
     }
 
     /**

@@ -147,6 +147,7 @@
                         <option>Evento</option>
                         <option>Lista fria</option>
                         <option>AVA Pro</option>
+                        <option>Amigo/Conhecido</option>
                         <option>Outro</option>
                     </select>
                 </div>

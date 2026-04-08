@@ -141,7 +141,7 @@ function val(array $client, string $key): string
                     <select name="source" id="source_select"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                         <option value="">Desconhecida</option>
-                        <?php foreach (['Google Ads', 'Indicação', 'LinkedIn', 'Instagram', 'Site Orgânico', 'Evento', 'Lista fria', 'AVA Pro', 'Outro'] as $src): ?>
+                        <?php foreach (['Google Ads', 'Indicação', 'LinkedIn', 'Instagram', 'Site Orgânico', 'Evento', 'Lista fria', 'AVA Pro', 'Amigo/Conhecido', 'Outro'] as $src): ?>
                             <option value="<?= $src ?>" <?= val($client, 'source') === $src ? 'selected' : '' ?>><?= $src ?>
                             </option>
                         <?php endforeach; ?>

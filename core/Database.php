@@ -80,6 +80,10 @@ class Database
                 // enquanto colunas criadas com utf8mb4_unicode_ci causam "Illegal mix of collations".
                 self::$instance->exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
 
+                // Define timezone da sessão MySQL como horário de Brasília (-03:00).
+                // Sem isso NOW() retorna UTC, causando erros em queries de prazo/vencimento.
+                self::$instance->exec("SET time_zone = '-03:00'");
+
             } catch (PDOException $e) {
                 // Em produção não tem mensagens de erro do banco para o usuário.
                 // Logamos internamente e mostramos uma mensagem genérica.

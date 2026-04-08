@@ -1,73 +1,53 @@
 /**
- * acompanhamento.js — Grafico de Acompanhamento Semanal (Chart.js 4)
+ * acompanhamento.js — Gráfico de clientes por etapa do pipeline (Chart.js 4)
  */
 
 (function () {
     'use strict';
 
-    // Guarda de seguranca — aborta se dependencias ausentes
     if (typeof acompanhamentoData === 'undefined' || typeof Chart === 'undefined') return;
 
     const canvas = document.getElementById('chartAcompanhamento');
     if (!canvas) return;
 
-    // --- Configuracao global (mesma de dashboard.js) ---
     Chart.defaults.font.family = "'Inter', sans-serif";
     Chart.defaults.color = '#6b7280';
 
-    // --- Cores das series (per D-01/D-02 e Claude discretion) ---
-    const COR_IMPORTADOS_BG = 'rgba(99, 102, 241, 0.75)';  // indigo-500 com 75% opacidade
-    const COR_IMPORTADOS_BDR = 'rgb(99, 102, 241)';
-    const COR_ABORDADOS_BG = 'rgba(16, 185, 129, 0.75)';  // emerald-500 com 75% opacidade
-    const COR_ABORDADOS_BDR = 'rgb(16, 185, 129)';
+    const labels = acompanhamentoData.map(function (s) { return s.name; });
+    const totals = acompanhamentoData.map(function (s) { return parseInt(s.total, 10); });
+    const bgColors = acompanhamentoData.map(function (s) {
+        // Converte hex para rgba com 75% opacidade
+        var hex = s.color.replace('#', '');
+        var r = parseInt(hex.substring(0, 2), 16);
+        var g = parseInt(hex.substring(2, 4), 16);
+        var b = parseInt(hex.substring(4, 6), 16);
+        return 'rgba(' + r + ',' + g + ',' + b + ',0.75)';
+    });
+    const borderColors = acompanhamentoData.map(function (s) { return s.color; });
 
-    // --- Funcao auxiliar: monta config de datasets para uma lista ---
-    function buildDatasets(listaKey) {
-        const lista = acompanhamentoData.listas[listaKey] || acompanhamentoData.listas['Todos'];
-        return [
-            {
-                label: 'Importados',
-                data: lista.importados.map(Number),
-                backgroundColor: COR_IMPORTADOS_BG,
-                borderColor: COR_IMPORTADOS_BDR,
-                borderWidth: 2,
-                borderRadius: 5,
-                borderSkipped: false,
-            },
-            {
-                label: 'Abordados',
-                data: lista.abordados.map(Number),
-                backgroundColor: COR_ABORDADOS_BG,
-                borderColor: COR_ABORDADOS_BDR,
-                borderWidth: 2,
-                borderRadius: 5,
-                borderSkipped: false,
-            }
-        ];
-    }
-
-    // --- Instancia o grafico com a selecao inicial ("Todos") ---
-    const chart = new Chart(canvas, {
+    new Chart(canvas, {
         type: 'bar',
         data: {
-            labels: acompanhamentoData.semanas,
-            datasets: buildDatasets('Todos'),
+            labels: labels,
+            datasets: [{
+                label: 'Clientes',
+                data: totals,
+                backgroundColor: bgColors,
+                borderColor: borderColors,
+                borderWidth: 2,
+                borderRadius: 5,
+                borderSkipped: false,
+            }]
         },
         options: {
             responsive: true,
             maintainAspectRatio: true,
-            interaction: {
-                mode: 'index',      // tooltip mostra as duas series ao mesmo tempo
-                intersect: false,
-            },
             plugins: {
-                legend: {
-                    display: false,   // Legenda feita manualmente na view (HTML)
-                },
+                legend: { display: false },
                 tooltip: {
                     callbacks: {
                         label: function (ctx) {
-                            return ' ' + ctx.dataset.label + ': ' + ctx.parsed.y;
+                            return ' ' + ctx.parsed.y + ' cliente(s)';
                         }
                     }
                 }
@@ -90,18 +70,5 @@
             }
         }
     });
-
-    // --- Filtro client-side: atualiza datasets ao mudar o dropdown ---
-    const select = document.getElementById('filtroLista');
-    if (select) {
-        select.addEventListener('change', function () {
-            const listaKey = this.value;
-            const novosDatasets = buildDatasets(listaKey);
-            // Atualiza dados sem recriar o grafico (Chart.js update API)
-            chart.data.datasets[0].data = novosDatasets[0].data;
-            chart.data.datasets[1].data = novosDatasets[1].data;
-            chart.update();
-        });
-    }
 
 })();
