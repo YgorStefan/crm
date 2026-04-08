@@ -79,4 +79,4 @@ $temDados = $totalClientes > 0 || $abordados > 0;
     const acompanhamentoData = <?= json_encode(array_values($stages), JSON_HEX_TAG | JSON_HEX_AMP) ?>;
     const acompanhamentoAbordados = <?= (int)$abordados ?>;
 </script>
-<script src="<?= APP_URL ?>/assets/js/acompanhamento.js"></script>
+<script src="<?= APP_URL ?>/assets/js/acompanhamento.js?v=2"></script>
