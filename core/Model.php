@@ -109,14 +109,4 @@ abstract class Model
     {
         return $this->db->lastInsertId();
     }
-
-    /**
-     * Retorna o tenant_id da sessão atual.
-     *
-     * @return int
-     */
-    protected function currentTenantId(): int
-    {
-        return (int) ($_SESSION['tenant_id'] ?? 0);
-    }
 }
