@@ -16,7 +16,52 @@ class Client extends Model
      * @param  array  $filters  ['stage_id', 'assigned_to', 'search']
      * @return array
      */
-    public function findAllWithRelations(array $filters = []): array
+    /**
+     * Conta o total de clientes ativos que correspondem aos filtros fornecidos.
+     * Usa os mesmos JOINs de findAllWithRelations, contando DISTINCT c.id.
+     *
+     * @param  array  $filters  ['stage_id', 'assigned_to', 'search', 'tipo_venda']
+     * @return int
+     */
+    public function countAllWithRelations(array $filters = []): int
+    {
+        $sql = "
+            SELECT COUNT(DISTINCT c.id)
+            FROM clients c
+            LEFT JOIN client_sales cs ON cs.client_id = c.id
+            WHERE c.is_active = 1
+        ";
+        $params = [];
+        $tenantId = $this->currentTenantId();
+        $sql .= " AND c.tenant_id = :tenant_id";
+        $params[':tenant_id'] = $tenantId;
+
+        if (!empty($filters['stage_id'])) {
+            $sql .= " AND c.pipeline_stage_id = :stage_id";
+            $params[':stage_id'] = (int) $filters['stage_id'];
+        }
+
+        if (!empty($filters['assigned_to'])) {
+            $sql .= " AND c.assigned_to = :assigned_to";
+            $params[':assigned_to'] = (int) $filters['assigned_to'];
+        }
+
+        if (!empty($filters['search'])) {
+            $sql .= " AND (c.name LIKE :search OR c.company LIKE :search OR c.email LIKE :search)";
+            $params[':search'] = '%' . $filters['search'] . '%';
+        }
+
+        if (!empty($filters['tipo_venda'])) {
+            $sql .= " AND cs.tipo = :tipo_venda";
+            $params[':tipo_venda'] = $filters['tipo_venda'];
+        }
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return (int) $stmt->fetchColumn();
+    }
+
+    public function findAllWithRelations(array $filters = [], ?int $limit = null, ?int $offset = null): array
     {
         // Query base com JOINs
         $sql = "
@@ -24,8 +69,9 @@ class Client extends Model
                 c.*,
                 ps.name  AS stage_name,
                 ps.color AS stage_color,
+                ps.is_won_stage,
                 u.name   AS assigned_name,
-                cs.tipo  AS tipo_venda
+                ANY_VALUE(cs.tipo) AS tipo_venda
             FROM clients c
             LEFT JOIN pipeline_stages ps ON ps.id = c.pipeline_stage_id
             LEFT JOIN users u            ON u.id  = c.assigned_to
@@ -33,6 +79,9 @@ class Client extends Model
             WHERE c.is_active = 1
         ";
         $params = [];
+        $tenantId = $this->currentTenantId();
+        $sql .= " AND c.tenant_id = :tenant_id";
+        $params[':tenant_id'] = $tenantId;
 
         // Filtro por etapa do funil
         if (!empty($filters['stage_id'])) {
@@ -61,18 +110,30 @@ class Client extends Model
         $sql .= " GROUP BY c.id";
         $sql .= " ORDER BY c.updated_at DESC";
 
+        if ($limit !== null) {
+            $sql .= " LIMIT :limit OFFSET :offset";
+        }
+
         $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
+
+        // Bind named params primeiro
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+
+        if ($limit !== null) {
+            $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $offset ?? 0, \PDO::PARAM_INT);
+        }
+
+        $stmt->execute();
         $rows = $stmt->fetchAll();
         $overdueIds = array_flip($this->findAllOverdueSalesByClient());
 
         foreach ($rows as &$row) {
-            $isVendaFechada = !empty($row['stage_name'])
-                && (
-                    stripos($row['stage_name'], 'venda fechada') !== false ||
-                    stripos($row['stage_name'], 'fechado - ganho') !== false
-                );
-            $row['has_overdue'] = $isVendaFechada && isset($overdueIds[(int) $row['id']]);
+            // FRAG-03: identificação por coluna estruturada, não por nome de string
+            $isWonStage = !empty($row['is_won_stage']);
+            $row['has_overdue'] = $isWonStage && isset($overdueIds[(int) $row['id']]);
         }
         unset($row);
 
@@ -89,14 +150,15 @@ class Client extends Model
                 c.*,
                 ps.name  AS stage_name,
                 ps.color AS stage_color,
+                ps.is_won_stage,
                 u.name   AS assigned_name
             FROM clients c
             LEFT JOIN pipeline_stages ps ON ps.id = c.pipeline_stage_id
             LEFT JOIN users u            ON u.id  = c.assigned_to
-            WHERE c.id = :id AND c.is_active = 1
+            WHERE c.id = :id AND c.is_active = 1 AND c.tenant_id = :tenant_id
             LIMIT 1
         ");
-        $stmt->execute([':id' => $id]);
+        $stmt->execute([':id' => $id, ':tenant_id' => $this->currentTenantId()]);
         return $stmt->fetch();
     }
 
@@ -110,15 +172,16 @@ class Client extends Model
     {
         $stmt = $this->db->prepare("
             INSERT INTO clients
-                (name, email, phone, company, cnpj_cpf, address, city, state,
+                (tenant_id, name, email, phone, company, cnpj_cpf, address, city, state,
                  zip_code, pipeline_stage_id, assigned_to, deal_value, source, notes,
                  birth_date, referido_por, closed_at)
             VALUES
-                (:name, :email, :phone, :company, :cnpj_cpf, :address, :city, :state,
+                (:tenant_id, :name, :email, :phone, :company, :cnpj_cpf, :address, :city, :state,
                  :zip_code, :pipeline_stage_id, :assigned_to, :deal_value, :source, :notes,
                  :birth_date, :referido_por, :closed_at)
         ");
         $stmt->execute([
+            ':tenant_id' => $this->currentTenantId(),
             ':name' => $data['name'],
             ':email' => $data['email'] ?: null,
             ':phone' => $data['phone'] ?: null,
@@ -154,7 +217,7 @@ class Client extends Model
                 source = :source, notes = :notes,
                 birth_date = :birth_date, referido_por = :referido_por,
                 closed_at = :closed_at
-            WHERE id = :id
+            WHERE id = :id AND tenant_id = :tenant_id
         ");
         $stmt->execute([
             ':name' => $data['name'],
@@ -175,6 +238,7 @@ class Client extends Model
             ':referido_por' => $data['referido_por'] ?: null,
             ':closed_at' => !empty($data['closed_at']) ? $data['closed_at'] : null,
             ':id' => $id,
+            ':tenant_id' => $this->currentTenantId(),
         ]);
         return $stmt->rowCount() > 0;
     }
@@ -185,8 +249,10 @@ class Client extends Model
      */
     public function softDelete(int $id): bool
     {
-        $stmt = $this->db->prepare("UPDATE clients SET is_active = 0 WHERE id = :id");
-        $stmt->execute([':id' => $id]);
+        $stmt = $this->db->prepare(
+            "UPDATE clients SET is_active = 0 WHERE id = :id AND tenant_id = :tenant_id"
+        );
+        $stmt->execute([':id' => $id, ':tenant_id' => $this->currentTenantId()]);
         return $stmt->rowCount() > 0;
     }
 
@@ -197,9 +263,9 @@ class Client extends Model
     public function updateStage(int $clientId, int $stageId): bool
     {
         $stmt = $this->db->prepare(
-            "UPDATE clients SET pipeline_stage_id = :stage WHERE id = :id"
+            "UPDATE clients SET pipeline_stage_id = :stage WHERE id = :id AND tenant_id = :tenant_id"
         );
-        $stmt->execute([':stage' => $stageId, ':id' => $clientId]);
+        $stmt->execute([':stage' => $stageId, ':id' => $clientId, ':tenant_id' => $this->currentTenantId()]);
         return $stmt->rowCount() > 0;
     }
 
@@ -209,7 +275,8 @@ class Client extends Model
      */
     public function findGroupedByStage(): array
     {
-        $stmt = $this->db->query("
+        $t = $this->currentTenantId();
+        $stmt = $this->db->prepare("
             SELECT
                 c.id, c.name, c.company, c.deal_value, c.email, c.phone,
                 c.pipeline_stage_id,
@@ -217,8 +284,10 @@ class Client extends Model
             FROM clients c
             LEFT JOIN users u ON u.id = c.assigned_to
             WHERE c.is_active = 1
+              AND c.tenant_id = :tenant_id
             ORDER BY c.updated_at DESC
         ");
+        $stmt->execute([':tenant_id' => $t]);
         $rows = $stmt->fetchAll();
 
         // Agrupa os clientes por stage_id para montar as colunas do Kanban
@@ -234,13 +303,18 @@ class Client extends Model
      */
     public function countByStage(): array
     {
-        $stmt = $this->db->query("
-            SELECT ps.name, ps.color, COUNT(c.id) AS total, COALESCE(SUM(c.deal_value), 0) AS total_value
+        $t = $this->currentTenantId();
+        $stmt = $this->db->prepare("
+            SELECT ps.name, ps.color, ps.is_won_stage, COUNT(c.id) AS total, COALESCE(SUM(c.deal_value), 0) AS total_value
             FROM pipeline_stages ps
-            LEFT JOIN clients c ON c.pipeline_stage_id = ps.id AND c.is_active = 1
-            GROUP BY ps.id, ps.name, ps.color
+            LEFT JOIN clients c ON c.pipeline_stage_id = ps.id
+                AND c.is_active = 1
+                AND c.tenant_id = :tenant_id_c
+            WHERE ps.tenant_id = :tenant_id_ps
+            GROUP BY ps.id, ps.name, ps.color, ps.is_won_stage
             ORDER BY ps.position
         ");
+        $stmt->execute([':tenant_id_ps' => $t, ':tenant_id_c' => $t]);
         return $stmt->fetchAll();
     }
 
@@ -250,16 +324,19 @@ class Client extends Model
      */
     public function countByStageAndMonth(string $yearMonth): array
     {
+        $t = $this->currentTenantId();
         $stmt = $this->db->prepare("
-            SELECT ps.name, ps.color, COUNT(c.id) AS total, COALESCE(SUM(c.deal_value), 0) AS total_value
+            SELECT ps.name, ps.color, ps.is_won_stage, COUNT(c.id) AS total, COALESCE(SUM(c.deal_value), 0) AS total_value
             FROM pipeline_stages ps
             LEFT JOIN clients c ON c.pipeline_stage_id = ps.id
                 AND c.is_active = 1
+                AND c.tenant_id = :tenant_id_c
                 AND DATE_FORMAT(c.created_at, '%Y-%m') = :year_month
-            GROUP BY ps.id, ps.name, ps.color
+            WHERE ps.tenant_id = :tenant_id_ps
+            GROUP BY ps.id, ps.name, ps.color, ps.is_won_stage
             ORDER BY ps.position
         ");
-        $stmt->execute([':year_month' => $yearMonth]);
+        $stmt->execute([':tenant_id_c' => $t, ':tenant_id_ps' => $t, ':year_month' => $yearMonth]);
         return $stmt->fetchAll();
     }
 
@@ -269,9 +346,11 @@ class Client extends Model
     public function findSalesByClientId(int $clientId): array
     {
         $stmt = $this->db->prepare(
-            "SELECT * FROM client_sales WHERE client_id = :client_id ORDER BY created_at ASC"
+            "SELECT cs.* FROM client_sales cs
+             INNER JOIN clients c ON c.id = cs.client_id AND c.tenant_id = :tenant_id
+             WHERE cs.client_id = :client_id ORDER BY cs.created_at ASC"
         );
-        $stmt->execute([':client_id' => $clientId]);
+        $stmt->execute([':client_id' => $clientId, ':tenant_id' => $this->currentTenantId()]);
         return $stmt->fetchAll();
     }
 
@@ -306,16 +385,18 @@ class Client extends Model
     public function deleteSale(int $saleId, int $clientId): bool
     {
         $stmt = $this->db->prepare(
-            "DELETE FROM client_sales WHERE id = :id AND client_id = :client_id"
+            "DELETE cs FROM client_sales cs
+             INNER JOIN clients c ON c.id = cs.client_id AND c.tenant_id = :tenant_id
+             WHERE cs.id = :id AND cs.client_id = :client_id"
         );
-        $stmt->execute([':id' => $saleId, ':client_id' => $clientId]);
+        $stmt->execute([':id' => $saleId, ':client_id' => $clientId, ':tenant_id' => $this->currentTenantId()]);
         return $stmt->rowCount() > 0;
     }
 
     /**
      * Busca cotas do cliente com status de pagamento calculado em PHP.
-     *   - dia atual >= 20 → mês de referência = mês atual
-     *   - dia atual < 20  → mês de referência = mês anterior
+     *   - dia atual >= cutoff → mês de referência = mês atual
+     *   - dia atual < cutoff  → mês de referência = mês anterior
      * A cota está "em dia" se paid_at NÃO for NULL e cair dentro do mês de referência.
      * @param  int   $clientId
      * @return array  Cada elemento possui todos os campos de client_sales
@@ -323,9 +404,11 @@ class Client extends Model
     public function findSalesWithPaymentStatus(int $clientId): array
     {
         $stmt = $this->db->prepare(
-            "SELECT * FROM client_sales WHERE client_id = :client_id ORDER BY created_at ASC"
+            "SELECT cs.* FROM client_sales cs
+             INNER JOIN clients c ON c.id = cs.client_id AND c.tenant_id = :tenant_id
+             WHERE cs.client_id = :client_id ORDER BY cs.created_at ASC"
         );
-        $stmt->execute([':client_id' => $clientId]);
+        $stmt->execute([':client_id' => $clientId, ':tenant_id' => $this->currentTenantId()]);
         $sales = $stmt->fetchAll();
 
         // Determina mês/ano de referência do ciclo vigente
@@ -364,9 +447,12 @@ class Client extends Model
     public function updateSalePaidAt(int $saleId, int $clientId): bool
     {
         $stmt = $this->db->prepare(
-            "UPDATE client_sales SET paid_at = NOW() WHERE id = :id AND client_id = :client_id"
+            "UPDATE client_sales cs
+             INNER JOIN clients c ON c.id = cs.client_id AND c.tenant_id = :tenant_id
+             SET cs.paid_at = NOW()
+             WHERE cs.id = :id AND cs.client_id = :client_id"
         );
-        $stmt->execute([':id' => $saleId, ':client_id' => $clientId]);
+        $stmt->execute([':id' => $saleId, ':client_id' => $clientId, ':tenant_id' => $this->currentTenantId()]);
         return $stmt->rowCount() > 0;
     }
 
@@ -376,9 +462,9 @@ class Client extends Model
     public function findByPhone(string $phone): array|bool
     {
         $stmt = $this->db->prepare(
-            "SELECT id, name FROM clients WHERE phone = :phone AND is_active = 1 LIMIT 1"
+            "SELECT id, name FROM clients WHERE phone = :phone AND is_active = 1 AND tenant_id = :tenant_id LIMIT 1"
         );
-        $stmt->execute([':phone' => $phone]);
+        $stmt->execute([':phone' => $phone, ':tenant_id' => $this->currentTenantId()]);
         return $stmt->fetch();
     }
 
@@ -402,8 +488,24 @@ class Client extends Model
     }
 
     /**
+     * Returns the configured payment cutoff day for the current tenant.
+     * Reads tenants.payment_cutoff_day; falls back to 20 if missing.
+     */
+    private function getTenantCutoffDay(): int
+    {
+        try {
+            $stmt = $this->db->prepare('SELECT payment_cutoff_day FROM tenants WHERE id = :id LIMIT 1');
+            $stmt->execute([':id' => $this->currentTenantId()]);
+            $value = $stmt->fetchColumn();
+            return ((int) $value) ?: 20;
+        } catch (\RuntimeException $e) {
+            return 20;
+        }
+    }
+
+    /**
      * Determina o mês/ano de referência do ciclo vigente de pagamentos.
-     * dia >= 20 → mês atual; dia < 20 → mês anterior. (D-04)
+     * dia >= cutoff → mês atual; dia < cutoff → mês anterior. (D-04)
      *
      * @return array{mes: int, ano: int}
      */
@@ -412,7 +514,7 @@ class Client extends Model
         $hoje = new \DateTimeImmutable('now');
         $diaHoje = (int) $hoje->format('j');
 
-        if ($diaHoje >= 20) {
+        if ($diaHoje >= $this->getTenantCutoffDay()) {
             return ['mes' => (int) $hoje->format('n'), 'ano' => (int) $hoje->format('Y')];
         }
 
@@ -430,11 +532,12 @@ class Client extends Model
     public function updateNotes(int $id, string $notes): bool
     {
         $stmt = $this->db->prepare("
-            UPDATE clients SET notes = :notes WHERE id = :id
+            UPDATE clients SET notes = :notes WHERE id = :id AND tenant_id = :tenant_id
         ");
         return $stmt->execute([
-            ':notes' => $notes,
-            ':id'    => $id,
+            ':notes'     => $notes,
+            ':id'        => $id,
+            ':tenant_id' => $this->currentTenantId(),
         ]);
     }
 
@@ -451,17 +554,21 @@ class Client extends Model
         $refAno = $ref['ano'];
 
         // Busca todas as cotas ativas (de clientes is_active=1)
-        $stmt = $this->db->query("
+        $t = $this->currentTenantId();
+        $stmt = $this->db->prepare("
             SELECT cs.client_id, cs.paid_at
             FROM client_sales cs
-            INNER JOIN clients c ON c.id = cs.client_id AND c.is_active = 1
+            INNER JOIN clients c ON c.id = cs.client_id
+                AND c.is_active = 1
+                AND c.tenant_id = :tenant_id
         ");
+        $stmt->execute([':tenant_id' => $t]);
         $rows = $stmt->fetchAll();
 
-        // Só exibe em atraso a partir do dia 20 sem pagamento
+        // Só exibe em atraso a partir do dia de corte configurado do tenant sem pagamento
         $hoje    = new \DateTimeImmutable('now');
         $diaHoje = (int) $hoje->format('j');
-        if ($diaHoje < 20) {
+        if ($diaHoje < $this->getTenantCutoffDay()) {
             return [];
         }
 

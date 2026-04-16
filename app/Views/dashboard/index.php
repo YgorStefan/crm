@@ -1,6 +1,6 @@
 <?php
 $totalValue = array_sum(array_column($stageData, 'total_value'));
-$wonStage = array_filter($stageData, fn($s) => stripos($s['name'], 'ganho') !== false);
+$wonStage = array_filter($stageData, fn($s) => !empty($s['is_won_stage']));
 $wonRevenue = array_sum(array_column($wonStage, 'total_value'));
 ?>
 
@@ -137,7 +137,7 @@ $wonRevenue = array_sum(array_column($wonStage, 'total_value'));
 </div>
 
 <!-- Dados para o Chart.js (injetados como JSON no HTML) -->
-<script>
+<script nonce="<?= CSP_NONCE ?>">
     // Dados do pipeline injetados pelo PHP como JSON seguro
     const pipelineData = <?= json_encode([
         'labels' => array_column($stageData, 'name'),
@@ -146,4 +146,4 @@ $wonRevenue = array_sum(array_column($wonStage, 'total_value'));
         'colors' => array_column($stageData, 'color'),
     ], JSON_HEX_TAG | JSON_HEX_AMP) ?>;
 </script>
-<script src="<?= APP_URL ?>/assets/js/dashboard.js"></script>
+<script nonce="<?= CSP_NONCE ?>" src="<?= APP_URL ?>/assets/js/dashboard.js"></script>
