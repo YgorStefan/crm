@@ -87,6 +87,7 @@ class AuthController extends Controller
             'role' => $user['role'],
             'avatar' => $user['avatar'],
         ];
+        $_SESSION['tenant_id']     = (int) $user['tenant_id'];
         $_SESSION['last_activity'] = time();
 
         // Redireciona para a URL que o usuário tentou acessar antes do login,

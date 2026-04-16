@@ -12,7 +12,8 @@ abstract class Model
     // Nome da tabela no banco (cada model filho deve redefinir esta propriedade)
     protected string $table = '';
 
-    // Modelos globais (tabelas sem tenant_id) devem sobrescrever com true
+    // Models globais (ex.: Tenant, Stage) ignoram o filtro de tenant_id.
+    // Models comuns herdam false e ficam automaticamente escopados ao tenant.
     protected bool $isGlobal = false;
 
     public function __construct()
@@ -52,7 +53,15 @@ abstract class Model
      */
     public function findAll(): array
     {
-        $stmt = $this->db->query("SELECT * FROM {$this->table}");
+        if ($this->isGlobal) {
+            $stmt = $this->db->query("SELECT * FROM {$this->table}");
+            return $stmt->fetchAll();
+        }
+        if (!isset($_SESSION['tenant_id'])) {
+            throw new \RuntimeException('findAll() called without tenant context on non-global model');
+        }
+        $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE tenant_id = :tenant_id");
+        $stmt->execute([':tenant_id' => $_SESSION['tenant_id']]);
         return $stmt->fetchAll();
     }
 
@@ -64,9 +73,30 @@ abstract class Model
      */
     public function delete(int $id): bool
     {
-        $stmt = $this->db->prepare("DELETE FROM {$this->table} WHERE id = :id");
-        $stmt->execute([':id' => $id]);
+        if ($this->isGlobal) {
+            $stmt = $this->db->prepare("DELETE FROM {$this->table} WHERE id = :id");
+            $stmt->execute([':id' => $id]);
+            return $stmt->rowCount() > 0;
+        }
+        if (!isset($_SESSION['tenant_id'])) {
+            throw new \RuntimeException('delete() called without tenant context on non-global model');
+        }
+        $stmt = $this->db->prepare("DELETE FROM {$this->table} WHERE id = :id AND tenant_id = :tenant_id");
+        $stmt->execute([':id' => $id, ':tenant_id' => $_SESSION['tenant_id']]);
         return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * Retorna o tenant_id da sessão atual.
+     * Lança RuntimeException se não houver contexto de sessão — evita
+     * UPDATEs/DELETEs silenciosamente sem efeito (WHERE tenant_id = 0).
+     */
+    protected function currentTenantId(): int
+    {
+        if (!isset($_SESSION['tenant_id'])) {
+            throw new \RuntimeException('No tenant context in session');
+        }
+        return (int) $_SESSION['tenant_id'];
     }
 
     /**

@@ -22,6 +22,27 @@ SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';
 SET time_zone = '-03:00';
 
 -- ============================================================
+-- TABELA: tenants
+-- Organizações multi-tenant. Cada usuário pertence a um tenant.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS tenants (
+    id                  INT UNSIGNED        NOT NULL AUTO_INCREMENT,
+    name                VARCHAR(150)        NOT NULL,
+    slug                VARCHAR(80)         NOT NULL COMMENT 'Identificador estável por tenant (único)',
+    is_system_tenant    TINYINT(1)          NOT NULL DEFAULT 0 COMMENT '1 = tenant da instalação com poderes de plataforma',
+    payment_cutoff_day  TINYINT UNSIGNED    NOT NULL DEFAULT 20 COMMENT 'Dia do mês (1-28) para início do ciclo de pagamento (FRAG-04)',
+    created_at          TIMESTAMP           NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          TIMESTAMP           NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                            ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_tenants_slug (slug)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tenant padrão para instalações novas e realocação de dados legados
+INSERT IGNORE INTO tenants (id, name, slug, is_system_tenant) VALUES
+  (1, 'Organização Padrão', 'default', 1);
+
+-- ============================================================
 -- TABELA: users
 -- Usuários do sistema com controle de acesso por papel (role).
 --
@@ -42,6 +63,7 @@ CREATE TABLE IF NOT EXISTS users (
                                       NOT NULL DEFAULT 'seller',
     avatar        VARCHAR(255)        NULL     COMMENT 'Caminho relativo ao /public/uploads/',
     is_active     TINYINT(1)          NOT NULL DEFAULT 1 COMMENT '0 = usuário desativado (soft-delete)',
+    tenant_id     INT UNSIGNED        NOT NULL DEFAULT 1 COMMENT 'Isolamento multi-tenant',
     created_at    TIMESTAMP           NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at    TIMESTAMP           NOT NULL DEFAULT CURRENT_TIMESTAMP
                                       ON UPDATE CURRENT_TIMESTAMP,
@@ -55,11 +77,13 @@ CREATE TABLE IF NOT EXISTS users (
 -- O campo `position` define a ordem da esquerda para a direita.
 -- ============================================================
 CREATE TABLE IF NOT EXISTS pipeline_stages (
-    id         INT UNSIGNED        NOT NULL AUTO_INCREMENT,
-    name       VARCHAR(80)         NOT NULL,
-    color      VARCHAR(7)          NOT NULL DEFAULT '#6366f1' COMMENT 'Cor hexadecimal do cabeçalho da coluna',
-    position   TINYINT UNSIGNED    NOT NULL DEFAULT 0         COMMENT 'Ordenação crescente = esquerda para direita',
-    created_at TIMESTAMP           NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id           INT UNSIGNED        NOT NULL AUTO_INCREMENT,
+    name         VARCHAR(80)         NOT NULL,
+    color        VARCHAR(7)          NOT NULL DEFAULT '#6366f1' COMMENT 'Cor hexadecimal do cabeçalho da coluna',
+    position     TINYINT UNSIGNED    NOT NULL DEFAULT 0         COMMENT 'Ordenação crescente = esquerda para direita',
+    tenant_id    INT UNSIGNED        NOT NULL DEFAULT 1         COMMENT 'Isolamento multi-tenant',
+    is_won_stage TINYINT(1)          NOT NULL DEFAULT 0         COMMENT '1 = etapa de venda fechada (FRAG-03)',
+    created_at   TIMESTAMP           NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -277,11 +301,12 @@ ALTER TABLE clients
 -- ============================================================
 -- FIM DO SCHEMA
 -- Tabelas criadas:
---   1. users             → autenticação e controle de acesso
---   2. pipeline_stages   → etapas do funil Kanban (6 padrão)
---   3. clients           → cadastro de clientes/leads
---   4. client_sales      → cotas de consórcio por cliente
---   5. interactions      → histórico de contatos
---   6. tasks             → tarefas e follow-ups
---   7. cold_contacts     → contatos frios importados via CSV
+--   1. tenants           → organizações multi-tenant
+--   2. users             → autenticação e controle de acesso
+--   3. pipeline_stages   → etapas do funil Kanban (6 padrão)
+--   4. clients           → cadastro de clientes/leads
+--   5. client_sales      → cotas de consórcio por cliente
+--   6. interactions      → histórico de contatos
+--   7. tasks             → tarefas e follow-ups
+--   8. cold_contacts     → contatos frios importados via CSV
 -- ============================================================

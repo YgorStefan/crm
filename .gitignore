@@ -47,6 +47,9 @@ CLAUDE.md
 # --- Scripts de Infra ---
 deploy.sh
 
+# --- Tailwind CLI binary (downloaded via scripts/setup_tailwind.php) ---
+.bin/
+
 # --- Configurações de Servidor PHP ---
 public/.user.ini
 .user.ini

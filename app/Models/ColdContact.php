@@ -9,10 +9,25 @@ class ColdContact extends Model
     protected string $table = 'cold_contacts';
 
     /**
+     * Conta o total de grupos mês/ano de importação.
+     *
+     * @return int
+     */
+    public function countFindMonthSummaries(): int
+    {
+        $stmt = $this->db->query("
+            SELECT COUNT(DISTINCT DATE_FORMAT(imported_at, '%Y-%m'))
+            FROM cold_contacts
+        ");
+        return (int) $stmt->fetchColumn();
+    }
+
+    /**
      * Retorna contatos agrupados por mês/ano de importação.
      * Ordenado do mais recente para o mais antigo.
+     * Suporta paginação via $limit/$offset.
      */
-    public function findMonthSummaries(): array
+    public function findMonthSummaries(?int $limit = null, ?int $offset = null): array
     {
         $sql = "
             SELECT
@@ -22,8 +37,49 @@ class ColdContact extends Model
             GROUP BY DATE_FORMAT(imported_at, '%Y-%m')
             ORDER BY DATE_FORMAT(imported_at, '%Y-%m') DESC
         ";
-        $stmt = $this->db->query($sql);
+
+        if ($limit !== null) {
+            $sql .= " LIMIT :limit OFFSET :offset";
+            $stmt = $this->db->prepare($sql);
+            $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $offset ?? 0, \PDO::PARAM_INT);
+            $stmt->execute();
+        } else {
+            $stmt = $this->db->query($sql);
+        }
+
         return $stmt->fetchAll();
+    }
+
+    /**
+     * Conta contatos de um mês específico (YYYY-MM) com filtros opcionais.
+     *
+     * @param  string  $yearMonth  Formato YYYY-MM
+     * @param  array   $filters    ['dia', 'telefone_enviado']
+     * @return int
+     */
+    public function countByMonth(string $yearMonth, array $filters = []): int
+    {
+        $sql = "
+            SELECT COUNT(*)
+            FROM cold_contacts
+            WHERE DATE_FORMAT(imported_at, '%Y-%m') = :year_month
+        ";
+        $params = [':year_month' => $yearMonth];
+
+        if (!empty($filters['dia'])) {
+            $sql .= " AND DAY(data_mensagem) = :dia";
+            $params[':dia'] = (int) $filters['dia'];
+        }
+
+        if (!empty($filters['telefone_enviado'])) {
+            $sql .= " AND telefone_enviado LIKE :telefone_enviado";
+            $params[':telefone_enviado'] = '%' . $filters['telefone_enviado'] . '%';
+        }
+
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return (int) $stmt->fetchColumn();
     }
 
     /**
@@ -31,8 +87,9 @@ class ColdContact extends Model
      * Filtro dia: filtra por dia do campo data_mensagem (1-31).
      * Filtro phone: busca parcial no campo phone do contato.
      * Ordenado por id ASC (ordem de importação).
+     * Suporta paginação via $limit/$offset.
      */
-    public function findByMonth(string $yearMonth, array $filters = []): array
+    public function findByMonth(string $yearMonth, array $filters = [], ?int $limit = null, ?int $offset = null): array
     {
         $sql = "
             SELECT *
@@ -53,8 +110,22 @@ class ColdContact extends Model
 
         $sql .= " ORDER BY id ASC";
 
+        if ($limit !== null) {
+            $sql .= " LIMIT :limit OFFSET :offset";
+        }
+
         $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
+
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+
+        if ($limit !== null) {
+            $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+            $stmt->bindValue(':offset', $offset ?? 0, \PDO::PARAM_INT);
+        }
+
+        $stmt->execute();
         return $stmt->fetchAll();
     }
 
@@ -152,19 +223,6 @@ class ColdContact extends Model
         $stmt = $this->db->prepare($sql);
         $stmt->execute(array_merge($params, array_map('intval', $ids)));
         return $stmt->rowCount();
-    }
-
-    /**
-     * Conta contatos frios importados em um mês específico (YYYY-MM).
-     * Usado pelo Acompanhamento de Prospecção como métrica "Abordados".
-     */
-    public function countByMonth(string $yearMonth): int
-    {
-        $stmt = $this->db->prepare(
-            "SELECT COUNT(*) FROM cold_contacts WHERE DATE_FORMAT(imported_at, '%Y-%m') = :year_month"
-        );
-        $stmt->execute([':year_month' => $yearMonth]);
-        return (int) $stmt->fetchColumn();
     }
 
     /**

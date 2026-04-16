@@ -293,12 +293,9 @@ $interactionTypes = [
             <?php endif; ?>
 
             <?php
-            // Detecta "Venda Fechada" pelo nome da etapa - case-insensitive
+            // FRAG-03: identificação por coluna estruturada, não por nome de string
             $isVendaFechada = !empty($client['stage_name'])
-                && (
-                    stripos($client['stage_name'], 'venda fechada') !== false ||
-                    stripos($client['stage_name'], 'fechado - ganho') !== false
-                );
+                && !empty($client['is_won_stage']);
 
             if ($isVendaFechada): ?>
                 <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden" id="cotas-section">
@@ -385,7 +382,7 @@ $interactionTypes = [
         </div>
     </div>
 
-    <script>
+    <script nonce="<?= CSP_NONCE ?>">
     window.crmCsrfToken = '<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>';
     window.syncCsrfForms = function (token) {
         window.crmCsrfToken = token;
@@ -395,7 +392,7 @@ $interactionTypes = [
     };
     </script>
 
-    <script>
+    <script nonce="<?= CSP_NONCE ?>">
     (function () {
         const appUrl = '<?= rtrim(APP_URL, '/') ?>';
 
@@ -524,7 +521,7 @@ $interactionTypes = [
     })();
     </script>
 
-    <script>
+    <script nonce="<?= CSP_NONCE ?>">
     (function () {
         const clientId = <?= (int) $client['id'] ?>;
         const appUrl   = '<?= rtrim(APP_URL, '/') ?>';
@@ -680,7 +677,7 @@ $interactionTypes = [
             </div>
         </div>
 
-        <script>
+        <script nonce="<?= CSP_NONCE ?>">
             (function () {
                 const clientId = <?= (int) $client['id'] ?>;
                 const appUrl = '<?= rtrim(APP_URL, '/') ?>';

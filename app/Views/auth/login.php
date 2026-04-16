@@ -101,7 +101,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="<?= CSP_NONCE ?>">
     // Alterna a visibilidade do campo de senha
     function togglePassword() {
         const input = document.getElementById('password');

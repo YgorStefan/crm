@@ -1,4 +1,10 @@
 <?php
+// Variáveis injetadas pelo Controller::render() via extract($data)
+$client     = $client ?? [];
+$stages     = $stages ?? [];
+$users      = $users ?? [];
+$csrf_token = $csrf_token ?? '';
+
 // Função auxiliar para repopular os campos com os valores atuais do cliente
 function val(array $client, string $key): string
 {
@@ -110,7 +116,7 @@ function val(array $client, string $key): string
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                         <?php foreach ($stages as $stage): ?>
                             <option value="<?= $stage['id'] ?>"
-                                data-venda-fechada="<?= stripos($stage['name'], 'venda fechada') !== false ? '1' : '0' ?>"
+                                data-venda-fechada="<?= !empty($stage['is_won_stage']) ? '1' : '0' ?>"
                                 <?= $client['pipeline_stage_id'] == $stage['id'] ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($stage['name'], ENT_QUOTES, 'UTF-8') ?>
                             </option>
@@ -120,7 +126,7 @@ function val(array $client, string $key): string
 
                 <?php
                 $currentStage = array_values(array_filter($stages, fn($s) => $s['id'] == $client['pipeline_stage_id']));
-                $currentIsVF  = !empty($currentStage) && stripos($currentStage[0]['name'], 'venda fechada') !== false;
+                $currentIsVF  = !empty($currentStage) && !empty($currentStage[0]['is_won_stage']);
                 ?>
                 <div id="closed_at_wrapper" <?= $currentIsVF ? '' : 'style="display:none;"' ?>>
                     <label class="block text-sm font-medium text-gray-700 mb-1">Data de Fechamento</label>
@@ -214,7 +220,7 @@ function val(array $client, string $key): string
 </form>
 </div>
 
-<script>
+<script nonce="<?= CSP_NONCE ?>">
     // Máscara: Telefone (11) 99999-9999
     document.querySelector('[name="phone"]').addEventListener('input', function () {
         let v = this.value.replace(/\D/g, '').substring(0, 11);

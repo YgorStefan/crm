@@ -16,9 +16,11 @@ class PipelineStage extends Model
      */
     public function findAllOrdered(): array
     {
-        $stmt = $this->db->query(
-            "SELECT * FROM pipeline_stages ORDER BY position ASC"
+        $t = $this->currentTenantId();
+        $stmt = $this->db->prepare(
+            "SELECT * FROM pipeline_stages WHERE tenant_id = :t ORDER BY position ASC"
         );
+        $stmt->execute([':t' => $t]);
         return $stmt->fetchAll();
     }
 
@@ -27,16 +29,22 @@ class PipelineStage extends Model
      */
     public function create(array $data): int
     {
+        $t = $this->currentTenantId();
         // Descobre qual é a maior posição atual para colocar a nova etapa no final
-        $maxPos = $this->db->query("SELECT COALESCE(MAX(position), 0) FROM pipeline_stages")->fetchColumn();
+        $maxPos = $this->db->prepare(
+            "SELECT COALESCE(MAX(position), 0) FROM pipeline_stages WHERE tenant_id = :t"
+        );
+        $maxPos->execute([':t' => $t]);
+        $pos = (int) $maxPos->fetchColumn();
 
         $stmt = $this->db->prepare(
-            "INSERT INTO pipeline_stages (name, color, position) VALUES (:name, :color, :position)"
+            "INSERT INTO pipeline_stages (name, color, position, tenant_id) VALUES (:name, :color, :position, :t)"
         );
         $stmt->execute([
-            ':name' => $data['name'],
-            ':color' => $data['color'] ?? '#6366f1',
-            ':position' => (int) $maxPos + 1,
+            ':name'     => $data['name'],
+            ':color'    => $data['color'] ?? '#6366f1',
+            ':position' => $pos + 1,
+            ':t'        => $t,
         ]);
         return (int) $this->db->lastInsertId();
     }
@@ -46,10 +54,11 @@ class PipelineStage extends Model
      */
     public function hasClients(int $stageId): bool
     {
+        $t = $this->currentTenantId();
         $stmt = $this->db->prepare(
-            "SELECT COUNT(*) FROM clients WHERE pipeline_stage_id = :id AND is_active = 1"
+            "SELECT COUNT(*) FROM clients WHERE pipeline_stage_id = :id AND tenant_id = :t AND is_active = 1"
         );
-        $stmt->execute([':id' => $stageId]);
+        $stmt->execute([':id' => $stageId, ':t' => $t]);
         return (int) $stmt->fetchColumn() > 0;
     }
 
@@ -59,12 +68,13 @@ class PipelineStage extends Model
     public function update(int $id, array $data): bool
     {
         $stmt = $this->db->prepare(
-            "UPDATE pipeline_stages SET name = :name, color = :color WHERE id = :id"
+            "UPDATE pipeline_stages SET name = :name, color = :color WHERE id = :id AND tenant_id = :t"
         );
         $stmt->execute([
             ':name' => $data['name'],
             ':color' => $data['color'],
-            ':id' => $id,
+            ':id'   => $id,
+            ':t'    => $this->currentTenantId(),
         ]);
         return (bool) ($stmt->rowCount() > 0);
     }
@@ -78,11 +88,13 @@ class PipelineStage extends Model
             return false;
         }
 
-        // Busca a etapa atual
+        $t = $this->currentTenantId();
+
+        // Busca a etapa atual (escopo ao tenant)
         $stmt = $this->db->prepare(
-            "SELECT id, position FROM pipeline_stages WHERE id = :id"
+            "SELECT id, position FROM pipeline_stages WHERE id = :id AND tenant_id = :t"
         );
-        $stmt->execute([':id' => $id]);
+        $stmt->execute([':id' => $id, ':t' => $t]);
         $current = $stmt->fetch();
 
         if (!$current) {
@@ -92,30 +104,61 @@ class PipelineStage extends Model
         $currentPos = (int) $current['position'];
         $neighborPos = $direction === 'up' ? $currentPos - 1 : $currentPos + 1;
 
-        // Busca a etapa vizinha
+        // Busca a etapa vizinha (escopo ao tenant)
         $stmt = $this->db->prepare(
-            "SELECT id, position FROM pipeline_stages WHERE position = :neighbor_pos LIMIT 1"
+            "SELECT id, position FROM pipeline_stages WHERE position = :neighbor_pos AND tenant_id = :t LIMIT 1"
         );
-        $stmt->execute([':neighbor_pos' => $neighborPos]);
+        $stmt->execute([':neighbor_pos' => $neighborPos, ':t' => $t]);
         $neighbor = $stmt->fetch();
 
         if (!$neighbor) {
             return false;
         }
 
-        // Troca as posições dentro de uma transação
+        // Troca as posições dentro de uma transação (escopo ao tenant)
         try {
             $this->db->beginTransaction();
 
             $up1 = $this->db->prepare(
-                "UPDATE pipeline_stages SET position = :new_pos WHERE id = :id"
+                "UPDATE pipeline_stages SET position = :new_pos WHERE id = :id AND tenant_id = :t"
             );
-            $up1->execute([':new_pos' => $neighborPos, ':id' => $id]);
+            $up1->execute([':new_pos' => $neighborPos, ':id' => $id, ':t' => $t]);
 
             $up2 = $this->db->prepare(
-                "UPDATE pipeline_stages SET position = :old_pos WHERE id = :neighbor_id"
+                "UPDATE pipeline_stages SET position = :old_pos WHERE id = :neighbor_id AND tenant_id = :t"
             );
-            $up2->execute([':old_pos' => $currentPos, ':neighbor_id' => $neighbor['id']]);
+            $up2->execute([':old_pos' => $currentPos, ':neighbor_id' => $neighbor['id'], ':t' => $t]);
+
+            $this->db->commit();
+            return true;
+        } catch (\Throwable $e) {
+            $this->db->rollBack();
+            return false;
+        }
+    }
+
+    /**
+     * Marca ou desmarca uma etapa como "etapa de venda fechada" (FRAG-03).
+     */
+    public function setWonStage(int $id, bool $isWon): bool
+    {
+        $t = $this->currentTenantId();
+        try {
+            $this->db->beginTransaction();
+
+            if ($isWon) {
+                // Limpa todas as etapas do tenant (exclusividade mútua)
+                $clear = $this->db->prepare(
+                    'UPDATE pipeline_stages SET is_won_stage = 0 WHERE tenant_id = :t'
+                );
+                $clear->execute([':t' => $t]);
+            }
+
+            // Define a etapa alvo
+            $set = $this->db->prepare(
+                'UPDATE pipeline_stages SET is_won_stage = :is_won WHERE id = :id AND tenant_id = :t'
+            );
+            $set->execute([':is_won' => $isWon ? 1 : 0, ':id' => $id, ':t' => $t]);
 
             $this->db->commit();
             return true;
