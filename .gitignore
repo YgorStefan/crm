@@ -53,7 +53,6 @@ public/.user.ini
 
 # --- Credenciais de produção ---
 env\ crm.txt
-"env crm.txt"
 
 # --- Config de banco (credenciais reais ficam no .env) ---
 config/database.php
