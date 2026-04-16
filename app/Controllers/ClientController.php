@@ -216,6 +216,11 @@ class ClientController extends Controller
         ];
 
         $clientModel = new Client();
+        $client = $clientModel->findById($id);
+        if (!$client) {
+            $this->redirect('/clients');
+            return;
+        }
         $clientModel->update($id, $data);
 
         $this->flash('success', 'Cliente atualizado com sucesso!');
@@ -229,6 +234,11 @@ class ClientController extends Controller
     {
         $id = (int) ($params['id'] ?? 0);
         $clientModel = new Client();
+        $client = $clientModel->findById($id);
+        if (!$client) {
+            $this->redirect('/clients');
+            return;
+        }
         $clientModel->softDelete($id);
 
         $this->flash('success', 'Cliente removido com sucesso.');
