@@ -50,3 +50,20 @@ deploy.sh
 # --- Configurações de Servidor PHP ---
 public/.user.ini
 .user.ini
+
+# --- Credenciais de produção ---
+env\ crm.txt
+"env crm.txt"
+
+# --- Config de banco (credenciais reais ficam no .env) ---
+config/database.php
+
+# --- Scripts de desenvolvimento descartáveis ---
+scripts/smoke/
+scripts/migrations/
+
+# --- Logs gerados em runtime ---
+storage/
+
+# --- Artefatos de planejamento interno ---
+docs/superpowers/
