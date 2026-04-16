@@ -134,10 +134,14 @@ class TaskController extends Controller
 
         if (empty($title) || empty($dueDate)) {
             $this->flash('error', 'Título e prazo são obrigatórios.');
-            // Redireciona de volta para a origem
-            $ref = $_SERVER['HTTP_REFERER'] ?? APP_URL . '/tasks';
-            header('Location: ' . $ref);
-            exit;
+            // Redireciona para a tela de tarefas (Referer header é forjável)
+            $clientId = $this->inputRaw('client_id');
+            if ($clientId) {
+                $this->redirect('/clients/' . (int) $clientId);
+            } else {
+                $this->redirect('/tasks');
+            }
+            return;
         }
 
         // Converte datetime-local para MySQL
@@ -189,6 +193,11 @@ class TaskController extends Controller
             $data['due_date'] = str_replace('T', ' ', $this->inputRaw('due_date')) . ':00';
 
         $taskModel = new Task();
+        $task = $taskModel->findById($id);
+        if (!$task) {
+            $this->redirect('/tasks');
+            return;
+        }
         $taskModel->update($id, $data);
 
         // Se for requisição AJAX, retorna JSON; senão, redireciona
@@ -204,6 +213,11 @@ class TaskController extends Controller
     {
         $id = (int) ($params['id'] ?? 0);
         $taskModel = new Task();
+        $task = $taskModel->findById($id);
+        if (!$task) {
+            $this->redirect('/tasks');
+            return;
+        }
         $taskModel->delete($id);
 
         if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {

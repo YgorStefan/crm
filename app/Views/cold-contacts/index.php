@@ -178,7 +178,7 @@
         </div>
 
         <!-- Corpo da modal: tabela de contatos -->
-        <div id="modalBody" class="flex-1 overflow-y-auto px-6 py-4">
+        <div id="modalBody" class="flex-1 overflow-y-auto overflow-x-auto px-6 py-4">
             <p class="text-gray-400 text-sm text-center">Carregando...</p>
         </div>
 

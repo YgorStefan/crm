@@ -62,7 +62,7 @@
             class="fixed inset-y-0 left-0 z-50 w-64 bg-sidebar text-white flex flex-col transform -translate-x-full transition-transform duration-300 lg:relative lg:translate-x-0">
             <div class="px-6 py-5 border-b border-indigo-800 flex justify-between items-center">
                 <div>
-                    <h1 class="text-xl font-bold tracking-wide"><?= APP_NAME ?></h1>
+                    <h1 class="text-xl font-bold tracking-wide"><?= htmlspecialchars(APP_NAME, ENT_QUOTES, 'UTF-8') ?></h1>
                     <p class="text-xs text-indigo-300 mt-1">Gestão de Relacionamento</p>
                 </div>
                 <button id="closeSidebarBtn" class="lg:hidden text-indigo-200 hover:text-white">

@@ -4,7 +4,7 @@
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
     <div>
         <h3 class="text-2xl font-bold text-gray-800">Clientes</h3>
-        <p class="text-sm text-gray-500 mt-1"><?= count($clients) ?> cliente(s) encontrado(s)</p>
+        <p class="text-sm text-gray-500 mt-1"><?= isset($pagination) ? (int) $pagination['total_items'] : count($clients) ?> cliente(s) encontrado(s)</p>
     </div>
     <a href="<?= APP_URL ?>/clients/create"
        class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white
@@ -14,7 +14,7 @@
 </div>
 
 <!-- Filtros de busca -->
-<form method="GET" action="<?= APP_URL ?>/clients"
+<form id="filterForm" method="GET" action="<?= APP_URL ?>/clients"
       class="bg-white rounded-xl shadow-sm border border-gray-100 p-4 mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
 
     <input type="text" name="search" value="<?= htmlspecialchars($filters['search'], ENT_QUOTES, 'UTF-8') ?>"
@@ -57,6 +57,24 @@
         </a>
     </div>
 </form>
+<script nonce="<?= CSP_NONCE ?>">
+// Ao submeter o formulário de filtros, reseta para a página 1
+(function () {
+    var filterForm = document.getElementById('filterForm');
+    if (filterForm) {
+        filterForm.addEventListener('submit', function () {
+            var pageInput = this.querySelector('input[name="page"]');
+            if (!pageInput) {
+                pageInput = document.createElement('input');
+                pageInput.type = 'hidden';
+                pageInput.name = 'page';
+                this.appendChild(pageInput);
+            }
+            pageInput.value = '1';
+        });
+    }
+})();
+</script>
 
 <!-- Tabela de clientes -->
 <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -148,3 +166,7 @@
     </div>
     <?php endif; ?>
 </div>
+
+<?php if (isset($pagination)): ?>
+<?php require VIEW_PATH . '/components/pagination.php'; ?>
+<?php endif; ?>
