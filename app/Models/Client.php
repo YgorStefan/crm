@@ -71,7 +71,7 @@ class Client extends Model
                 ps.color AS stage_color,
                 ps.is_won_stage,
                 u.name   AS assigned_name,
-                ANY_VALUE(cs.tipo) AS tipo_venda
+                MAX(cs.tipo) AS tipo_venda
             FROM clients c
             LEFT JOIN pipeline_stages ps ON ps.id = c.pipeline_stage_id
             LEFT JOIN users u            ON u.id  = c.assigned_to
