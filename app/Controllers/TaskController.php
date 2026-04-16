@@ -134,10 +134,14 @@ class TaskController extends Controller
 
         if (empty($title) || empty($dueDate)) {
             $this->flash('error', 'Título e prazo são obrigatórios.');
-            // Redireciona de volta para a origem
-            $ref = $_SERVER['HTTP_REFERER'] ?? APP_URL . '/tasks';
-            header('Location: ' . $ref);
-            exit;
+            // Redireciona para a tela de tarefas (Referer header é forjável)
+            $clientId = $this->inputRaw('client_id');
+            if ($clientId) {
+                $this->redirect('/clients/' . (int) $clientId);
+            } else {
+                $this->redirect('/tasks');
+            }
+            return;
         }
 
         // Converte datetime-local para MySQL
