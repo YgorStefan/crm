@@ -22,8 +22,14 @@ class AuthMiddleware
         // Verifica se a chave 'user' existe na sessão
         // (populada pelo AuthController após login bem-sucedido)
         if (empty($_SESSION['user']['id'])) {
-            // Salva a URL atual para redirecionar de volta após o login
-            $_SESSION['redirect_after_login'] = $_SERVER['REQUEST_URI'];
+            // Salva apenas o path relativo (sem o prefixo do APP_URL) para
+            // evitar duplicação quando AuthController concatenar APP_URL novamente.
+            $uri = strtok($_SERVER['REQUEST_URI'], '?');
+            $basePath = parse_url(APP_URL, PHP_URL_PATH) ?? '';
+            if ($basePath !== '' && str_starts_with($uri, $basePath)) {
+                $uri = substr($uri, strlen($basePath));
+            }
+            $_SESSION['redirect_after_login'] = '/' . ltrim($uri, '/');
 
             // Redireciona para a página de login
             header('Location: ' . APP_URL . '/login');
