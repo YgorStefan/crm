@@ -16,9 +16,11 @@ require_once dirname(__DIR__) . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPAR
 //    As constantes SESSION_NAME e SESSION_LIFETIME são definidas em
 //    config/app.php, por isso o require acima vem primeiro.
 // ------------------------------------------------------------------
-ini_set('session.cookie_httponly', '1');   // Previne acesso via JS (mitigação de XSS)
-ini_set('session.cookie_samesite', 'Strict'); // Previne envio cross-site (mitigação de CSRF)
-ini_set('session.use_strict_mode', '1');   // Rejeita IDs de sessão não emitidos pelo servidor
+ini_set('session.cookie_httponly', '1');
+ini_set('session.cookie_samesite', 'Strict');
+ini_set('session.use_strict_mode', '1');
+ini_set('session.use_only_cookies', '1');
+ini_set('session.use_trans_sid', '0');
 if (defined('APP_ENV') && APP_ENV === 'production') {
     ini_set('session.cookie_secure', '1');
 }
