@@ -61,8 +61,9 @@ env\ crm.txt
 config/database.php
 
 # --- Scripts de desenvolvimento descartáveis ---
-scripts/smoke/
-scripts/migrations/
+scripts/
+tailwind.config.js
+resources/
 
 # --- Logs gerados em runtime ---
 storage/
