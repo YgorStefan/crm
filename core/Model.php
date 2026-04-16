@@ -12,6 +12,9 @@ abstract class Model
     // Nome da tabela no banco (cada model filho deve redefinir esta propriedade)
     protected string $table = '';
 
+    // Modelos globais (tabelas sem tenant_id) devem sobrescrever com true
+    protected bool $isGlobal = false;
+
     public function __construct()
     {
         // Obtém a conexão singleton ao instanciar qualquer model
@@ -19,15 +22,26 @@ abstract class Model
     }
 
     /**
-     * Busca um registro pelo ID primário.
+     * Busca um registro pelo ID primário, com escopo de tenant para modelos não-globais.
      *
      * @param  int   $id  Chave primária do registro
      * @return array|false  Array associativo com o registro, ou false se não encontrado
+     * @throws \RuntimeException  Se chamado sem contexto de tenant em modelo não-global
      */
     public function findById(int $id): array|bool
     {
-        $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE id = :id LIMIT 1");
-        $stmt->execute([':id' => $id]);
+        if ($this->isGlobal) {
+            $stmt = $this->db->prepare("SELECT * FROM {$this->table} WHERE id = :id LIMIT 1");
+            $stmt->execute([':id' => $id]);
+            return $stmt->fetch();
+        }
+        if (!isset($_SESSION['tenant_id'])) {
+            throw new \RuntimeException('findById() called without tenant context on non-global model');
+        }
+        $stmt = $this->db->prepare(
+            "SELECT * FROM {$this->table} WHERE id = :id AND tenant_id = :tenant_id LIMIT 1"
+        );
+        $stmt->execute([':id' => $id, ':tenant_id' => (int) $_SESSION['tenant_id']]);
         return $stmt->fetch();
     }
 
@@ -64,5 +78,15 @@ abstract class Model
     public function lastInsertId(): string
     {
         return $this->db->lastInsertId();
+    }
+
+    /**
+     * Retorna o tenant_id da sessão atual.
+     *
+     * @return int
+     */
+    protected function currentTenantId(): int
+    {
+        return (int) ($_SESSION['tenant_id'] ?? 0);
     }
 }

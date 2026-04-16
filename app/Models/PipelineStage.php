@@ -8,6 +8,9 @@ class PipelineStage extends Model
 {
     protected string $table = 'pipeline_stages';
 
+    // pipeline_stages é uma tabela global (sem tenant_id), compartilhada por todos os tenants
+    protected bool $isGlobal = true;
+
     /**
      * Retorna todas as etapas ordenadas pela posição (coluna do Kanban).
      */
