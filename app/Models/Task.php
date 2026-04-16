@@ -16,6 +16,7 @@ class Task extends Model
      */
     public function findAllWithRelations(array $filters = []): array
     {
+        $tenantId = $this->currentTenantId();
         $sql = "
             SELECT
                 t.*,
@@ -23,12 +24,14 @@ class Task extends Model
                 u.name  AS assigned_name,
                 cb.name AS created_by_name
             FROM tasks t
-            LEFT JOIN clients c ON c.id = t.client_id
+            LEFT JOIN clients c ON c.id = t.client_id AND c.tenant_id = :tenant_id_c
             LEFT JOIN users   u ON u.id = t.assigned_to
             LEFT JOIN users  cb ON cb.id = t.created_by
-            WHERE 1=1
+            WHERE t.assigned_to IN (
+                SELECT id FROM users WHERE tenant_id = :tenant_id_u
+            )
         ";
-        $params = [];
+        $params = [':tenant_id_c' => $tenantId, ':tenant_id_u' => $tenantId];
 
         if (!empty($filters['status'])) {
             $sql .= " AND t.status = :status";
@@ -140,15 +143,19 @@ class Task extends Model
      */
     public function findOverdue(?int $userId = null): array
     {
+        $tenantId = $this->currentTenantId();
         $sql = "
             SELECT t.*, c.name AS client_name, u.name AS assigned_name
             FROM tasks t
-            LEFT JOIN clients c ON c.id = t.client_id
+            LEFT JOIN clients c ON c.id = t.client_id AND c.tenant_id = :tenant_id_c
             LEFT JOIN users   u ON u.id = t.assigned_to
             WHERE t.due_date < NOW()
               AND t.status IN ('pending','in_progress')
+              AND t.assigned_to IN (
+                  SELECT id FROM users WHERE tenant_id = :tenant_id_u
+              )
         ";
-        $params = [];
+        $params = [':tenant_id_c' => $tenantId, ':tenant_id_u' => $tenantId];
         if ($userId) {
             $sql .= " AND t.assigned_to = :uid";
             $params[':uid'] = $userId;
@@ -209,13 +216,17 @@ class Task extends Model
      */
     public function findById(int $id): array|bool
     {
+        $tenantId = $this->currentTenantId();
         $stmt = $this->db->prepare("
             SELECT t.*, c.name AS client_name
             FROM tasks t
-            LEFT JOIN clients c ON c.id = t.client_id
+            LEFT JOIN clients c ON c.id = t.client_id AND c.tenant_id = :tenant_id_c
             WHERE t.id = :id
+              AND t.assigned_to IN (
+                  SELECT id FROM users WHERE tenant_id = :tenant_id_u
+              )
         ");
-        $stmt->execute([':id' => $id]);
+        $stmt->execute([':id' => $id, ':tenant_id_c' => $tenantId, ':tenant_id_u' => $tenantId]);
         return $stmt->fetch();
     }
 }
