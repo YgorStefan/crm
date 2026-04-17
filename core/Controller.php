@@ -92,7 +92,8 @@ abstract class Controller
 
     /**
      * Verifica se o usuário logado tem o papel exigido.
-     * Caso contrário, redireciona para o dashboard com mensagem de acesso negado.
+     * Para requisições JSON/AJAX: retorna 403 com erro estruturado.
+     * Para requisições HTML: redireciona para /dashboard com flash message.
      *
      * @param  string|array  $roles  Role(s) permitidos: 'admin' ou ['admin', 'seller']
      */
