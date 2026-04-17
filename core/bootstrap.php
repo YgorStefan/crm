@@ -24,6 +24,7 @@ ini_set('session.use_trans_sid', '0');
 if (defined('APP_ENV') && APP_ENV === 'production') {
     ini_set('session.cookie_secure', '1');
 }
+ini_set('session.gc_maxlifetime', (string) SESSION_LIFETIME);
 
 session_name(SESSION_NAME);
 session_start();
@@ -57,3 +58,14 @@ spl_autoload_register(function (string $className): void {
 // 4. Helpers globais
 // ------------------------------------------------------------------
 require_once CORE_PATH . DS . 'helpers.php';
+
+// Garantir proteção do diretório de logs desde o bootstrap (não lazy)
+$_logDir     = ROOT_PATH . '/storage/logs';
+$_htaccessLog = $_logDir . '/.htaccess';
+if (!is_dir($_logDir)) {
+    mkdir($_logDir, 0755, true);
+}
+if (!file_exists($_htaccessLog)) {
+    file_put_contents($_htaccessLog, "<IfModule mod_authz_core.c>\n    Require all denied\n</IfModule>\n<IfModule !mod_authz_core.c>\n    Deny from all\n</IfModule>\n");
+}
+unset($_logDir, $_htaccessLog);
