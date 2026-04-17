@@ -48,5 +48,20 @@ class AuthMiddleware
 
         // Atualiza o timestamp de última atividade
         $_SESSION['last_activity'] = time();
+
+        // Forçar troca de senha se flag ativa
+        // Exceção: o próprio /profile/change-password e /logout não são bloqueados
+        if (!empty($_SESSION['user']['password_must_change'])) {
+            $uri = strtok($_SERVER['REQUEST_URI'], '?');
+            $basePath = parse_url(APP_URL, PHP_URL_PATH) ?? '';
+            $path = ($basePath !== '' && str_starts_with($uri, $basePath))
+                ? substr($uri, strlen($basePath))
+                : $uri;
+            $allowed = ['/profile/change-password', '/logout'];
+            if (!in_array('/' . ltrim($path, '/'), $allowed, true)) {
+                header('Location: ' . APP_URL . '/profile/change-password');
+                exit;
+            }
+        }
     }
 }
