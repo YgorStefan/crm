@@ -68,5 +68,4 @@ resources/
 # --- Logs gerados em runtime ---
 storage/
 
-# --- Artefatos de planejamento interno ---
-docs/superpowers/
+# docs/superpowers/ removido do ignore — specs e planos são versionados
