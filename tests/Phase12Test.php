@@ -86,3 +86,11 @@ $lsrc = file_get_contents(ROOT_PATH . '/core/Logger.php');
 ok('Logger não escreve .htaccess no handle()',
     preg_match('/function log[^}]*htaccess/s', $lsrc) === 0
     && preg_match('/function log[^}]*\.htaccess/s', $lsrc) === 0);
+
+// ── 9. filter_var — FILTER_SANITIZE_EMAIL removido ───────────────────────────
+section('9. filter_var — sem FILTER_SANITIZE_EMAIL');
+foreach (['AuthController', 'UserController'] as $ctrl) {
+    $src = file_get_contents(ROOT_PATH . "/app/Controllers/{$ctrl}.php");
+    ok("{$ctrl} não usa FILTER_SANITIZE_EMAIL", strpos($src, 'FILTER_SANITIZE_EMAIL') === false);
+    ok("{$ctrl} usa FILTER_VALIDATE_EMAIL",      strpos($src, 'FILTER_VALIDATE_EMAIL') !== false);
+}
