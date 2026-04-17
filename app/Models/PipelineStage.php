@@ -8,8 +8,31 @@ class PipelineStage extends Model
 {
     protected string $table = 'pipeline_stages';
 
-    // pipeline_stages é uma tabela global (sem tenant_id), compartilhada por todos os tenants
-    protected bool $isGlobal = true;
+    protected bool $isGlobal = false;
+
+    /**
+     * Busca stage por ID dentro do tenant correto.
+     */
+    public function findById(int $id): array|bool
+    {
+        $stmt = $this->db->prepare(
+            "SELECT * FROM pipeline_stages WHERE id = :id AND tenant_id = :tenant_id LIMIT 1"
+        );
+        $stmt->execute([':id' => $id, ':tenant_id' => $this->currentTenantId()]);
+        return $stmt->fetch();
+    }
+
+    /**
+     * Deleta stage garantindo que pertence ao tenant.
+     */
+    public function delete(int $id): bool
+    {
+        $stmt = $this->db->prepare(
+            "DELETE FROM pipeline_stages WHERE id = :id AND tenant_id = :tenant_id"
+        );
+        $stmt->execute([':id' => $id, ':tenant_id' => $this->currentTenantId()]);
+        return $stmt->rowCount() > 0;
+    }
 
     /**
      * Retorna todas as etapas ordenadas pela posição (coluna do Kanban).
