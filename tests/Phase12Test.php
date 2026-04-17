@@ -94,3 +94,16 @@ foreach (['AuthController', 'UserController'] as $ctrl) {
     ok("{$ctrl} não usa FILTER_SANITIZE_EMAIL", strpos($src, 'FILTER_SANITIZE_EMAIL') === false);
     ok("{$ctrl} usa FILTER_VALIDATE_EMAIL",      strpos($src, 'FILTER_VALIDATE_EMAIL') !== false);
 }
+
+// ── Resultado final ───────────────────────────────────────────────────────────
+$total = $results['pass'] + $results['fail'];
+echo "\n\033[1m────────────────────────────────────\033[0m\n";
+echo "\033[1mResultado: {$results['pass']}/{$total} testes passaram\033[0m\n";
+
+if ($results['fail'] > 0) {
+    echo "\n\033[31mFalharam:\033[0m\n";
+    foreach ($results['errors'] as $e) { echo "  • {$e}\n"; }
+    exit(1);
+}
+echo "\033[32mTodos os testes passaram.\033[0m\n";
+exit(0);
