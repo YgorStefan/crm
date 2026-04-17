@@ -42,6 +42,7 @@ class PipelineController extends Controller
 
         if (!$clientId || !$stageId) {
             $this->json(['success' => false, 'message' => 'Parâmetros inválidos.'], 422);
+            return;
         }
 
         $clientModel = new Client();
@@ -151,6 +152,38 @@ class PipelineController extends Controller
 
         $this->json([
             'success' => $ok,
+            'csrf_token' => CsrfMiddleware::getToken(),
+        ]);
+    }
+
+    /**
+     * Ativa ou desativa a flag "etapa de venda fechada" (FRAG-03).
+     */
+    public function toggleWonStage(array $params = []): void
+    {
+        $this->requireRole('admin');
+        $id = (int) ($params['id'] ?? 0);
+
+        if (!$id) {
+            $this->json(['success' => false, 'message' => 'Parâmetros inválidos.'], 422);
+            return;
+        }
+
+        $stageModel = new PipelineStage();
+
+        // Lê o estado atual do DB e inverte (UI-SPEC: body contém apenas _csrf_token)
+        $stage = $stageModel->findById($id);
+        if (!$stage) {
+            $this->json(['success' => false, 'message' => 'Etapa não encontrada.'], 404);
+            return;
+        }
+
+        $newIsWon = !(bool) $stage['is_won_stage'];
+        $ok = $stageModel->setWonStage($id, $newIsWon);
+
+        $this->json([
+            'success' => $ok,
+            'is_won_stage' => $newIsWon ? 1 : 0,
             'csrf_token' => CsrfMiddleware::getToken(),
         ]);
     }

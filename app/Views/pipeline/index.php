@@ -46,7 +46,7 @@
                     <?= count($stageClients) ?>
                 </span>
                 <?php if ($totalValue > 0): ?>
-                <div class="kanban-value-total text-xs opacity-80 mt-0.5">R$ <?= number_format($totalValue, 2, ',', '.') ?></div>
+                <div class="kanban-value-total text-xs opacity-80 mt-0.5"><?= format_currency($totalValue) ?></div>
                 <?php endif; ?>
             </div>
         </div>
@@ -80,7 +80,7 @@
                 <div class="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
                     <?php if ($client['deal_value'] > 0): ?>
                     <span class="text-xs font-bold text-green-700">
-                        R$ <?= number_format($client['deal_value'], 2, ',', '.') ?>
+                        <?= format_currency($client['deal_value']) ?>
                     </span>
                     <?php else: ?>
                     <span></span>
@@ -118,4 +118,4 @@
 </div>
 
 <!-- Script Kanban (drag & drop + AJAX) -->
-<script src="<?= APP_URL ?>/assets/js/pipeline.js"></script>
+<script nonce="<?= CSP_NONCE ?>" src="<?= APP_URL ?>/assets/js/pipeline.js"></script>

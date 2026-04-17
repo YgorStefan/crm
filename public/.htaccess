@@ -11,6 +11,10 @@ Options -Indexes
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
+    # Força HTTPS
+    RewriteCond %{HTTPS} off
+    RewriteRule ^(.*)$ https://%{HTTP_HOST}%{REQUEST_URI} [L,R=301]
+
     # Se a requisição for para um arquivo ou diretório que EXISTE fisicamente,
     # serve diretamente (ex.: /public/assets/css/app.css, /public/uploads/foto.jpg)
     RewriteCond %{REQUEST_FILENAME} !-f
@@ -22,10 +26,18 @@ Options -Indexes
 
 # Cabeçalhos de segurança HTTP
 <IfModule mod_headers.c>
-    # Previne que o browser "adivinhe" o tipo de conteúdo (MIME sniffing)
+    # Strict-Transport-Security (HSTS) — SEC-01
+    Header set Strict-Transport-Security "max-age=31536000; includeSubDomains"
+
+    # Impede carregamento em iframes (clickjacking) — SEC-01
+    Header set X-Frame-Options "DENY"
+
+    # Previne MIME sniffing
     Header set X-Content-Type-Options "nosniff"
-    # Ativa proteção XSS do browser (legado, ainda útil em browsers antigos)
-    Header set X-XSS-Protection "1; mode=block"
-    # Impede que o site seja carregado em iframes (clickjacking)
-    Header set X-Frame-Options "SAMEORIGIN"
+
+    # Controla Referer em navegação cross-origin
+    Header set Referrer-Policy "strict-origin-when-cross-origin"
+
+    # Desabilita APIs sensíveis não utilizadas
+    Header set Permissions-Policy "geolocation=(), microphone=(), camera=()"
 </IfModule>

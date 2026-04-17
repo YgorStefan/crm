@@ -86,10 +86,11 @@ class UserController extends Controller
         $this->requireRole('admin');
         $id = (int) ($params['id'] ?? 0);
 
+        $requestedRole = $this->inputRaw('role', 'seller');
         $data = [
             'name' => $this->input('name'),
             'email' => filter_var(trim($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL),
-            'role' => $this->inputRaw('role', 'seller'),
+            'role' => in_array($requestedRole, ['admin', 'seller', 'viewer'], true) ? $requestedRole : 'seller',
             'is_active' => isset($_POST['is_active']) ? 1 : 0,
         ];
 

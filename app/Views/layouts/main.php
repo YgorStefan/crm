@@ -1,3 +1,4 @@
+<?php $safeAppUrl = htmlspecialchars(APP_URL, ENT_QUOTES, 'UTF-8'); ?>
 <!DOCTYPE html>
 <html lang="pt-BR">
 
@@ -7,48 +8,10 @@
     <!-- descomentar linha abaixo caso tenha o favicon.ico -->
     <link rel="icon" href="data:,">
     <title><?= htmlspecialchars($title ?? APP_NAME, ENT_QUOTES, 'UTF-8') ?></title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-        tailwind.config = {
-            theme: {
-                extend: {
-                    colors: {
-                        primary: { 50: '#eef2ff', 100: '#e0e7ff', 500: '#6366f1', 600: '#4f46e5', 700: '#4338ca' },
-                        sidebar: '#1e1b4b',
-                    }
-                }
-            }
-        }
-    </script>
-    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.20/index.global.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.20/locales-all.global.min.js"></script>
-    <style>
-        /* Scrollbar personalizada para o Kanban */
-        .kanban-scroll::-webkit-scrollbar {
-            height: 6px;
-        }
-
-        .kanban-scroll::-webkit-scrollbar-track {
-            background: #f1f5f9;
-        }
-
-        .kanban-scroll::-webkit-scrollbar-thumb {
-            background: #94a3b8;
-            border-radius: 3px;
-        }
-
-        /* Cartão Kanban sendo arrastado */
-        .dragging {
-            opacity: 0.4;
-            transform: rotate(2deg);
-        }
-
-        .drag-over {
-            outline: 2px dashed #4f46e5;
-            outline-offset: 2px;
-        }
-    </style>
+    <link rel="stylesheet" href="<?= $safeAppUrl ?>/assets/css/tailwind.css">
+    <script nonce="<?= CSP_NONCE ?>" src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script nonce="<?= CSP_NONCE ?>" src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.20/index.global.min.js"></script>
+    <script nonce="<?= CSP_NONCE ?>" src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.20/locales-all.global.min.js"></script>
 </head>
 
 <body class="bg-gray-100 font-sans text-gray-800">
@@ -62,7 +25,7 @@
             class="fixed inset-y-0 left-0 z-50 w-64 bg-sidebar text-white flex flex-col transform -translate-x-full transition-transform duration-300 lg:relative lg:translate-x-0">
             <div class="px-6 py-5 border-b border-indigo-800 flex justify-between items-center">
                 <div>
-                    <h1 class="text-xl font-bold tracking-wide"><?= APP_NAME ?></h1>
+                    <h1 class="text-xl font-bold tracking-wide"><?= htmlspecialchars(APP_NAME, ENT_QUOTES, 'UTF-8') ?></h1>
                     <p class="text-xs text-indigo-300 mt-1">Gestão de Relacionamento</p>
                 </div>
                 <button id="closeSidebarBtn" class="lg:hidden text-indigo-200 hover:text-white">
@@ -72,14 +35,6 @@
 
             <nav class="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
                 <?php
-                // Função auxiliar para destacar o item de menu ativo
-                function navLink(string $href, string $icon, string $label, string $currentPath): string
-                {
-                    $active = ($currentPath === $href || str_starts_with($currentPath, $href . '/'));
-                    $base = 'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors';
-                    $cls = $active ? "$base bg-indigo-600 text-white" : "$base text-indigo-200 hover:bg-indigo-800 hover:text-white";
-                    return "<a href=\"" . APP_URL . $href . "\" class=\"$cls\">$icon <span>$label</span></a>";
-                }
                 // Caminho atual para destacar o item ativo
                 $basePath = parse_url(APP_URL, PHP_URL_PATH) ?? '';
                 $currentPath = substr($_SERVER['REQUEST_URI'], strlen($basePath));
@@ -114,6 +69,7 @@
                     <div class="pt-3 mt-3 border-t border-indigo-800">
                         <p class="text-xs uppercase text-indigo-400 px-3 mb-2">Administração</p>
                         <?= navLink('/admin/users', '👤', 'Usuários', $currentPath) ?>
+                        <?= navLink('/settings', '⚙️', 'Configurações', $currentPath) ?>
                     </div>
                 <?php endif; ?>
             </nav>
@@ -127,9 +83,9 @@
                         <p class="text-sm font-medium truncate">
                             <?= htmlspecialchars($_SESSION['user']['name'] ?? '', ENT_QUOTES, 'UTF-8') ?>
                         </p>
-                        <p class="text-xs text-indigo-300 capitalize"><?= $_SESSION['user']['role'] ?? '' ?></p>
+                        <p class="text-xs text-indigo-300 capitalize"><?= htmlspecialchars($_SESSION['user']['role'] ?? '', ENT_QUOTES, 'UTF-8') ?></p>
                     </div>
-                    <a href="<?= APP_URL ?>/logout" title="Sair"
+                    <a href="<?= $safeAppUrl ?>/logout" title="Sair"
                         class="text-indigo-300 hover:text-white flex-shrink-0 transition-colors">
                         <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"
                             stroke="currentColor" class="w-6 h-6">
@@ -213,7 +169,7 @@
         </div>
     </div>
 
-    <script>
+    <script nonce="<?= CSP_NONCE ?>">
         // Relógio em tempo real no topbar
         function updateClock() {
             const now = new Date();
@@ -254,10 +210,10 @@
         setTimeout(() => document.getElementById('flashMsg')?.remove(), 5000);
     </script>
 
-    <script>
+    <script nonce="<?= CSP_NONCE ?>">
         // Polling leve a cada 60s — sem WebSocket/ServiceWorker
         (function () {
-            const appUrl = '<?= APP_URL ?>';
+            const appUrl = <?= json_encode(APP_URL) ?>;
             const NOTIFIED = new Set();
             const notifAlerts = [];
 

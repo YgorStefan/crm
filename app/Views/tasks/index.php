@@ -128,7 +128,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="<?= CSP_NONCE ?>">
     document.addEventListener('DOMContentLoaded', function () {
         const calendarEl = document.getElementById('fc-calendar');
         const appUrl = '<?= APP_URL ?>';

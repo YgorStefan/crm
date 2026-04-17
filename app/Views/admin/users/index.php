@@ -15,6 +15,7 @@ $roleBadges = ['admin' => 'bg-purple-100 text-purple-700', 'seller' => 'bg-blue-
 </div>
 
 <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="overflow-x-auto">
     <table class="w-full text-sm">
         <thead class="bg-gray-50 border-b border-gray-200">
             <tr>
@@ -57,4 +58,5 @@ $roleBadges = ['admin' => 'bg-purple-100 text-purple-700', 'seller' => 'bg-blue-
             <?php endforeach; ?>
         </tbody>
     </table>
+    </div>
 </div>

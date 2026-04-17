@@ -14,7 +14,24 @@ class ColdContactController extends Controller
     public function index(array $params = []): void
     {
         $model = new ColdContact();
-        $rawSummaries = $model->findMonthSummaries();
+
+        // Paginação dos cards mensais
+        $page = max(1, (int) ($_GET['page'] ?? 1));
+        $allowedLimits = [15, 25, 50, 100];
+        if (!empty($_GET['per_page'])) {
+            $requestedLimit = (int) $_GET['per_page'];
+            if (in_array($requestedLimit, $allowedLimits, true)) {
+                $_SESSION['per_page'] = $requestedLimit;
+            }
+        }
+        $limit = isset($_SESSION['per_page']) && in_array((int) $_SESSION['per_page'], $allowedLimits, true)
+            ? (int) $_SESSION['per_page']
+            : 25;
+        $offset = ($page - 1) * $limit;
+
+        $totalCount = $model->countFindMonthSummaries();
+        $rawSummaries = $model->findMonthSummaries($limit, $offset);
+        $totalPages = (int) ceil($totalCount / $limit);
 
         $meses = [
             '01' => 'Janeiro', '02' => 'Fevereiro', '03' => 'Março',
@@ -30,11 +47,21 @@ class ColdContactController extends Controller
             return $row;
         }, $rawSummaries);
 
+        $pagination_cards = [
+            'current_page' => $page,
+            'total_pages'  => $totalPages,
+            'total_items'  => $totalCount,
+            'per_page'     => $limit,
+            'base_url'     => '/cold-contacts',
+            'query_params' => [],
+        ];
+
         $this->render('cold-contacts/index', [
-            'pageTitle' => 'Contatos Frios',
-            'title'     => 'Contatos Frios — ' . APP_NAME,
-            'summaries' => $summaries,
-            'csrf_token' => CsrfMiddleware::getToken(),
+            'pageTitle'        => 'Contatos Frios',
+            'title'            => 'Contatos Frios — ' . APP_NAME,
+            'summaries'        => $summaries,
+            'csrf_token'       => CsrfMiddleware::getToken(),
+            'pagination_cards' => $pagination_cards,
         ]);
     }
 
@@ -347,35 +374,60 @@ class ColdContactController extends Controller
     }
 
     /**
-     * Retorna JSON com contatos filtrados do mês — usado pela modal JS
+     * Retorna JSON com contatos filtrados do mês — usado pela modal JS.
+     * Suporta paginação via page e per_page, retornando metadados no JSON.
      */
     public function listJson(array $params = []): void
     {
         header('Content-Type: application/json');
         $yearMonth = trim($_GET['month'] ?? '');
         if (empty($yearMonth) || !preg_match('/^\d{4}-\d{2}$/', $yearMonth)) {
-            echo json_encode(['contacts' => []]);
+            echo json_encode(['contacts' => [], 'pagination' => []]);
             exit;
         }
+
         $filters = [];
         if (!empty($_GET['dia']))
             $filters['dia'] = (int) $_GET['dia'];
         if (!empty($_GET['telefone_enviado']))
             $filters['telefone_enviado'] = trim($_GET['telefone_enviado']);
 
+        // Paginação
+        $page = max(1, (int) ($_GET['page'] ?? 1));
+        $allowedLimits = [15, 25, 50, 100];
+        if (!empty($_GET['per_page'])) {
+            $requestedLimit = (int) $_GET['per_page'];
+            if (in_array($requestedLimit, $allowedLimits, true)) {
+                $_SESSION['per_page'] = $requestedLimit;
+            }
+        }
+        $limit = isset($_SESSION['per_page']) && in_array((int) $_SESSION['per_page'], $allowedLimits, true)
+            ? (int) $_SESSION['per_page']
+            : 25;
+        $offset = ($page - 1) * $limit;
+
         try {
             $model = new ColdContact();
-            $contacts = $model->findByMonth($yearMonth, $filters);
+            $totalCount = $model->countByMonth($yearMonth, $filters);
+            $contacts = $model->findByMonth($yearMonth, $filters, $limit, $offset);
+
+            $paginationMeta = [
+                'current_page' => $page,
+                'total_pages'  => (int) ceil($totalCount / $limit),
+                'total_items'  => $totalCount,
+                'per_page'     => $limit,
+            ];
+
             // JSON_INVALID_UTF8_SUBSTITUTE substitui bytes inválidos em vez de retornar false
             $json = json_encode(
-                ['contacts' => $contacts],
+                ['contacts' => $contacts, 'pagination' => $paginationMeta],
                 JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE
             );
-            echo $json !== false ? $json : json_encode(['contacts' => []]);
+            echo $json !== false ? $json : json_encode(['contacts' => [], 'pagination' => []]);
         } catch (\Throwable $e) {
             // Loga a exceção real para diagnóstico; retorna 200 com array vazio
             error_log('[ColdContact listJson] yearMonth=' . $yearMonth . ' exception: ' . $e->getMessage() . ' | ' . $e->getTraceAsString());
-            echo json_encode(['contacts' => []]);
+            echo json_encode(['contacts' => [], 'pagination' => []]);
         }
         exit;
     }

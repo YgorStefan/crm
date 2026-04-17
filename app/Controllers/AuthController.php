@@ -87,12 +87,24 @@ class AuthController extends Controller
             'role' => $user['role'],
             'avatar' => $user['avatar'],
         ];
+        $_SESSION['tenant_id']     = (int) $user['tenant_id'];
         $_SESSION['last_activity'] = time();
 
         // Redireciona para a URL que o usuário tentou acessar antes do login,
         // ou para o dashboard se não houver URL salva
-        $redirect = $_SESSION['redirect_after_login'] ?? (APP_URL . '/dashboard');
+        $savedRedirect = $_SESSION['redirect_after_login'] ?? '';
         unset($_SESSION['redirect_after_login']);
+
+        // Valida que o redirect é um path interno (começa com APP_URL ou é relativo)
+        $redirect = APP_URL . '/dashboard';
+        if ($savedRedirect !== '') {
+            $appUrlBase = rtrim(APP_URL, '/');
+            if (str_starts_with($savedRedirect, $appUrlBase . '/')) {
+                $redirect = $savedRedirect;
+            } elseif (str_starts_with($savedRedirect, '/') && !str_starts_with($savedRedirect, '//')) {
+                $redirect = $appUrlBase . $savedRedirect;
+            }
+        }
 
         header('Location: ' . $redirect);
         exit;

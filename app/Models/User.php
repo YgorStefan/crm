@@ -39,10 +39,11 @@ class User extends Model
     public function create(array $data): int
     {
         $stmt = $this->db->prepare("
-            INSERT INTO users (name, email, password_hash, role, avatar)
-            VALUES (:name, :email, :password_hash, :role, :avatar)
+            INSERT INTO users (tenant_id, name, email, password_hash, role, avatar)
+            VALUES (:tenant_id, :name, :email, :password_hash, :role, :avatar)
         ");
         $stmt->execute([
+            ':tenant_id' => $this->currentTenantId(),
             ':name' => $data['name'],
             ':email' => $data['email'],
             ':password_hash' => $data['password_hash'],
@@ -83,7 +84,8 @@ class User extends Model
             return false;
         }
 
-        $sql = "UPDATE users SET " . implode(', ', $setClauses) . " WHERE id = :id";
+        $sql = "UPDATE users SET " . implode(', ', $setClauses) . " WHERE id = :id AND tenant_id = :tenant_id";
+        $params[':tenant_id'] = $this->currentTenantId();
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return $stmt->rowCount() > 0;
@@ -96,7 +98,11 @@ class User extends Model
      */
     public function findAllActive(): array
     {
-        $stmt = $this->db->query("SELECT id, name, email, role FROM users WHERE is_active = 1 ORDER BY name");
+        $t = $this->currentTenantId();
+        $stmt = $this->db->prepare(
+            "SELECT id, name, email, role FROM users WHERE is_active = 1 AND tenant_id = :tenant_id ORDER BY name"
+        );
+        $stmt->execute([':tenant_id' => $t]);
         return $stmt->fetchAll();
     }
 }

@@ -29,17 +29,47 @@ class ClientController extends Controller
             'tipo_venda' => $_GET['tipo_venda'] ?? '',
         ];
 
-        $clients = $clientModel->findAllWithRelations($filters);
+        // Paginação: página atual
+        $page = max(1, (int) ($_GET['page'] ?? 1));
+
+        // Itens por página: valida e persiste em sessão
+        $allowedLimits = [15, 25, 50, 100];
+        if (!empty($_GET['per_page'])) {
+            $requestedLimit = (int) $_GET['per_page'];
+            if (in_array($requestedLimit, $allowedLimits, true)) {
+                $_SESSION['per_page'] = $requestedLimit;
+            }
+        }
+        $limit = isset($_SESSION['per_page']) && in_array((int) $_SESSION['per_page'], $allowedLimits, true)
+            ? (int) $_SESSION['per_page']
+            : 25;
+
+        $offset = ($page - 1) * $limit;
+
+        $totalCount = $clientModel->countAllWithRelations($filters);
+        $clients = $clientModel->findAllWithRelations($filters, $limit, $offset);
+        $totalPages = (int) ceil($totalCount / $limit);
+
         $stages = $stageModel->findAllOrdered();
         $users = $userModel->findAllActive();
 
+        $pagination = [
+            'current_page' => $page,
+            'total_pages'  => $totalPages,
+            'total_items'  => $totalCount,
+            'per_page'     => $limit,
+            'base_url'     => '/clients',
+            'query_params' => $filters,
+        ];
+
         $this->render('clients/index', [
-            'pageTitle' => 'Clientes',
-            'title' => 'Clientes — ' . APP_NAME,
-            'clients' => $clients,
-            'stages' => $stages,
-            'users' => $users,
-            'filters' => $filters,
+            'pageTitle'  => 'Clientes',
+            'title'      => 'Clientes — ' . APP_NAME,
+            'clients'    => $clients,
+            'stages'     => $stages,
+            'users'      => $users,
+            'filters'    => $filters,
+            'pagination' => $pagination,
         ]);
     }
 
@@ -77,7 +107,7 @@ class ClientController extends Controller
 
         $stageModel = new PipelineStage();
         $stage = $stageModel->findById((int) $stageId);
-        $isVendaFechada = $stage && stripos($stage['name'], 'venda fechada') !== false;
+        $isVendaFechada = $stage && !empty($stage['is_won_stage']);
 
         $data = [
             'name' => $name,
@@ -193,7 +223,7 @@ class ClientController extends Controller
         $stageId = (int) $this->inputRaw('pipeline_stage_id');
         $stageModel = new PipelineStage();
         $stage = $stageModel->findById($stageId);
-        $isVendaFechada = $stage && stripos($stage['name'], 'venda fechada') !== false;
+        $isVendaFechada = $stage && !empty($stage['is_won_stage']);
 
         $data = [
             'name' => $name,
@@ -216,6 +246,11 @@ class ClientController extends Controller
         ];
 
         $clientModel = new Client();
+        $client = $clientModel->findById($id);
+        if (!$client) {
+            $this->redirect('/clients');
+            return;
+        }
         $clientModel->update($id, $data);
 
         $this->flash('success', 'Cliente atualizado com sucesso!');
@@ -229,6 +264,11 @@ class ClientController extends Controller
     {
         $id = (int) ($params['id'] ?? 0);
         $clientModel = new Client();
+        $client = $clientModel->findById($id);
+        if (!$client) {
+            $this->redirect('/clients');
+            return;
+        }
         $clientModel->softDelete($id);
 
         $this->flash('success', 'Cliente removido com sucesso.');
