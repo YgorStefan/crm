@@ -104,10 +104,11 @@ if (col010Exists($pdo, $dbName, $TABLE, 'imported_year_month')) {
     $log('imported_year_month', "Coluna imported_year_month já existe — nada a fazer", true);
 } else {
     $log('imported_year_month', "Adicionando imported_year_month CHAR(7) GENERATED STORED", true);
+    // DATE_FORMAT() não é permitido em GENERATED ALWAYS AS no MariaDB 11.x
     $pdo->exec(
         "ALTER TABLE `{$TABLE}`
          ADD COLUMN imported_year_month CHAR(7)
-             GENERATED ALWAYS AS (DATE_FORMAT(imported_at, '%Y-%m')) STORED"
+             GENERATED ALWAYS AS (CONCAT(YEAR(imported_at), '-', LPAD(MONTH(imported_at), 2, '0'))) STORED"
     );
     $log('imported_year_month.done', "imported_year_month adicionada com sucesso", true);
 }
