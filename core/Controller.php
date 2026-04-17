@@ -105,8 +105,8 @@ abstract class Controller
     }
 
     /**
-     * Retorna um valor sanitizado do array $_POST.
-     * Aplica htmlspecialchars para prevenir XSS nos dados exibidos em HTML.
+     * Retorna valor do $_POST com trim. Sem htmlspecialchars — encoding deve
+     * ser feito nas views (e.g. htmlspecialchars ao exibir, não ao gravar).
      *
      * @param  string  $key      Nome do campo
      * @param  string  $default  Valor padrão se o campo não existir
@@ -114,8 +114,7 @@ abstract class Controller
      */
     protected function input(string $key, string $default = ''): string
     {
-        $value = $_POST[$key] ?? $default;
-        return htmlspecialchars(trim((string) $value), ENT_QUOTES, 'UTF-8');
+        return trim((string) ($_POST[$key] ?? $default));
     }
 
     /**
