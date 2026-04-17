@@ -68,3 +68,10 @@ foreach (['app', 'core', 'config', 'database', 'tests'] as $dir) {
     ok("{$dir}/.htaccess existe",            file_exists($path));
     ok("{$dir}/.htaccess tem Require denied", strpos(file_get_contents($path), 'Require all denied') !== false);
 }
+
+// ── 7. CSP — sem unsafe-inline, sem jsdelivr em connect-src ──────────────────
+section('7. CspMiddleware');
+$src = file_get_contents(ROOT_PATH . '/core/Middleware/CspMiddleware.php');
+ok("sem 'unsafe-inline' no style-src",     strpos($src, "'unsafe-inline'") === false);
+ok("sem cdn.jsdelivr.net em connect-src",   strpos($src, 'cdn.jsdelivr.net') === false);
+ok("style-src usa nonce",                   strpos($src, "nonce-{") !== false || preg_match('/style-src[^;]*nonce/', $src) === 1);
