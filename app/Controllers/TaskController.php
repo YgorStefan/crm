@@ -181,6 +181,11 @@ class TaskController extends Controller
     public function update(array $params = []): void
     {
         $id = (int) ($params['id'] ?? 0);
+        // Check role: viewer and seller authorization
+        $role = $_SESSION['user']['role'] ?? '';
+        $viewer = ($role === 'viewer');
+        $seller = ($role === 'seller');
+        $userId = (int) ($_SESSION['user']['id'] ?? 0);
 
         $data = [];
         if (isset($_POST['status']))
@@ -198,6 +203,27 @@ class TaskController extends Controller
             $this->redirect('/tasks');
             return;
         }
+
+        if ($viewer) {
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+                $this->json(['success' => false, 'error' => 'Acesso negado.'], 403);
+            } else {
+                $this->flash('error', 'Acesso negado: leitores não podem editar tarefas.');
+                $this->redirect('/tasks');
+            }
+            return;
+        }
+
+        if ($seller && (int) $task['assigned_to'] !== $userId && (int) $task['created_by'] !== $userId) {
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+                $this->json(['success' => false, 'error' => 'Acesso negado.'], 403);
+            } else {
+                $this->flash('error', 'Acesso negado: você só pode editar suas próprias tarefas.');
+                $this->redirect('/tasks');
+            }
+            return;
+        }
+
         $taskModel->update($id, $data);
 
         // Se for requisição AJAX, retorna JSON; senão, redireciona
@@ -212,12 +238,39 @@ class TaskController extends Controller
     public function destroy(array $params = []): void
     {
         $id = (int) ($params['id'] ?? 0);
+        // Check role: viewer and seller authorization
+        $role = $_SESSION['user']['role'] ?? '';
+        $viewer = ($role === 'viewer');
+        $seller = ($role === 'seller');
+        $userId = (int) ($_SESSION['user']['id'] ?? 0);
+
         $taskModel = new Task();
         $task = $taskModel->findById($id);
         if (!$task) {
             $this->redirect('/tasks');
             return;
         }
+
+        if ($viewer) {
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+                $this->json(['success' => false, 'error' => 'Acesso negado.'], 403);
+            } else {
+                $this->flash('error', 'Acesso negado: leitores não podem editar tarefas.');
+                $this->redirect('/tasks');
+            }
+            return;
+        }
+
+        if ($seller && (int) $task['assigned_to'] !== $userId && (int) $task['created_by'] !== $userId) {
+            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
+                $this->json(['success' => false, 'error' => 'Acesso negado.'], 403);
+            } else {
+                $this->flash('error', 'Acesso negado: você só pode editar suas próprias tarefas.');
+                $this->redirect('/tasks');
+            }
+            return;
+        }
+
         $taskModel->delete($id);
 
         if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {

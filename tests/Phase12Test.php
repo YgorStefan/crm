@@ -41,3 +41,11 @@ section('3. AuthMiddleware — password_must_change');
 $src = file_get_contents(ROOT_PATH . '/core/Middleware/AuthMiddleware.php');
 ok('verifica password_must_change',       strpos($src, 'password_must_change') !== false);
 ok('redireciona para /profile/change-password', strpos($src, '/profile/change-password') !== false);
+
+// ── 4. TaskController — role auth ────────────────────────────────────────────
+section('4. TaskController — role auth em update/destroy');
+$src = file_get_contents(ROOT_PATH . '/app/Controllers/TaskController.php');
+ok('update() verifica role viewer',   preg_match("/update[^}]*viewer/s", $src) === 1);
+ok('update() verifica role seller',   preg_match("/update[^}]*seller/s", $src) === 1);
+ok('destroy() verifica role viewer',  preg_match("/destroy[^}]*viewer/s", $src) === 1);
+ok('destroy() verifica role seller',  preg_match("/destroy[^}]*seller/s", $src) === 1);
