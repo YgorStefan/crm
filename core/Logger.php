@@ -108,27 +108,12 @@ class Logger
 
     /**
      * Cria o diretório de logs se ainda não existir.
-     * Também escreve um .htaccess de negação para proteger o diretório de
-     * acesso web direto (T-07 — Info Disclosure).
+     * O .htaccess é criado proativamente no bootstrap.php.
      */
     private function ensureLogDir(): void
     {
         if (!is_dir($this->logDir)) {
             mkdir($this->logDir, 0755, true);
-        }
-
-        $htaccess = $this->logDir . '/.htaccess';
-        if (!file_exists($htaccess)) {
-            file_put_contents(
-                $htaccess,
-                "# Bloqueia acesso web direto aos arquivos de log\n" .
-                "<IfModule mod_authz_core.c>\n" .
-                "    Require all denied\n" .
-                "</IfModule>\n" .
-                "<IfModule !mod_authz_core.c>\n" .
-                "    Deny from all\n" .
-                "</IfModule>\n"
-            );
         }
     }
 }

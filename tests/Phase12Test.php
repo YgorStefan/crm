@@ -75,3 +75,14 @@ $src = file_get_contents(ROOT_PATH . '/core/Middleware/CspMiddleware.php');
 ok("sem 'unsafe-inline' no style-src",     strpos($src, "'unsafe-inline'") === false);
 ok("sem cdn.jsdelivr.net em connect-src",   strpos($src, 'cdn.jsdelivr.net') === false);
 ok("style-src usa nonce",                   strpos($src, "nonce-{") !== false || preg_match('/style-src[^;]*nonce/', $src) === 1);
+
+// ── 8. bootstrap.php — session gc e Logger .htaccess ─────────────────────────
+section('8. bootstrap.php e Logger .htaccess');
+$bsrc = file_get_contents(ROOT_PATH . '/core/bootstrap.php');
+ok('bootstrap define session.gc_maxlifetime', strpos($bsrc, 'session.gc_maxlifetime') !== false);
+ok('bootstrap cria .htaccess de storage/logs', strpos($bsrc, 'storage/logs') !== false);
+
+$lsrc = file_get_contents(ROOT_PATH . '/core/Logger.php');
+ok('Logger não escreve .htaccess no handle()',
+    preg_match('/function log[^}]*htaccess/s', $lsrc) === 0
+    && preg_match('/function log[^}]*\.htaccess/s', $lsrc) === 0);
