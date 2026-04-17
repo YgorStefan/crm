@@ -5,7 +5,7 @@
 
 // ---- Autenticação (rotas públicas — sem middleware) ----
 $router->get('/login', 'AuthController', 'loginForm', ['CspMiddleware']);
-$router->post('/login', 'AuthController', 'login', ['CsrfMiddleware', 'CspMiddleware']);
+$router->post('/login', 'AuthController', 'login', ['RateLimitMiddleware', 'CsrfMiddleware', 'CspMiddleware']);
 $router->get('/logout', 'AuthController', 'logout', ['AuthMiddleware', 'CspMiddleware']);
 
 // ---- Dashboard ----
