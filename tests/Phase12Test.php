@@ -49,3 +49,14 @@ ok('update() verifica role viewer',   preg_match("/update[^}]*viewer/s", $src) =
 ok('update() verifica role seller',   preg_match("/update[^}]*seller/s", $src) === 1);
 ok('destroy() verifica role viewer',  preg_match("/destroy[^}]*viewer/s", $src) === 1);
 ok('destroy() verifica role seller',  preg_match("/destroy[^}]*seller/s", $src) === 1);
+
+// ── 5. Controller::requireRole() — 403 para JSON ─────────────────────────────
+section('5. Controller::requireRole() — 403 para JSON');
+
+require_once ROOT_PATH . '/core/Controller.php';
+
+$src = file_get_contents(ROOT_PATH . '/core/Controller.php');
+ok('requireRole detecta Accept JSON',          strpos($src, 'application/json') !== false);
+ok('requireRole retorna 403 para JSON',         strpos($src, '403') !== false);
+ok('redirect() rejeita paths com ://',          strpos($src, '://') !== false && strpos($src, "str_contains(\$path, '://')") !== false);
+ok('redirect() rejeita paths sem /inicial',    strpos($src, "str_starts_with(\$path, '/')") !== false);
