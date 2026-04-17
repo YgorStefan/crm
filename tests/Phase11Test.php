@@ -83,3 +83,14 @@ ok('store() instancia Client model',      strpos($src, 'new Client()') !== false
 ok('store() usa findById no clientId',    preg_match('/store.*?findById\(\$clientId\)/s', $src) === 1);
 ok('update() valida client via findById', preg_match('/update.*?findById/s', $src) === 1);
 ok('usa App\Models\Client (use statement)', strpos($src, 'use App\Models\Client') !== false);
+
+// ── 5. PipelineStage — isGlobal=false + overrides ────────────────────────────
+section('5. PipelineStage — tenant gate em findById/delete');
+
+$src = file_get_contents(ROOT_PATH . '/app/Models/PipelineStage.php');
+
+ok('isGlobal = false',                          strpos($src, 'isGlobal = false') !== false);
+ok('sobrescreve findById',                      preg_match('/public function findById/', $src) === 1);
+ok('findById usa tenant_id no WHERE',           preg_match('/findById.*?tenant_id/s', $src) === 1);
+ok('sobrescreve delete',                        preg_match('/public function delete/', $src) === 1);
+ok('delete usa tenant_id no WHERE',             preg_match('/public function delete.*?tenant_id/s', $src) === 1);
