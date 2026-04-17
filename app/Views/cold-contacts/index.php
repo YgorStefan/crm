@@ -112,6 +112,10 @@
             <?php endforeach; ?>
         </div>
     <?php endif; ?>
+
+    <?php if (isset($pagination_cards)): ?>
+    <?php $pagination = $pagination_cards; require VIEW_PATH . '/components/pagination.php'; ?>
+    <?php endif; ?>
 </div>
 
 <!-- Modal de listagem de contatos -->
@@ -178,7 +182,7 @@
         </div>
 
         <!-- Corpo da modal: tabela de contatos -->
-        <div id="modalBody" class="flex-1 overflow-y-auto px-6 py-4">
+        <div id="modalBody" class="flex-1 overflow-y-auto overflow-x-auto px-6 py-4">
             <p class="text-gray-400 text-sm text-center">Carregando...</p>
         </div>
 
@@ -190,15 +194,15 @@
 </div>
 
 <!-- Injeção do CSRF token e appUrl para o JS -->
-<script>
+<script nonce="<?= CSP_NONCE ?>">
     window.CSRF_TOKEN = '<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>';
     window.APP_URL = '<?= APP_URL ?>';
 </script>
 
 <!-- SheetJS para conversão client-side de XLS/XLSX para CSV -->
-<script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+<script nonce="<?= CSP_NONCE ?>" src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
 
-<script>
+<script nonce="<?= CSP_NONCE ?>">
     // JS sem biblioteca de modal
     (function () {
         const modal = document.getElementById('modalColdContacts');
@@ -214,6 +218,7 @@
 
         let currentYearMonth = '';
         let currentMonthLabel = '';
+        let currentPage = 1;
 
         // ----- Abrir modal ao clicar no card -----
         document.querySelectorAll('.btn-open-modal').forEach(function (btn) {
@@ -223,9 +228,10 @@
                 modalTitle.textContent = currentMonthLabel.charAt(0).toUpperCase() + currentMonthLabel.slice(1);
                 filterDia.value = '';
                 filterTelEnv.value = '';
+                currentPage = 1;
                 hideBulkBar();
                 modal.classList.remove('hidden');
-                loadContacts();
+                loadContacts(1);
             });
         });
 
@@ -276,12 +282,16 @@
         modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
         function closeModal() { modal.classList.add('hidden'); hideBulkBar(); }
 
-        // ----- Filtros -----
-        document.getElementById('btnApplyFilter').addEventListener('click', loadContacts);
+        // ----- Filtros (resetam para página 1) -----
+        document.getElementById('btnApplyFilter').addEventListener('click', function () {
+            currentPage = 1;
+            loadContacts(1);
+        });
         document.getElementById('btnClearFilter').addEventListener('click', function () {
             filterDia.value = '';
             filterTelEnv.value = '';
-            loadContacts();
+            currentPage = 1;
+            loadContacts(1);
         });
 
         // ----- Exportar CSV -----
@@ -351,7 +361,7 @@
                 if (data.success) {
                     if (data.csrf_token) window.CSRF_TOKEN = data.csrf_token;
                     hideBulkBar();
-                    loadContacts();
+                    loadContacts(currentPage);
                 } else {
                     alert('Erro: ' + (data.error || 'Tente novamente.'));
                 }
@@ -361,24 +371,28 @@
         });
 
         // ----- Carregar lista via AJAX -----
-        async function loadContacts() {
+        async function loadContacts(page) {
+            page = page || currentPage || 1;
+            currentPage = page;
             modalBody.innerHTML = '<p class="text-gray-400 text-sm text-center py-8">Carregando...</p>';
             const params = buildParams();
-            const url = window.APP_URL + '/cold-contacts/list?month=' + encodeURIComponent(currentYearMonth) + params;
+            const url = window.APP_URL + '/cold-contacts/list?month=' + encodeURIComponent(currentYearMonth)
+                + '&page=' + encodeURIComponent(page) + params;
 
             try {
                 const resp = await fetch(url, { credentials: 'same-origin' });
                 if (!resp.ok) throw new Error('HTTP ' + resp.status);
                 const data = await resp.json();
-                renderTable(data.contacts || []);
+                renderTable(data.contacts || [], data.pagination || null);
             } catch (e) {
                 modalBody.innerHTML = '<p class="text-red-500 text-sm text-center py-8">Erro ao carregar contatos. Tente novamente.</p>';
             }
         }
 
         // ----- Renderizar tabela de contatos -----
-        function renderTable(contacts) {
-            modalTotal.textContent = contacts.length + ' contato(s) exibido(s)';
+        function renderTable(contacts, pagination) {
+            var totalShown = pagination ? pagination.total_items : contacts.length;
+            modalTotal.textContent = totalShown + ' contato(s) no total';
 
             if (contacts.length === 0) {
                 modalBody.innerHTML = '<p class="text-gray-400 text-sm text-center py-8">Nenhum contato encontrado com os filtros aplicados.</p>';
@@ -402,6 +416,12 @@
             });
 
             html += '</tbody></table>';
+
+            // Barra de paginação da modal
+            if (pagination && pagination.total_pages > 1) {
+                html += renderModalPagination(pagination);
+            }
+
             modalBody.innerHTML = html;
 
             // Selecionar todos
@@ -415,6 +435,64 @@
             document.getElementById('contactsTableBody').addEventListener('change', function (e) {
                 if (e.target.classList.contains('row-check')) updateBulkBar();
             });
+
+            // Delegate events para botões de paginação da modal
+            var paginationBar = document.getElementById('modalPaginationBar');
+            if (paginationBar) {
+                paginationBar.addEventListener('click', function (e) {
+                    var btn = e.target.closest('[data-page]');
+                    if (btn && !btn.disabled) {
+                        var p = parseInt(btn.dataset.page, 10);
+                        if (!isNaN(p)) loadContacts(p);
+                    }
+                });
+            }
+        }
+
+        // ----- Renderizar barra de paginação da modal -----
+        function renderModalPagination(pag) {
+            var cur = pag.current_page;
+            var total = pag.total_pages;
+
+            function pageBtn(p, label, disabled) {
+                if (disabled) {
+                    return '<span class="px-3 py-1.5 rounded-lg border border-gray-200 bg-gray-50 text-sm text-gray-400 cursor-not-allowed">' + esc(label) + '</span>';
+                }
+                var active = (p === cur) ? ' bg-indigo-600 text-white font-semibold' : ' bg-white text-gray-600 hover:bg-gray-50';
+                return '<button type="button" data-page="' + p + '" class="px-3 py-1.5 rounded-lg border border-gray-300 text-sm transition-colors' + active + '">' + esc(label) + '</button>';
+            }
+
+            function buildRange(current, totalPages) {
+                var delta = 2;
+                var range = [];
+                for (var i = Math.max(1, current - delta); i <= Math.min(totalPages, current + delta); i++) {
+                    range.push(i);
+                }
+                if (range[0] > 1) {
+                    if (range[0] > 2) range.unshift(null);
+                    range.unshift(1);
+                }
+                var last = range[range.length - 1];
+                if (last < totalPages) {
+                    if (last < totalPages - 1) range.push(null);
+                    range.push(totalPages);
+                }
+                return range;
+            }
+
+            var pages = buildRange(cur, total);
+            var html = '<div id="modalPaginationBar" class="flex items-center gap-1 mt-4 justify-center flex-wrap">';
+            html += pageBtn(cur - 1, 'Anterior', cur <= 1);
+            pages.forEach(function (p) {
+                if (p === null) {
+                    html += '<span class="px-2 py-1.5 text-sm text-gray-400">...</span>';
+                } else {
+                    html += pageBtn(p, String(p), false);
+                }
+            });
+            html += pageBtn(cur + 1, 'Próximo', cur >= total);
+            html += '</div>';
+            return html;
         }
 
         function renderRow(c, editMode) {
@@ -459,7 +537,7 @@
                 document.getElementById('contactsTableBody').addEventListener('click', handleTableClick);
 
             } else if (btn.classList.contains('btn-cancel')) {
-                loadContacts();
+                loadContacts(currentPage);
 
             } else if (btn.classList.contains('btn-save')) {
                 const row = document.querySelector('#contactsTableBody tr[data-id="' + id + '"]');
@@ -487,7 +565,7 @@
                 const data = await resp.json();
                 if (data.success) {
                     if (data.csrf_token) window.CSRF_TOKEN = data.csrf_token;
-                    loadContacts();
+                    loadContacts(currentPage);
                 } else {
                     alert('Erro ao salvar: ' + (data.error || 'Tente novamente.'));
                 }
@@ -508,7 +586,7 @@
                 const data = await resp.json();
                 if (data.success) {
                     if (data.csrf_token) window.CSRF_TOKEN = data.csrf_token;
-                    loadContacts();
+                    loadContacts(currentPage);
                 } else {
                     alert('Erro ao excluir: ' + (data.error || 'Tente novamente.'));
                 }
@@ -532,7 +610,7 @@
     })();
 </script>
 
-<script>
+<script nonce="<?= CSP_NONCE ?>">
 (function () {
     var importForm = document.querySelector('form[action*="cold-contacts/import"]');
     if (!importForm) return;

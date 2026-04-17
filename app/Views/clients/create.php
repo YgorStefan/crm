@@ -109,7 +109,7 @@
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                         <?php foreach ($stages as $stage): ?>
                             <option value="<?= $stage['id'] ?>"
-                                data-venda-fechada="<?= stripos($stage['name'], 'venda fechada') !== false ? '1' : '0' ?>">
+                                data-venda-fechada="<?= !empty($stage['is_won_stage']) ? '1' : '0' ?>">
                                 <?= htmlspecialchars($stage['name'], ENT_QUOTES, 'UTF-8') ?>
                             </option>
                         <?php endforeach; ?>
@@ -191,7 +191,7 @@
     </form>
 </div>
 
-<script>
+<script nonce="<?= CSP_NONCE ?>">
     // Máscara: Telefone (11) 99999-9999
     document.querySelector('[name="phone"]').addEventListener('input', function () {
         let v = this.value.replace(/\D/g, '').substring(0, 11);

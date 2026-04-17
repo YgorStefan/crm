@@ -47,6 +47,26 @@ CLAUDE.md
 # --- Scripts de Infra ---
 deploy.sh
 
+# --- Tailwind CLI binary (downloaded via scripts/setup_tailwind.php) ---
+.bin/
+
 # --- Configurações de Servidor PHP ---
 public/.user.ini
 .user.ini
+
+# --- Credenciais de produção ---
+env\ crm.txt
+
+# --- Config de banco (credenciais reais ficam no .env) ---
+config/database.php
+
+# --- Scripts descartáveis de uso único ---
+# (scripts de produção ficam em database/migrations/ e bin/)
+
+# --- Tailwind source e config (versionados) ---
+# tailwind.config.js e resources/ foram removidos do ignore
+
+# --- Logs gerados em runtime ---
+storage/
+
+# docs/superpowers/ removido do ignore — specs e planos são versionados

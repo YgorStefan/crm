@@ -72,6 +72,18 @@
                         <button type="button" class="btn-move text-gray-400 hover:text-gray-600 text-sm leading-none"
                             data-direction="down" title="Mover para baixo">↓</button>
 
+                        <!-- Botao Won Stage Toggle (FRAG-03) -->
+                        <button type="button"
+                            class="btn-won-toggle <?= !empty($stage['is_won_stage'])
+                                ? 'text-indigo-600 font-medium text-sm'
+                                : 'text-gray-400 hover:text-indigo-500 text-sm' ?> py-2 focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                            data-stage-id="<?= $stage['id'] ?>"
+                            data-is-won="<?= !empty($stage['is_won_stage']) ? '1' : '0' ?>"
+                            aria-pressed="<?= !empty($stage['is_won_stage']) ? 'true' : 'false' ?>"
+                            title="<?= !empty($stage['is_won_stage']) ? 'Etapa de ganho ativa' : 'Definir como etapa de ganho' ?>">
+                            <?= !empty($stage['is_won_stage']) ? '★' : '☆' ?>
+                        </button>
+
                         <!-- Botão Editar -->
                         <button type="button" class="btn-edit text-indigo-500 hover:text-indigo-700 text-sm">Editar</button>
 
@@ -84,8 +96,8 @@
                             class="btn-cancel hidden text-gray-400 hover:text-gray-600 text-sm">Cancelar</button>
 
                         <!-- Form de deleção -->
-                        <form method="POST" action="<?= APP_URL ?>/pipeline/stages/<?= $stage['id'] ?>/delete"
-                            onsubmit="return confirm('Remover a etapa \'<?= addslashes($stage['name']) ?>\'?\nTodos os clientes nesta etapa ficarão sem etapa se não houver outra.')">
+                        <form method="POST" action="<?= APP_URL ?>/pipeline/stages/<?= (int)$stage['id'] ?>/delete"
+                            class="form-delete-stage">
                             <input type="hidden" name="_csrf_token"
                                 value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
                             <button type="submit" class="text-red-400 hover:text-red-600 text-sm"
@@ -98,7 +110,7 @@
     </div>
 </div>
 
-<script>
+<script nonce="<?= CSP_NONCE ?>">
     (function () {
         let csrfToken = '<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>';
         const appUrl = '<?= rtrim(APP_URL, '/') ?>';
@@ -184,6 +196,67 @@
                         location.reload();
                     })
                     .catch(() => alert('Erro de comunicação. Tente novamente.'));
+            });
+        });
+        // Won Stage Toggle (FRAG-03)
+        document.querySelectorAll('.btn-won-toggle').forEach(btn => {
+            btn.addEventListener('click', function () {
+                const id = this.dataset.stageId;
+                this.classList.add('opacity-50', 'cursor-wait');
+                this.setAttribute('aria-label', 'Salvando...');
+                this.disabled = true;
+
+                const body = new URLSearchParams({ _csrf_token: csrfToken });
+                fetch(appUrl + '/pipeline/stages/' + id + '/toggle-won', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                    body,
+                })
+                    .then(r => r.json())
+                    .then(data => {
+                        if (data.csrf_token) csrfToken = data.csrf_token;
+                        if (!data.success) { alert('Erro ao salvar. Tente novamente.'); return; }
+
+                        const newState = data.is_won_stage === 1;
+
+                        // Exclusividade mutua: se ligando, desliga todos os outros primeiro
+                        if (newState) {
+                            document.querySelectorAll('.btn-won-toggle').forEach(b => {
+                                b.dataset.isWon = '0';
+                                b.setAttribute('aria-pressed', 'false');
+                                b.setAttribute('title', 'Definir como etapa de ganho');
+                                b.className = b.className.replace('text-indigo-600 font-medium', 'text-gray-400 hover:text-indigo-500');
+                                b.textContent = '\u2606';
+                            });
+                        }
+
+                        // Atualiza a linha alvo
+                        this.dataset.isWon = newState ? '1' : '0';
+                        this.setAttribute('aria-pressed', newState ? 'true' : 'false');
+                        this.setAttribute('title', newState ? 'Etapa de ganho ativa' : 'Definir como etapa de ganho');
+                        this.textContent = newState ? '\u2605' : '\u2606';
+                        this.className = this.className.replace(
+                            newState ? 'text-gray-400 hover:text-indigo-500' : 'text-indigo-600 font-medium',
+                            newState ? 'text-indigo-600 font-medium' : 'text-gray-400 hover:text-indigo-500'
+                        );
+                    })
+                    .catch(() => alert('Erro de comunicacao. Tente novamente.'))
+                    .finally(() => {
+                        this.classList.remove('opacity-50', 'cursor-wait');
+                        this.removeAttribute('aria-label');
+                        this.disabled = false;
+                    });
+            });
+        });
+        // --- Deleção com confirmação segura (CR-02) ---
+        document.querySelectorAll('.form-delete-stage').forEach(function (form) {
+            form.addEventListener('submit', function (e) {
+                const row = this.closest('[data-stage-id]');
+                const name = row ? row.dataset.stageName : '';
+                if (!confirm('Remover a etapa "' + name + '"?\n' +
+                        'Todos os clientes nesta etapa ficarão sem etapa se não houver outra.')) {
+                    e.preventDefault();
+                }
             });
         });
     })();

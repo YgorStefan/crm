@@ -22,6 +22,27 @@ SET SQL_MODE = 'NO_AUTO_VALUE_ON_ZERO';
 SET time_zone = '-03:00';
 
 -- ============================================================
+-- TABELA: tenants
+-- Organizações multi-tenant. Cada usuário pertence a um tenant.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS tenants (
+    id                  INT UNSIGNED        NOT NULL AUTO_INCREMENT,
+    name                VARCHAR(150)        NOT NULL,
+    slug                VARCHAR(80)         NOT NULL COMMENT 'Identificador estável por tenant (único)',
+    is_system_tenant    TINYINT(1)          NOT NULL DEFAULT 0 COMMENT '1 = tenant da instalação com poderes de plataforma',
+    payment_cutoff_day  TINYINT UNSIGNED    NOT NULL DEFAULT 20 COMMENT 'Dia do mês (1-28) para início do ciclo de pagamento (FRAG-04)',
+    created_at          TIMESTAMP           NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at          TIMESTAMP           NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                            ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    UNIQUE KEY uq_tenants_slug (slug)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tenant padrão para instalações novas e realocação de dados legados
+INSERT IGNORE INTO tenants (id, name, slug, is_system_tenant) VALUES
+  (1, 'Organização Padrão', 'default', 1);
+
+-- ============================================================
 -- TABELA: users
 -- Usuários do sistema com controle de acesso por papel (role).
 --
@@ -41,10 +62,13 @@ CREATE TABLE IF NOT EXISTS users (
     role          ENUM('admin','seller','viewer')
                                       NOT NULL DEFAULT 'seller',
     avatar        VARCHAR(255)        NULL     COMMENT 'Caminho relativo ao /public/uploads/',
-    is_active     TINYINT(1)          NOT NULL DEFAULT 1 COMMENT '0 = usuário desativado (soft-delete)',
-    created_at    TIMESTAMP           NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at    TIMESTAMP           NOT NULL DEFAULT CURRENT_TIMESTAMP
-                                      ON UPDATE CURRENT_TIMESTAMP,
+    is_active            TINYINT(1)          NOT NULL DEFAULT 1 COMMENT '0 = usuário desativado (soft-delete)',
+    password_must_change TINYINT(1)          NOT NULL DEFAULT 0 COMMENT '1 = forçar troca de senha no próximo login',
+    is_system_admin      TINYINT(1)          NOT NULL DEFAULT 0 COMMENT '1 = admin da plataforma (acesso a /admin/tenants)',
+    tenant_id            INT UNSIGNED        NOT NULL DEFAULT 1 COMMENT 'Isolamento multi-tenant',
+    created_at           TIMESTAMP           NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at           TIMESTAMP           NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                             ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY uq_users_email (email)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -55,22 +79,24 @@ CREATE TABLE IF NOT EXISTS users (
 -- O campo `position` define a ordem da esquerda para a direita.
 -- ============================================================
 CREATE TABLE IF NOT EXISTS pipeline_stages (
-    id         INT UNSIGNED        NOT NULL AUTO_INCREMENT,
-    name       VARCHAR(80)         NOT NULL,
-    color      VARCHAR(7)          NOT NULL DEFAULT '#6366f1' COMMENT 'Cor hexadecimal do cabeçalho da coluna',
-    position   TINYINT UNSIGNED    NOT NULL DEFAULT 0         COMMENT 'Ordenação crescente = esquerda para direita',
-    created_at TIMESTAMP           NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    id           INT UNSIGNED        NOT NULL AUTO_INCREMENT,
+    name         VARCHAR(80)         NOT NULL,
+    color        VARCHAR(7)          NOT NULL DEFAULT '#6366f1' COMMENT 'Cor hexadecimal do cabeçalho da coluna',
+    position     TINYINT UNSIGNED    NOT NULL DEFAULT 0         COMMENT 'Ordenação crescente = esquerda para direita',
+    tenant_id    INT UNSIGNED        NOT NULL DEFAULT 1         COMMENT 'Isolamento multi-tenant',
+    is_won_stage TINYINT(1)          NOT NULL DEFAULT 0         COMMENT '1 = etapa de venda fechada (FRAG-03)',
+    created_at   TIMESTAMP           NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Etapas padrão do funil (o admin pode adicionar/remover depois)
-INSERT INTO pipeline_stages (name, color, position) VALUES
-  ('Prospecção',       '#6366f1', 1),
-  ('Qualificação',     '#f59e0b', 2),
-  ('Proposta',         '#3b82f6', 3),
-  ('Negociação',       '#8b5cf6', 4),
-  ('Fechado - Ganho',  '#10b981', 5),
-  ('Fechado - Perdido','#ef4444', 6);
+INSERT INTO pipeline_stages (name, color, position, tenant_id) VALUES
+  ('Prospecção',       '#6366f1', 1, 1),
+  ('Qualificação',     '#f59e0b', 2, 1),
+  ('Proposta',         '#3b82f6', 3, 1),
+  ('Negociação',       '#8b5cf6', 4, 1),
+  ('Fechado - Ganho',  '#10b981', 5, 1),
+  ('Fechado - Perdido','#ef4444', 6, 1);
 
 -- ============================================================
 -- TABELA: clients
@@ -99,11 +125,13 @@ CREATE TABLE IF NOT EXISTS clients (
     referido_por      VARCHAR(150)    NULL     COMMENT 'Nome de quem indicou (quando source = Indicação)',
     closed_at         DATE            NULL     COMMENT 'Data de fechamento da venda (preenchido apenas na etapa Venda Fechada)',
     is_active         TINYINT(1)      NOT NULL DEFAULT 1 COMMENT '0 = cliente arquivado (soft-delete)',
+    tenant_id         INT UNSIGNED    NOT NULL DEFAULT 1 COMMENT 'Isolamento multi-tenant',
     created_at        TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at        TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP
                                       ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     UNIQUE KEY uq_clients_email (email),
+    INDEX idx_clients_tenant (tenant_id),
     -- Ao renomear etapa (UPDATE), a FK atualiza em cascata.
     -- Ao tentar DELETAR etapa com clientes, o banco bloqueia (RESTRICT).
     CONSTRAINT fk_client_stage
@@ -112,7 +140,9 @@ CREATE TABLE IF NOT EXISTS clients (
     -- Ao remover vendedor, o cliente perde o responsável (SET NULL).
     CONSTRAINT fk_client_user
         FOREIGN KEY (assigned_to) REFERENCES users(id)
-        ON UPDATE CASCADE ON DELETE SET NULL
+        ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_clients_tenant
+        FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Índices de apoio (além dos criados automaticamente pelas FKs)
@@ -138,14 +168,18 @@ CREATE TABLE IF NOT EXISTS client_sales (
     -- nunca é armazenado como string aqui.
     paid_at             TIMESTAMP       NULL     DEFAULT NULL
                                                  COMMENT 'Timestamp da última confirmação de pagamento. NULL = não pago.',
+    tenant_id           INT UNSIGNED    NOT NULL DEFAULT 1 COMMENT 'Isolamento multi-tenant',
     created_at          TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at          TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP
                                         ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
+    INDEX idx_client_sales_tenant (tenant_id),
     -- Ao deletar o cliente, todas as suas cotas são removidas (CASCADE)
     CONSTRAINT fk_sale_client
         FOREIGN KEY (client_id) REFERENCES clients(id)
-        ON DELETE CASCADE ON UPDATE CASCADE
+        ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_client_sales_tenant
+        FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE INDEX idx_sales_client ON client_sales(client_id);
@@ -164,8 +198,10 @@ CREATE TABLE IF NOT EXISTS interactions (
                                 NOT NULL DEFAULT 'note',
     description TEXT            NOT NULL COMMENT 'Texto livre descrevendo o contato',
     occurred_at DATETIME        NOT NULL COMMENT 'Data/hora em que o contato ocorreu',
+    tenant_id   INT UNSIGNED    NOT NULL DEFAULT 1 COMMENT 'Isolamento multi-tenant',
     created_at  TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
+    INDEX idx_interactions_tenant (tenant_id),
     -- Deletar cliente remove também suas interações (CASCADE)
     CONSTRAINT fk_inter_client
         FOREIGN KEY (client_id) REFERENCES clients(id)
@@ -173,7 +209,9 @@ CREATE TABLE IF NOT EXISTS interactions (
     -- Vendedor não pode ser deletado enquanto tiver interações (RESTRICT)
     CONSTRAINT fk_inter_user
         FOREIGN KEY (user_id) REFERENCES users(id)
-        ON DELETE RESTRICT
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_interactions_tenant
+        FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Acelera a timeline de interações de um cliente ordenada pela mais recente
@@ -196,10 +234,12 @@ CREATE TABLE IF NOT EXISTS tasks (
     status      ENUM('pending','in_progress','done','cancelled')
                                 NOT NULL DEFAULT 'pending',
     created_by  INT UNSIGNED    NOT NULL COMMENT 'Usuário que criou a tarefa',
+    tenant_id   INT UNSIGNED    NOT NULL DEFAULT 1 COMMENT 'Isolamento multi-tenant',
     created_at  TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at  TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP
                                 ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
+    INDEX idx_tasks_tenant (tenant_id),
     -- Deletar cliente mantém a tarefa mas remove o vínculo (SET NULL)
     CONSTRAINT fk_task_client
         FOREIGN KEY (client_id) REFERENCES clients(id)
@@ -209,7 +249,9 @@ CREATE TABLE IF NOT EXISTS tasks (
         ON DELETE RESTRICT,
     CONSTRAINT fk_task_created
         FOREIGN KEY (created_by) REFERENCES users(id)
-        ON DELETE RESTRICT
+        ON DELETE RESTRICT,
+    CONSTRAINT fk_tasks_tenant
+        FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Acelera queries de tarefas por prazo (agenda do dia, atrasadas, etc.)
@@ -233,12 +275,19 @@ CREATE TABLE IF NOT EXISTS cold_contacts (
                                               COMMENT 'Data em que a mensagem foi enviada ao contato',
     -- Usada para agrupar contatos nos Cards Mensais do painel de acompanhamento.
     -- Valor definido no momento do import (CURRENT_TIMESTAMP) e nunca alterado.
-    imported_at       TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP
-                                              COMMENT 'Data/hora da importação — agrupa Cards Mensais',
-    created_at        TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at        TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP
-                                      ON UPDATE CURRENT_TIMESTAMP,
-    PRIMARY KEY (id)
+    imported_at          TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                                  COMMENT 'Data/hora da importação — agrupa Cards Mensais',
+    tenant_id            INT UNSIGNED    NOT NULL DEFAULT 1 COMMENT 'Isolamento multi-tenant',
+    archived_at          DATETIME        NULL     DEFAULT NULL,
+    imported_year_month  CHAR(7) GENERATED ALWAYS AS (DATE_FORMAT(imported_at, '%Y-%m')) STORED,
+    created_at           TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at           TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                         ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    INDEX idx_cold_contacts_tenant (tenant_id),
+    INDEX idx_cc_year_month (imported_year_month),
+    CONSTRAINT fk_cold_contacts_tenant
+        FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Agrupa por mês de importação nos Cards Mensais
@@ -254,12 +303,9 @@ CREATE INDEX idx_cold_phone ON cold_contacts(phone);
 -- IMPORTANTE: Troque a senha no primeiro acesso!
 --   Acesse: Configurações → Meu Perfil → Alterar Senha
 -- ============================================================
-INSERT INTO users (name, email, password_hash, role) VALUES (
-  'Administrador',
-  'admin@crm.local',
-  '$2y$12$eImiTXuWVxfM37uY4JANjOe5XtTkLfkwU1h9qMz5h3ZfCqsN8G2HW',
-  'admin'
-);
+INSERT IGNORE INTO users (id, name, email, password_hash, role, tenant_id, password_must_change) VALUES
+(1, 'Administrador', 'admin@crm.local',
+ '$2y$12$eImiTXuWVxfM37uY4JANjOe5XtTkLfkwU1h9qMz5h3ZfCqsN8G2HW', 'admin', 1, 1);
 
 SET FOREIGN_KEY_CHECKS = 1;
 
@@ -277,11 +323,12 @@ ALTER TABLE clients
 -- ============================================================
 -- FIM DO SCHEMA
 -- Tabelas criadas:
---   1. users             → autenticação e controle de acesso
---   2. pipeline_stages   → etapas do funil Kanban (6 padrão)
---   3. clients           → cadastro de clientes/leads
---   4. client_sales      → cotas de consórcio por cliente
---   5. interactions      → histórico de contatos
---   6. tasks             → tarefas e follow-ups
---   7. cold_contacts     → contatos frios importados via CSV
+--   1. tenants           → organizações multi-tenant
+--   2. users             → autenticação e controle de acesso
+--   3. pipeline_stages   → etapas do funil Kanban (6 padrão)
+--   4. clients           → cadastro de clientes/leads
+--   5. client_sales      → cotas de consórcio por cliente
+--   6. interactions      → histórico de contatos
+--   7. tasks             → tarefas e follow-ups
+--   8. cold_contacts     → contatos frios importados via CSV
 -- ============================================================

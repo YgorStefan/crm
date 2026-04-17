@@ -1,0 +1,28 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Scrollbar personalizada para o Kanban */
+.kanban-scroll::-webkit-scrollbar {
+    height: 6px;
+}
+
+.kanban-scroll::-webkit-scrollbar-track {
+    background: #f1f5f9;
+}
+
+.kanban-scroll::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 3px;
+}
+
+/* Cartão Kanban sendo arrastado */
+.dragging {
+    opacity: 0.4;
+    transform: rotate(2deg);
+}
+
+.drag-over {
+    outline: 2px dashed #4f46e5;
+    outline-offset: 2px;
+}

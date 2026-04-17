@@ -72,8 +72,8 @@ class Database
 
                 self::$instance = new PDO($dsn, $config['user'], $config['pass'], $options);
 
-                // Desativa o modo ONLY_FULL_GROUP_BY para compatibilidade com queries legadas
-                self::$instance->exec("SET SESSION sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''))");
+                // ONLY_FULL_GROUP_BY mantido ativo (modo estrito do MySQL).
+                // Queries com GROUP BY ambíguo devem ser corrigidas explicitamente.
 
                 // Garante que charset e collation da conexão correspondam ao schema do banco.
                 // Sem COLLATE explícito o MySQL usa utf8mb4_general_ci como padrão da conexão,
@@ -93,7 +93,7 @@ class Database
                     die('Erro de conexão com o banco de dados: ' . $e->getMessage());
                 } else {
                     // Em produção, log silencioso + mensagem amigável
-                    error_log('[CRM] Falha na conexão PDO: ' . $e->getMessage());
+                    (new Logger())->error('[CRM] Falha na conexão PDO', ['message' => $e->getMessage()]);
                     die('Serviço temporariamente indisponível. Tente novamente em instantes.');
                 }
             }
