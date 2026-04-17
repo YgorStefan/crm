@@ -46,3 +46,20 @@ ok('input() ainda aplica trim',             $ctrl->exposeInput('espaco', '') ===
 
 $_POST['espaco'] = '  texto  ';
 ok('input() aplica trim no valor',          $ctrl->exposeInput('espaco') === 'texto');
+
+// ── 2. ColdContact — verificação estrutural de tenant_id ─────────────────────
+section('2. ColdContact — tenant isolation (estrutural)');
+
+$src = file_get_contents(ROOT_PATH . '/app/Models/ColdContact.php');
+
+ok('countFindMonthSummaries usa tenant_id',     strpos($src, 'countFindMonthSummaries') !== false
+    && preg_match('/countFindMonthSummaries.*?tenant_id/s', $src) === 1);
+ok('findMonthSummaries usa tenant_id',          strpos($src, 'tenant_id') !== false);
+ok('countByMonth usa tenant_id',                preg_match('/countByMonth.*?tenant_id/s', $src) === 1);
+ok('findByMonth usa tenant_id',                 preg_match('/findByMonth.*?tenant_id/s', $src) === 1);
+ok('create() inclui tenant_id no INSERT',       strpos($src, 'INSERT INTO cold_contacts') !== false
+    && preg_match('/INSERT INTO cold_contacts[^;]*tenant_id/s', $src) === 1);
+ok('update() usa tenant_id no WHERE',           preg_match('/UPDATE cold_contacts[^;]*tenant_id/s', $src) === 1);
+ok('destroy() usa tenant_id no WHERE',          preg_match('/DELETE FROM cold_contacts[^;]*tenant_id/s', $src) === 1);
+ok('deleteByMonth() usa tenant_id no WHERE',    preg_match('/deleteByMonth[^}]*tenant_id/s', $src) === 1);
+ok('bulkAtualizarExtras() usa tenant_id',       preg_match('/bulkAtualizarExtras.*?tenant_id/s', $src) === 1);
