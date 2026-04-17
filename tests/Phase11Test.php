@@ -73,3 +73,13 @@ ok('Interaction define isGlobal = true',         strpos($src, 'isGlobal = true')
 ok('Interaction sobrescreve findById',            preg_match('/public function findById/', $src) === 1);
 ok('findById usa INNER JOIN clients',             strpos($src, 'INNER JOIN clients') !== false);
 ok('findById filtra por c.tenant_id',             strpos($src, 'c.tenant_id') !== false);
+
+// ── 4. InteractionController — validação de client_id ───────────────────────
+section('4. InteractionController — verifica client_id antes de write');
+
+$src = file_get_contents(ROOT_PATH . '/app/Controllers/InteractionController.php');
+
+ok('store() instancia Client model',      strpos($src, 'new Client()') !== false);
+ok('store() usa findById no clientId',    preg_match('/store.*?findById\(\$clientId\)/s', $src) === 1);
+ok('update() valida client via findById', preg_match('/update.*?findById/s', $src) === 1);
+ok('usa App\Models\Client (use statement)', strpos($src, 'use App\Models\Client') !== false);
