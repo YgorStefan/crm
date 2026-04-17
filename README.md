@@ -96,6 +96,11 @@ Edite `config/database.php` com seus dados:
 'pass'   => 'sua_senha',
 ```
 
+> **Atenção:** Nunca mantenha arquivos de credenciais (`.env`, `env crm.txt`, etc.) no
+> diretório do projeto. Use variáveis de ambiente do painel Hostinger ou coloque o `.env`
+> **fora** da pasta pública. Se você rotacionou credenciais após um vazamento, documente
+> isso em seus registros internos.
+
 **4. Ajuste a URL base**
 
 Em `config/app.php`, altere:
