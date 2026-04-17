@@ -38,11 +38,18 @@ class UserController extends Controller
         $this->requireRole('admin');
 
         $name = $this->input('name');
-        $email = filter_var(trim($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL);
+        $raw   = trim($_POST['email'] ?? '');
+        $email = filter_var($raw, FILTER_VALIDATE_EMAIL) ? $raw : '';
         $password = $_POST['password'] ?? '';
         $role = $this->inputRaw('role', 'seller');
 
-        if (empty($name) || empty($email) || strlen($password) < MIN_PASSWORD_LENGTH) {
+        if (!$email) {
+            $this->flash('error', 'E-mail inválido.');
+            $this->redirect('/admin/users/create');
+            return;
+        }
+
+        if (empty($name) || strlen($password) < MIN_PASSWORD_LENGTH) {
             $this->flash('error', 'Preencha todos os campos. Senha mínima: ' . MIN_PASSWORD_LENGTH . ' caracteres.');
             $this->redirect('/admin/users/create');
             return;
@@ -86,10 +93,18 @@ class UserController extends Controller
         $this->requireRole('admin');
         $id = (int) ($params['id'] ?? 0);
 
+        $rawEmail = trim($_POST['email'] ?? '');
+        $email    = filter_var($rawEmail, FILTER_VALIDATE_EMAIL) ? $rawEmail : '';
+        if (!$email) {
+            $this->flash('error', 'E-mail inválido.');
+            $this->redirect('/admin/users/' . $id . '/edit');
+            return;
+        }
+
         $requestedRole = $this->inputRaw('role', 'seller');
         $data = [
             'name' => $this->input('name'),
-            'email' => filter_var(trim($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL),
+            'email' => $email,
             'role' => in_array($requestedRole, ['admin', 'seller', 'viewer'], true) ? $requestedRole : 'seller',
             'is_active' => isset($_POST['is_active']) ? 1 : 0,
         ];

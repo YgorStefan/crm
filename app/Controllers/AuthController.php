@@ -39,7 +39,8 @@ class AuthController extends Controller
      */
     public function login(array $params = []): void
     {
-        $email = filter_var(trim($_POST['email'] ?? ''), FILTER_SANITIZE_EMAIL);
+        $raw   = trim($_POST['email'] ?? '');
+        $email = filter_var($raw, FILTER_VALIDATE_EMAIL) ? $raw : '';
         $password = $_POST['password'] ?? '';
 
         // Validação básica de campos
