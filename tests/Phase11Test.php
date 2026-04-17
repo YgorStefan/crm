@@ -63,3 +63,13 @@ ok('update() usa tenant_id no WHERE',           preg_match('/UPDATE cold_contact
 ok('destroy() usa tenant_id no WHERE',          preg_match('/DELETE FROM cold_contacts[^;]*tenant_id/s', $src) === 1);
 ok('deleteByMonth() usa tenant_id no WHERE',    preg_match('/deleteByMonth[^}]*tenant_id/s', $src) === 1);
 ok('bulkAtualizarExtras() usa tenant_id',       preg_match('/bulkAtualizarExtras.*?tenant_id/s', $src) === 1);
+
+// ── 3. Interaction — override findById ───────────────────────────────────────
+section('3. Interaction::findById() — tenant gate via join');
+
+$src = file_get_contents(ROOT_PATH . '/app/Models/Interaction.php');
+
+ok('Interaction define isGlobal = true',         strpos($src, 'isGlobal = true') !== false);
+ok('Interaction sobrescreve findById',            preg_match('/public function findById/', $src) === 1);
+ok('findById usa INNER JOIN clients',             strpos($src, 'INNER JOIN clients') !== false);
+ok('findById filtra por c.tenant_id',             strpos($src, 'c.tenant_id') !== false);

@@ -8,6 +8,33 @@ class Interaction extends Model
 {
     protected string $table = 'interactions';
 
+    // isGlobal = true evita que Core\Model::findById() lance RuntimeException
+    // pela ausência de tenant_id na tabela. A segurança de tenant é garantida
+    // pelo override abaixo, que usa INNER JOIN com clients.
+    // Remover este flag após rodar migration 009 e a coluna existir na tabela.
+    protected bool $isGlobal = true;
+
+    /**
+     * Busca interação por ID garantindo que pertence ao tenant correto
+     * via JOIN com a tabela clients.
+     */
+    public function findById(int $id): array|bool
+    {
+        $stmt = $this->db->prepare("
+            SELECT i.*
+            FROM interactions i
+            INNER JOIN clients c ON c.id = i.client_id
+            WHERE i.id = :id
+              AND c.tenant_id = :tenant_id
+            LIMIT 1
+        ");
+        $stmt->execute([
+            ':id'        => $id,
+            ':tenant_id' => $this->currentTenantId(),
+        ]);
+        return $stmt->fetch();
+    }
+
     /**
      * Busca todas as interações de um cliente, do mais recente ao mais antigo.
      *
