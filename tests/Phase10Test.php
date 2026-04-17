@@ -38,7 +38,7 @@ section('1. .gitignore');
 $gitignore = file_get_contents(ROOT . '/.gitignore');
 ok('.gitignore contém regra para "env crm.txt"', str_contains($gitignore, 'env crm.txt') || str_contains($gitignore, 'env\ crm.txt'));
 ok('.gitignore contém regra para config/database.php', str_contains($gitignore, 'config/database.php'));
-ok('.gitignore contém regra para scripts/smoke/', str_contains($gitignore, 'scripts/smoke/'));
+ok('scripts de smoke test existem em tests/smoke/', is_dir(ROOT . '/tests/smoke'));
 ok('config/database.php não está rastreado pelo git', !in_array(
     'config/database.php',
     explode("\n", shell_exec('git -C ' . ROOT . ' ls-files config/database.php') ?? '')

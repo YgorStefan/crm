@@ -94,3 +94,25 @@ ok('sobrescreve findById',                      preg_match('/public function fin
 ok('findById usa tenant_id no WHERE',           preg_match('/findById.*?tenant_id/s', $src) === 1);
 ok('sobrescreve delete',                        preg_match('/public function delete/', $src) === 1);
 ok('delete usa tenant_id no WHERE',             preg_match('/public function delete.*?tenant_id/s', $src) === 1);
+
+// ── 6. Arquivos criados ───────────────────────────────────────────────────────
+section('6. Arquivos de migrations e seeders existem');
+
+ok('migration 004 existe', file_exists(ROOT_PATH . '/database/migrations/004_decode_htmlentities.php'));
+ok('migration 005 existe', file_exists(ROOT_PATH . '/database/migrations/005_pipeline_stages_assign_tenants.php'));
+ok('migration 009 existe', file_exists(ROOT_PATH . '/database/migrations/009_backfill_interactions_tenant.php'));
+ok('seeder pipeline stages existe', file_exists(ROOT_PATH . '/database/seeders/pipeline_stages_default.php'));
+
+// ── Resultado final ───────────────────────────────────────────────────────────
+$total = $results['pass'] + $results['fail'];
+echo "\n\033[1m────────────────────────────────────\033[0m\n";
+echo "\033[1mResultado: {$results['pass']}/{$total} testes passaram\033[0m\n";
+
+if ($results['fail'] > 0) {
+    echo "\n\033[31mFalharam:\033[0m\n";
+    foreach ($results['errors'] as $e) { echo "  • {$e}\n"; }
+    exit(1);
+}
+
+echo "\033[32mTodos os testes passaram.\033[0m\n";
+exit(0);
