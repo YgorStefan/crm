@@ -60,3 +60,11 @@ ok('requireRole detecta Accept JSON',          strpos($src, 'application/json') 
 ok('requireRole retorna 403 para JSON',         strpos($src, '403') !== false);
 ok('redirect() rejeita paths com ://',          strpos($src, '://') !== false && strpos($src, "str_contains(\$path, '://')") !== false);
 ok('redirect() rejeita paths sem /inicial',    strpos($src, "str_starts_with(\$path, '/')") !== false);
+
+// ── 6. .htaccess por diretório ───────────────────────────────────────────────
+section('6. .htaccess por diretório');
+foreach (['app', 'core', 'config', 'database', 'tests'] as $dir) {
+    $path = ROOT_PATH . "/{$dir}/.htaccess";
+    ok("{$dir}/.htaccess existe",            file_exists($path));
+    ok("{$dir}/.htaccess tem Require denied", strpos(file_get_contents($path), 'Require all denied') !== false);
+}
