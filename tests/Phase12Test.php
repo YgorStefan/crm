@@ -35,3 +35,9 @@ section('2. Rotas — RateLimitMiddleware no POST /login');
 $routes = file_get_contents(ROOT_PATH . '/config/routes.php');
 ok('POST /login tem RateLimitMiddleware', strpos($routes, "post('/login'") !== false
     && preg_match("/post\('\/login'[^;]*RateLimitMiddleware/s", $routes) === 1);
+
+// ── 3. AuthMiddleware — password_must_change ─────────────────────────────────
+section('3. AuthMiddleware — password_must_change');
+$src = file_get_contents(ROOT_PATH . '/core/Middleware/AuthMiddleware.php');
+ok('verifica password_must_change',       strpos($src, 'password_must_change') !== false);
+ok('redireciona para /profile/change-password', strpos($src, '/profile/change-password') !== false);
