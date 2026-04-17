@@ -56,6 +56,9 @@ abstract class Controller
      */
     protected function redirect(string $path): void
     {
+        if (str_contains($path, '://') || !str_starts_with($path, '/')) {
+            $path = '/dashboard';
+        }
         header('Location: ' . APP_URL . $path);
         exit;
     }
@@ -95,12 +98,22 @@ abstract class Controller
      */
     protected function requireRole(string|array $roles): void
     {
-        $roles = (array) $roles;
+        $roles    = (array) $roles;
         $userRole = $_SESSION['user']['role'] ?? '';
 
         if (!in_array($userRole, $roles, true)) {
-            $this->flash('error', 'Acesso negado: você não tem permissão para esta ação.');
-            $this->redirect('/dashboard');
+            $isJson = str_contains($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json')
+                   || !empty($_SERVER['HTTP_X_REQUESTED_WITH']);
+
+            if ($isJson) {
+                $this->json([
+                    'success' => false,
+                    'error'   => ['code' => 'forbidden', 'message' => 'Acesso negado.'],
+                ], 403);
+            } else {
+                $this->flash('error', 'Acesso negado: você não tem permissão para esta ação.');
+                $this->redirect('/dashboard');
+            }
         }
     }
 
