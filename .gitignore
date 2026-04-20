@@ -62,6 +62,8 @@ config/database.php
 
 # --- Scripts descartáveis de uso único ---
 # (scripts de produção ficam em database/migrations/ e bin/)
+scripts/smoke/
+tests/smoke/
 
 # --- Tailwind source e config (versionados) ---
 # tailwind.config.js e resources/ foram removidos do ignore
@@ -69,4 +71,5 @@ config/database.php
 # --- Logs gerados em runtime ---
 storage/
 
-# docs/superpowers/ removido do ignore — specs e planos são versionados
+# --- Documentação interna (planos e specs ficam somente local) ---
+docs/superpowers/
