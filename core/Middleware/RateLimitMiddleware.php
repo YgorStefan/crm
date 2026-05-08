@@ -22,16 +22,15 @@ class RateLimitMiddleware
         // Contar tentativas recentes
         $stmt = $pdo->prepare("
             SELECT COUNT(*) FROM login_attempts
-            WHERE ip_address = :ip
+            WHERE ip = :ip
               AND attempted_at > DATE_SUB(NOW(), INTERVAL :seconds SECOND)
         ");
         $stmt->execute([':ip' => $ip, ':seconds' => self::WINDOW_SECONDS]);
         $count = (int) $stmt->fetchColumn();
 
         // Registrar esta tentativa
-        $email = $_POST['email'] ?? '';
-        $pdo->prepare("INSERT INTO login_attempts (ip_address, email) VALUES (:ip, :email)")
-            ->execute([':ip' => $ip, ':email' => $email]);
+        $pdo->prepare("INSERT INTO login_attempts (ip) VALUES (:ip)")
+            ->execute([':ip' => $ip]);
 
         if ($count >= self::MAX_ATTEMPTS) {
             (new Logger())->warning("Rate limit atingido para IP {$ip}");
