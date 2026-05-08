@@ -82,9 +82,15 @@ function val(array $client, string $key): string
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">CEP</label>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">CEP <span id="cep_status" class="text-xs text-indigo-500 font-normal"></span></label>
                     <input type="text" name="zip_code" value="<?= val($client, 'zip_code') ?>" maxlength="10"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div class="md:col-span-3">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Bairro</label>
+                    <input type="text" name="neighborhood" id="neighborhood" value="<?= val($client, 'neighborhood') ?>"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                        placeholder="Bairro">
                 </div>
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
@@ -246,12 +252,37 @@ function val(array $client, string $key): string
         this.value = v;
     });
 
-    // Máscara: CEP 00000-000
-    document.querySelector('[name="zip_code"]').addEventListener('input', function () {
-        let v = this.value.replace(/\D/g, '').substring(0, 8);
-        if (v.length > 5) v = v.substring(0, 5) + '-' + v.substring(5);
-        this.value = v;
-    });
+    // Máscara + ViaCEP: CEP 00000-000
+    (function () {
+        const zipInput = document.querySelector('[name="zip_code"]');
+        const statusEl = document.getElementById('cep_status');
+        let lastCep = '';
+        zipInput.addEventListener('input', function () {
+            let v = this.value.replace(/\D/g, '').substring(0, 8);
+            if (v.length > 5) v = v.substring(0, 5) + '-' + v.substring(5);
+            this.value = v;
+            const digits = v.replace(/\D/g, '');
+            if (digits.length === 8 && digits !== lastCep) {
+                lastCep = digits;
+                if (statusEl) statusEl.textContent = 'Buscando...';
+                fetch('https://viacep.com.br/ws/' + digits + '/json/')
+                    .then(function (r) { return r.json(); })
+                    .then(function (data) {
+                        if (statusEl) statusEl.textContent = '';
+                        if (data.erro) return;
+                        const addr = document.querySelector('[name="address"]');
+                        const nbhd = document.querySelector('[name="neighborhood"]');
+                        const city = document.querySelector('[name="city"]');
+                        const state = document.querySelector('[name="state"]');
+                        if (addr) addr.value = data.logradouro || '';
+                        if (nbhd) nbhd.value = data.bairro || '';
+                        if (city) city.value = data.localidade || '';
+                        if (state) state.value = (data.uf || '').toUpperCase();
+                    })
+                    .catch(function () { if (statusEl) statusEl.textContent = ''; });
+            }
+        });
+    })();
 
     // Máscara: Data de nascimento DD/MM/AAAA
     document.querySelector('[name="birth_date"]').addEventListener('input', function () {

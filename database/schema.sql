@@ -90,13 +90,13 @@ CREATE TABLE IF NOT EXISTS pipeline_stages (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Etapas padrão do funil (o admin pode adicionar/remover depois)
-INSERT INTO pipeline_stages (name, color, position, tenant_id) VALUES
-  ('Prospecção',       '#6366f1', 1, 1),
-  ('Qualificação',     '#f59e0b', 2, 1),
-  ('Proposta',         '#3b82f6', 3, 1),
-  ('Negociação',       '#8b5cf6', 4, 1),
-  ('Fechado - Ganho',  '#10b981', 5, 1),
-  ('Fechado - Perdido','#ef4444', 6, 1);
+INSERT INTO pipeline_stages (name, color, position, tenant_id, is_won_stage) VALUES
+  ('Prospecção',       '#6366f1', 1, 1, 0),
+  ('Qualificação',     '#f59e0b', 2, 1, 0),
+  ('Proposta',         '#3b82f6', 3, 1, 0),
+  ('Negociação',       '#8b5cf6', 4, 1, 0),
+  ('Fechado - Ganho',  '#10b981', 5, 1, 1),
+  ('Fechado - Perdido','#ef4444', 6, 1, 0);
 
 -- ============================================================
 -- TABELA: clients
@@ -111,6 +111,7 @@ CREATE TABLE IF NOT EXISTS clients (
     company           VARCHAR(150)    NULL,
     cnpj_cpf          VARCHAR(20)     NULL     COMMENT 'CPF (11 dígitos) ou CNPJ (14 dígitos) sem máscara',
     address           VARCHAR(255)    NULL,
+    neighborhood      VARCHAR(100)    NULL     COMMENT 'Bairro — preenchido via ViaCEP',
     city              VARCHAR(100)    NULL,
     state             CHAR(2)         NULL     COMMENT 'UF em maiúsculas: SP, RJ, MG...',
     zip_code          VARCHAR(10)     NULL,

@@ -54,7 +54,7 @@
                 <label class="block text-sm font-medium text-gray-700 mb-1">
                     Data do Envio
                 </label>
-                <input type="date" name="data_mensagem"
+                <input type="date" name="data_mensagem" max="9999-12-31"
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
         </div>
@@ -168,7 +168,7 @@
                 class="w-20 px-2 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 
             <label class="text-sm text-gray-600 font-medium ml-2">Data:</label>
-            <input type="date" id="bulkDataMensagem"
+            <input type="date" id="bulkDataMensagem" max="9999-12-31"
                 title="Deixe em branco para manter, ou preencha para alterar em todos"
                 class="w-32 px-2 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
 
@@ -504,7 +504,7 @@
                     '<td class="py-2 px-2"><input class="w-full border border-gray-300 rounded px-2 py-1 text-xs" name="name" value="' + esc(c.name) + '"></td>' +
                     '<td class="py-2 px-2 text-gray-500 text-xs">' + esc(c.tipo_lista) + '</td>' +
                     '<td class="py-2 px-2"><input class="w-16 border border-gray-300 rounded px-2 py-1 text-xs" name="telefone_enviado" maxlength="4" value="' + esc(c.telefone_enviado || '') + '"></td>' +
-                    '<td class="py-2 px-2"><input type="date" class="border border-gray-300 rounded px-2 py-1 text-xs" name="data_mensagem" value="' + esc(c.data_mensagem || '') + '"></td>' +
+                    '<td class="py-2 px-2"><input type="date" max="9999-12-31" class="border border-gray-300 rounded px-2 py-1 text-xs" name="data_mensagem" value="' + esc(c.data_mensagem || '') + '"></td>' +
                     '<td class="py-2 px-2 whitespace-nowrap">' +
                     '<button class="btn-save text-green-600 hover:text-green-800 font-medium text-xs mr-2" data-id="' + id + '">Salvar</button>' +
                     '<button class="btn-cancel text-gray-500 hover:text-gray-700 font-medium text-xs" data-id="' + id + '">Cancelar</button>' +
@@ -670,4 +670,14 @@
         reader.readAsArrayBuffer(file);
     });
 })();
+</script>
+
+<script nonce="<?= CSP_NONCE ?>">
+document.addEventListener('change', function (e) {
+    if (e.target.type !== 'date') return;
+    var val = e.target.value;
+    if (val && parseInt(val.split('-')[0], 10) > 9999) {
+        e.target.value = '';
+    }
+});
 </script>
