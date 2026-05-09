@@ -20,5 +20,7 @@ class CspMiddleware
                "form-action 'self'";
 
         header("Content-Security-Policy: " . $csp);
+        header('X-Content-Type-Options: nosniff');
+        header('Referrer-Policy: strict-origin-when-cross-origin');
     }
 }
