@@ -545,10 +545,9 @@ class Client extends Model
     }
 
     /**
-     * Retorna lista de client_ids que possuem ao menos uma cota em atraso no ciclo vigente.
-     * Usado por findAllWithRelations para injetar has_overdue sem N+1 queries.
+     * Retorna clientes com aniversário hoje (mesmo dia e mês, qualquer ano).
      *
-     * @return array  Array de int client_ids com cota em atraso
+     * @return array  Array de ['id' => int, 'name' => string]
      */
     public function findBirthdaysToday(): array
     {
