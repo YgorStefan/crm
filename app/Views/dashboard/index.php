@@ -7,45 +7,41 @@ $wonRevenue = array_sum(array_column($wonStage, 'total_value'));
 <!-- KPI Cards -->
 <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
 
-    <!-- Total de Clientes -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center gap-4">
+    <a href="<?= APP_URL ?>/clients"
+       class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center gap-4 hover:shadow-md hover:border-indigo-200 transition-all">
         <div class="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center text-2xl flex-shrink-0">👥</div>
         <div>
             <p class="text-2xl font-bold text-gray-800"><?= number_format($totalClients) ?></p>
             <p class="text-sm text-gray-500">Clientes ativos</p>
         </div>
-    </div>
+    </a>
 
-    <!-- Tarefas Pendentes -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center gap-4">
+    <a href="<?= APP_URL ?>/tasks"
+       class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center gap-4 hover:shadow-md hover:border-amber-200 transition-all">
         <div class="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center text-2xl flex-shrink-0">✅</div>
         <div>
             <p class="text-2xl font-bold text-gray-800"><?= $pendingTasks ?></p>
             <p class="text-sm text-gray-500">Minhas tarefas abertas</p>
         </div>
-    </div>
+    </a>
 
-    <!-- Tarefas Atrasadas -->
-    <div
-        class="bg-white rounded-xl shadow-sm border <?= count($overdueTasks) > 0 ? 'border-red-200 bg-red-50' : 'border-gray-100' ?> p-5 flex items-center gap-4">
-        <div
-            class="w-12 h-12 rounded-xl <?= count($overdueTasks) > 0 ? 'bg-red-100' : 'bg-gray-100' ?> flex items-center justify-center text-2xl flex-shrink-0">
-            ⚠️</div>
+    <a href="<?= APP_URL ?>/tasks"
+       class="bg-white rounded-xl shadow-sm border <?= count($overdueTasks) > 0 ? 'border-red-200 bg-red-50' : 'border-gray-100' ?> p-5 flex items-center gap-4 hover:shadow-md transition-all">
+        <div class="w-12 h-12 rounded-xl <?= count($overdueTasks) > 0 ? 'bg-red-100' : 'bg-gray-100' ?> flex items-center justify-center text-2xl flex-shrink-0">⚠️</div>
         <div>
-            <p class="text-2xl font-bold <?= count($overdueTasks) > 0 ? 'text-red-700' : 'text-gray-800' ?>">
-                <?= count($overdueTasks) ?></p>
+            <p class="text-2xl font-bold <?= count($overdueTasks) > 0 ? 'text-red-700' : 'text-gray-800' ?>"><?= count($overdueTasks) ?></p>
             <p class="text-sm <?= count($overdueTasks) > 0 ? 'text-red-500' : 'text-gray-500' ?>">Tarefas atrasadas</p>
         </div>
-    </div>
+    </a>
 
-    <!-- Receita Fechada -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center gap-4">
+    <a href="<?= APP_URL ?>/pipeline"
+       class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 flex items-center gap-4 hover:shadow-md hover:border-green-200 transition-all">
         <div class="w-12 h-12 rounded-xl bg-green-100 flex items-center justify-center text-2xl flex-shrink-0">💰</div>
         <div>
             <p class="text-2xl font-bold text-green-700">R$ <?= number_format($wonRevenue, 2, ',', '.') ?></p>
             <p class="text-sm text-gray-500">Negócios ganhos</p>
         </div>
-    </div>
+    </a>
 </div>
 
 <!-- Gráficos -->
@@ -78,8 +74,8 @@ $wonRevenue = array_sum(array_column($wonStage, 'total_value'));
                             class="w-2 h-2 rounded-full flex-shrink-0 <?= $priorityColors[$task['priority']] ?? 'bg-gray-400' ?>">
                         </div>
                         <div class="flex-1 min-w-0">
-                            <p class="text-sm font-medium text-gray-700 truncate">
-                                <?= htmlspecialchars($task['title'], ENT_QUOTES, 'UTF-8') ?></p>
+                            <a href="<?= APP_URL ?>/tasks" class="text-sm font-medium text-gray-700 hover:text-indigo-600 truncate block">
+                                <?= htmlspecialchars($task['title'], ENT_QUOTES, 'UTF-8') ?></a>
                             <?php if ($task['client_name']): ?>
                                 <p class="text-xs text-gray-400 truncate">👥
                                     <?= htmlspecialchars($task['client_name'], ENT_QUOTES, 'UTF-8') ?></p>
