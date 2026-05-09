@@ -70,6 +70,7 @@ class ClientController extends Controller
             'users'      => $users,
             'filters'    => $filters,
             'pagination' => $pagination,
+            'csrf_token' => CsrfMiddleware::getToken(),
         ]);
     }
 

@@ -157,6 +157,12 @@
                                class="text-indigo-600 hover:text-indigo-800 text-xs font-medium" title="Ver detalhes">👁️</a>
                             <a href="<?= APP_URL ?>/clients/<?= $client['id'] ?>/edit"
                                class="text-amber-600 hover:text-amber-800 text-xs font-medium" title="Editar">✏️</a>
+                            <button
+                                onclick="openQuickInteraction(<?= (int)$client['id'] ?>, <?= json_encode($client['name']) ?>)"
+                                class="text-green-600 hover:text-green-800 text-xs font-medium" title="Nova interação">💬</button>
+                            <button
+                                onclick="openQuickTask(<?= (int)$client['id'] ?>, <?= json_encode($client['name']) ?>)"
+                                class="text-purple-600 hover:text-purple-800 text-xs font-medium" title="Nova tarefa">📅</button>
                         </div>
                     </td>
                 </tr>
@@ -170,3 +176,101 @@
 <?php if (isset($pagination)): ?>
 <?php require VIEW_PATH . '/components/pagination.php'; ?>
 <?php endif; ?>
+
+<!-- Modal: Nova Interação Rápida -->
+<div id="modalQuickInteraction" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h4 class="font-bold text-gray-800">💬 Nova Interação — <span id="qiClientName"></span></h4>
+            <button onclick="document.getElementById('modalQuickInteraction').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+        </div>
+        <form method="POST" action="<?= APP_URL ?>/interactions/store" class="px-6 py-5 space-y-4">
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
+            <input type="hidden" name="client_id" id="qiClientId">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Tipo</label>
+                <select name="type" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    <option value="call">📞 Ligação</option>
+                    <option value="whatsapp">💬 WhatsApp</option>
+                    <option value="email">📧 E-mail</option>
+                    <option value="meeting">🤝 Reunião</option>
+                    <option value="note">📝 Nota</option>
+                </select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Descrição <span class="text-red-500">*</span></label>
+                <textarea name="description" rows="3" required placeholder="O que aconteceu?"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none resize-none"></textarea>
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Data e hora</label>
+                <input type="datetime-local" name="occurred_at" id="qiOccurredAt"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-lg text-sm transition-colors">Salvar</button>
+                <button type="button" onclick="document.getElementById('modalQuickInteraction').classList.add('hidden')"
+                    class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 rounded-lg text-sm transition-colors">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal: Nova Tarefa Rápida -->
+<div id="modalQuickTask" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between">
+            <h4 class="font-bold text-gray-800">📅 Nova Tarefa — <span id="qtClientName"></span></h4>
+            <button onclick="document.getElementById('modalQuickTask').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 text-xl">&times;</button>
+        </div>
+        <form method="POST" action="<?= APP_URL ?>/tasks/store" class="px-6 py-5 space-y-4">
+            <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
+            <input type="hidden" name="client_id" id="qtClientId">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">Título <span class="text-red-500">*</span></label>
+                <input type="text" name="title" required placeholder="O que precisa ser feito?"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Prazo <span class="text-red-500">*</span></label>
+                    <input type="datetime-local" name="due_date" id="qtDueDate" required
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Prioridade</label>
+                    <select name="priority" class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <option value="low">Baixa</option>
+                        <option value="medium" selected>Média</option>
+                        <option value="high">Alta</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex gap-3 pt-2">
+                <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-lg text-sm transition-colors">Salvar</button>
+                <button type="button" onclick="document.getElementById('modalQuickTask').classList.add('hidden')"
+                    class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 rounded-lg text-sm transition-colors">Cancelar</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script nonce="<?= CSP_NONCE ?>">
+function openQuickInteraction(clientId, clientName) {
+    document.getElementById('qiClientId').value = clientId;
+    document.getElementById('qiClientName').textContent = clientName;
+    const now = new Date();
+    now.setSeconds(0, 0);
+    document.getElementById('qiOccurredAt').value = now.toISOString().slice(0, 16);
+    document.getElementById('modalQuickInteraction').classList.remove('hidden');
+}
+function openQuickTask(clientId, clientName) {
+    document.getElementById('qtClientId').value = clientId;
+    document.getElementById('qtClientName').textContent = clientName;
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(12, 0, 0, 0);
+    document.getElementById('qtDueDate').value = tomorrow.toISOString().slice(0, 16);
+    document.getElementById('modalQuickTask').classList.remove('hidden');
+}
+</script>
