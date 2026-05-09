@@ -49,18 +49,10 @@ $wonRevenue = array_sum(array_column($wonStage, 'total_value'));
 </div>
 
 <!-- Gráficos -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-
-    <!-- Gráfico: Clientes por Etapa (Barras) -->
+<div class="mb-8">
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
         <h4 class="text-sm font-semibold text-gray-600 mb-4">Distribuição no Pipeline</h4>
-        <canvas id="chartPipeline" height="220"></canvas>
-    </div>
-
-    <!-- Gráfico: Valor por Etapa (Pizza) -->
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-        <h4 class="text-sm font-semibold text-gray-600 mb-4">Valor Total por Etapa (R$)</h4>
-        <canvas id="chartValues" height="220"></canvas>
+        <canvas id="chartPipeline" height="100"></canvas>
     </div>
 </div>
 
@@ -142,7 +134,6 @@ $wonRevenue = array_sum(array_column($wonStage, 'total_value'));
     const pipelineData = <?= json_encode([
         'labels' => array_column($stageData, 'name'),
         'counts' => array_map('intval', array_column($stageData, 'total')),
-        'values' => array_map('floatval', array_column($stageData, 'total_value')),
         'colors' => array_column($stageData, 'color'),
     ], JSON_HEX_TAG | JSON_HEX_AMP) ?>;
 </script>
