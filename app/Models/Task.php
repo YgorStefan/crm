@@ -59,14 +59,16 @@ class Task extends Model
      */
     public function findByClient(int $clientId): array
     {
+        $tenantId = $this->currentTenantId();
         $stmt = $this->db->prepare("
             SELECT t.*, u.name AS assigned_name
             FROM tasks t
             LEFT JOIN users u ON u.id = t.assigned_to
             WHERE t.client_id = :client_id
+              AND t.assigned_to IN (SELECT id FROM users WHERE tenant_id = :tenant_id_u)
             ORDER BY t.due_date ASC
         ");
-        $stmt->execute([':client_id' => $clientId]);
+        $stmt->execute([':client_id' => $clientId, ':tenant_id_u' => $tenantId]);
         return $stmt->fetchAll();
     }
 
@@ -78,18 +80,29 @@ class Task extends Model
      */
     public function create(array $data): int
     {
+        $tenantId  = $this->currentTenantId();
+        $assignedTo = (int) $data['assigned_to'];
+
+        $check = $this->db->prepare(
+            "SELECT id FROM users WHERE id = :uid AND tenant_id = :tenant_id_u"
+        );
+        $check->execute([':uid' => $assignedTo, ':tenant_id_u' => $tenantId]);
+        if (!$check->fetch()) {
+            throw new \InvalidArgumentException("assigned_to não pertence ao tenant atual.");
+        }
+
         $stmt = $this->db->prepare("
             INSERT INTO tasks (client_id, assigned_to, title, description, due_date, priority, status, created_by)
             VALUES (:client_id, :assigned_to, :title, :description, :due_date, :priority, 'pending', :created_by)
         ");
         $stmt->execute([
-            ':client_id' => !empty($data['client_id']) ? (int) $data['client_id'] : null,
-            ':assigned_to' => (int) $data['assigned_to'],
-            ':title' => $data['title'],
+            ':client_id'   => !empty($data['client_id']) ? (int) $data['client_id'] : null,
+            ':assigned_to' => $assignedTo,
+            ':title'       => $data['title'],
             ':description' => $data['description'] ?? null,
-            ':due_date' => $data['due_date'],
-            ':priority' => $data['priority'] ?? 'medium',
-            ':created_by' => (int) $data['created_by'],
+            ':due_date'    => $data['due_date'],
+            ':priority'    => $data['priority'] ?? 'medium',
+            ':created_by'  => (int) $data['created_by'],
         ]);
         return (int) $this->db->lastInsertId();
     }
