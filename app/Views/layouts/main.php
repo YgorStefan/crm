@@ -22,7 +22,7 @@
             class="fixed inset-0 bg-gray-900 bg-opacity-50 z-40 hidden lg:hidden transition-opacity"></div>
 
         <aside id="sidebar"
-            class="fixed inset-y-0 left-0 z-50 w-64 bg-sidebar text-white flex flex-col transform -translate-x-full transition-transform duration-300 lg:relative lg:translate-x-0">
+            class="fixed inset-y-0 left-0 z-50 w-64 bg-sidebar text-white flex flex-col transform -translate-x-full transition-transform duration-300">
             <div class="px-6 py-5 border-b border-indigo-800 flex justify-between items-center">
                 <div>
                     <h1 class="text-xl font-bold tracking-wide"><?= htmlspecialchars(APP_NAME, ENT_QUOTES, 'UTF-8') ?></h1>
@@ -97,12 +97,12 @@
             </div>
         </aside>
 
-        <div class="flex-1 flex flex-col w-full overflow-hidden">
+        <div id="mainContent" class="flex-1 flex flex-col w-full overflow-hidden transition-all duration-300">
 
             <header
                 class="bg-white border-b border-gray-200 px-4 sm:px-6 py-3 flex items-center justify-between flex-shrink-0 z-10 relative">
                 <div class="flex items-center gap-3 w-full">
-                    <button id="sidebarToggle" class="text-gray-500 hover:text-gray-700 lg:hidden p-1">
+                    <button id="sidebarToggle" class="text-gray-500 hover:text-gray-700 p-1">
                         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M4 6h16M4 12h16M4 18h16" />
@@ -181,29 +181,43 @@
         updateClock();
         setInterval(updateClock, 60000);
 
-        // LÓGICA DO MENU RESPONSIVO (SIDEBAR)
+        // SIDEBAR — colapsável em qualquer tamanho de tela
         const sidebar = document.getElementById('sidebar');
         const backdrop = document.getElementById('sidebarBackdrop');
+        const mainContent = document.getElementById('mainContent');
         const toggleBtn = document.getElementById('sidebarToggle');
         const closeBtn = document.getElementById('closeSidebarBtn');
 
         function openSidebar() {
             sidebar.classList.remove('-translate-x-full');
+            sidebar.classList.add('translate-x-0');
             backdrop.classList.remove('hidden');
+            // Em desktop: empurra o conteúdo para a direita
+            if (window.innerWidth >= 1024) {
+                mainContent.style.marginLeft = '256px';
+                backdrop.classList.add('hidden'); // sem backdrop em desktop
+            }
         }
 
         function closeSidebar() {
             sidebar.classList.add('-translate-x-full');
+            sidebar.classList.remove('translate-x-0');
             backdrop.classList.add('hidden');
+            mainContent.style.marginLeft = '0';
         }
 
-        // Abre ao clicar no botão hambúrguer
-        toggleBtn?.addEventListener('click', openSidebar);
+        // Estado inicial: aberto em desktop, fechado em mobile
+        if (window.innerWidth >= 1024) {
+            openSidebar();
+        } else {
+            closeSidebar();
+        }
 
-        // Fecha ao clicar no botão "X" de dentro do menu
+        toggleBtn?.addEventListener('click', function () {
+            const isOpen = !sidebar.classList.contains('-translate-x-full');
+            isOpen ? closeSidebar() : openSidebar();
+        });
         closeBtn?.addEventListener('click', closeSidebar);
-
-        // Fecha ao clicar na área escura fora do menu
         backdrop?.addEventListener('click', closeSidebar);
 
         // Auto-remove flash message após 5 segundos
