@@ -174,16 +174,18 @@ class Task extends Model
     public function findForCalendar(int $userId, bool $isAdmin = false): array
     {
         $sql = "
-            SELECT id, title, due_date, priority, status
-            FROM tasks
-            WHERE status NOT IN ('cancelled')
+            SELECT t.id, t.title, t.due_date, t.priority, t.status, t.client_id,
+                   c.name AS client_name
+            FROM tasks t
+            LEFT JOIN clients c ON c.id = t.client_id
+            WHERE t.status NOT IN ('cancelled')
         ";
         $params = [];
         if (!$isAdmin) {
-            $sql .= " AND assigned_to = :uid";
+            $sql .= " AND t.assigned_to = :uid";
             $params[':uid'] = $userId;
         }
-        $sql .= " ORDER BY CASE WHEN status = 'done' THEN 1 ELSE 0 END ASC, due_date ASC";
+        $sql .= " ORDER BY CASE WHEN t.status = 'done' THEN 1 ELSE 0 END ASC, t.due_date ASC";
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return $stmt->fetchAll();

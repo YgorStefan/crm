@@ -21,15 +21,20 @@ class TaskController extends Controller
         $tasks = $taskModel->findForCalendar($userId, $isAdmin);
 
         $events = array_map(fn($t) => [
-            'id' => $t['id'],
+            'id'    => $t['id'],
             'title' => htmlspecialchars($t['title'], ENT_QUOTES, 'UTF-8'),
             'start' => $t['due_date'],
             'color' => match ($t['priority']) {
-                'high' => '#ef4444',
+                'high'   => '#ef4444',
                 'medium' => '#f59e0b',
-                default => '#6366f1',
+                default  => '#6366f1',
             },
-            'extendedProps' => ['status' => $t['status'], 'priority' => $t['priority']],
+            'extendedProps' => [
+                'status'      => $t['status'],
+                'priority'    => $t['priority'],
+                'client_id'   => $t['client_id'] ? (int) $t['client_id'] : null,
+                'client_name' => $t['client_name'] ?? null,
+            ],
         ], $tasks);
 
         $this->json($events);

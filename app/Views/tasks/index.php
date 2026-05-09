@@ -41,6 +41,11 @@
             <input type="hidden" id="task_id" value="">
             <input type="hidden" id="task_csrf" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
 
+            <div id="taskClientLink" style="display:none" class="bg-indigo-50 rounded-lg px-3 py-2 flex items-center justify-between">
+                <span class="text-sm text-indigo-700">👥 Cliente: <span id="taskClientName" class="font-medium"></span></span>
+                <a id="taskClientUrl" href="#" class="text-xs text-indigo-600 hover:underline font-medium">Ver cadastro →</a>
+            </div>
+
             <div>
                 <label class="block text-sm font-medium text-gray-700 mb-1">Titulo <span
                         class="text-red-500">*</span></label>
@@ -242,6 +247,17 @@
                     btnToggle.dataset.nextStatus = 'done';
                 }
                 document.getElementById('modalTask').classList.remove('hidden');
+                // Mostra link do cliente se a tarefa estiver vinculada
+                const clientLinkEl = document.getElementById('taskClientLink');
+                const clientNameEl = document.getElementById('taskClientName');
+                const clientUrlEl  = document.getElementById('taskClientUrl');
+                if (task.client_id) {
+                    clientNameEl.textContent = task.client_name || 'Cliente #' + task.client_id;
+                    clientUrlEl.href = appUrl + '/clients/' + task.client_id;
+                    clientLinkEl.style.display = 'flex';
+                } else {
+                    clientLinkEl.style.display = 'none';
+                }
             } catch (e) {
                 console.error('Erro ao carregar tarefa:', e);
             }
