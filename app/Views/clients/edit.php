@@ -75,24 +75,36 @@ function val(array $client, string $key): string
         <!-- Seção: Endereço -->
         <div class="px-6 py-5 border-b border-gray-100">
             <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Endereço</h4>
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Logradouro</label>
                     <input type="text" name="address" value="<?= val($client, 'address') ?>"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
                 <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Número</label>
+                    <input type="text" name="address_number" maxlength="20" value="<?= val($client, 'address_number') ?>"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                        placeholder="123">
+                </div>
+                <div>
                     <label class="block text-sm font-medium text-gray-700 mb-1">CEP <span id="cep_status" class="text-xs text-indigo-500 font-normal"></span></label>
                     <input type="text" name="zip_code" value="<?= val($client, 'zip_code') ?>" maxlength="10"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
-                <div class="md:col-span-3">
+                <div class="md:col-span-4">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Bairro</label>
                     <input type="text" name="neighborhood" id="neighborhood" value="<?= val($client, 'neighborhood') ?>"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                         placeholder="Bairro">
                 </div>
-                <div class="md:col-span-2">
+                <div class="md:col-span-4">
+                    <label class="block text-sm font-medium text-gray-700 mb-1">Complemento</label>
+                    <input type="text" name="address_complement" maxlength="100" value="<?= val($client, 'address_complement') ?>"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                        placeholder="Apto 42, Bloco B...">
+                </div>
+                <div class="md:col-span-3">
                     <label class="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
                     <input type="text" name="city" value="<?= val($client, 'city') ?>"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">

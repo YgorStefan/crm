@@ -172,11 +172,13 @@ class Client extends Model
     {
         $stmt = $this->db->prepare("
             INSERT INTO clients
-                (tenant_id, name, email, phone, company, cnpj_cpf, address, neighborhood, city, state,
+                (tenant_id, name, email, phone, company, cnpj_cpf, address, address_number, address_complement,
+                 neighborhood, city, state,
                  zip_code, pipeline_stage_id, assigned_to, deal_value, source, notes,
                  birth_date, referido_por, closed_at)
             VALUES
-                (:tenant_id, :name, :email, :phone, :company, :cnpj_cpf, :address, :neighborhood, :city, :state,
+                (:tenant_id, :name, :email, :phone, :company, :cnpj_cpf, :address, :address_number, :address_complement,
+                 :neighborhood, :city, :state,
                  :zip_code, :pipeline_stage_id, :assigned_to, :deal_value, :source, :notes,
                  :birth_date, :referido_por, :closed_at)
         ");
@@ -188,6 +190,8 @@ class Client extends Model
             ':company' => $data['company'] ?: null,
             ':cnpj_cpf' => $data['cnpj_cpf'] ?: null,
             ':address' => $data['address'] ?: null,
+            ':address_number'     => $data['address_number'] ?: null,
+            ':address_complement' => $data['address_complement'] ?: null,
             ':neighborhood' => $data['neighborhood'] ?: null,
             ':city' => $data['city'] ?: null,
             ':state' => $data['state'] ?: null,
@@ -212,7 +216,9 @@ class Client extends Model
         $stmt = $this->db->prepare("
             UPDATE clients SET
                 name = :name, email = :email, phone = :phone, company = :company,
-                cnpj_cpf = :cnpj_cpf, address = :address, neighborhood = :neighborhood,
+                cnpj_cpf = :cnpj_cpf, address = :address,
+                address_number = :address_number, address_complement = :address_complement,
+                neighborhood = :neighborhood,
                 city = :city, state = :state,
                 zip_code = :zip_code, pipeline_stage_id = :pipeline_stage_id,
                 assigned_to = :assigned_to, deal_value = :deal_value,
@@ -228,6 +234,8 @@ class Client extends Model
             ':company' => $data['company'] ?: null,
             ':cnpj_cpf' => $data['cnpj_cpf'] ?: null,
             ':address' => $data['address'] ?: null,
+            ':address_number'     => $data['address_number'] ?: null,
+            ':address_complement' => $data['address_complement'] ?: null,
             ':neighborhood' => $data['neighborhood'] ?: null,
             ':city' => $data['city'] ?: null,
             ':state' => $data['state'] ?: null,
