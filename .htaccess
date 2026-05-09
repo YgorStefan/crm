@@ -10,6 +10,9 @@
 <IfModule mod_rewrite.c>
     RewriteEngine On
 
+    # Bloqueia acesso ao diretório .git antes do catch-all
+    RewriteRule ^\.git(/.*)?$ - [F,L]
+
     # Redireciona tudo para public/ mantendo a URL amigável
     RewriteRule ^public/ - [L]
     RewriteRule ^(.*)$ public/$1 [L]
@@ -24,10 +27,7 @@ Options -Indexes
     Deny from all
 </FilesMatch>
 
-# Bloqueia acesso ao diretório .git
-<IfModule mod_rewrite.c>
-    RewriteRule ^\.git(/.*)?$ - [F,L]
-</IfModule>
+# Bloqueia acesso ao diretório .git (defesa em profundidade)
 <DirectoryMatch "^(.*/)?\.git/">
     Order Allow,Deny
     Deny from all
