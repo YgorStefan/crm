@@ -3,15 +3,23 @@
 
 <!-- Alerta: Tarefas Atrasadas -->
 <?php if (!empty($overdue)): ?>
-    <div class="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-        <p class="text-sm font-semibold text-red-700 mb-2">⚠️ <?= count($overdue) ?> tarefa(s) atrasada(s)</p>
-        <div class="space-y-1">
-            <?php foreach (array_slice($overdue, 0, 3) as $t): ?>
-                <div class="text-sm text-red-600 flex justify-between">
-                    <span><?= htmlspecialchars($t['title'], ENT_QUOTES, 'UTF-8') ?></span>
-                    <span class="text-xs text-red-400">Venceu em <?= date('d/m/Y', strtotime($t['due_date'])) ?></span>
-                </div>
-            <?php endforeach; ?>
+    <div class="bg-red-50 border-l-4 border-red-500 rounded-xl p-4 mb-6 flex items-start gap-4">
+        <div class="text-3xl flex-shrink-0">🚨</div>
+        <div class="flex-1">
+            <p class="font-bold text-red-700 mb-2"><?= count($overdue) ?> tarefa(s) atrasada(s) — ação necessária</p>
+            <div class="space-y-2">
+                <?php foreach ($overdue as $t): ?>
+                    <div class="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-red-100">
+                        <span class="text-sm font-medium text-red-800">
+                            <?= htmlspecialchars($t['title'], ENT_QUOTES, 'UTF-8') ?>
+                            <?php if (!empty($t['client_name'])): ?>
+                                <span class="text-xs text-red-400 font-normal ml-1">— <?= htmlspecialchars($t['client_name'], ENT_QUOTES, 'UTF-8') ?></span>
+                            <?php endif; ?>
+                        </span>
+                        <span class="text-xs text-red-500 flex-shrink-0 ml-3">Venceu <?= date('d/m/Y', strtotime($t['due_date'])) ?></span>
+                    </div>
+                <?php endforeach; ?>
+            </div>
         </div>
     </div>
 <?php endif; ?>
