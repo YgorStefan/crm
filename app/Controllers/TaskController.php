@@ -86,6 +86,17 @@ class TaskController extends Controller
             ];
         }
 
+        // Busca clientes com aniversário hoje (mesmo dia e mês, qualquer ano)
+        $clientModel = new Client();
+        $birthdays = $clientModel->findBirthdaysToday();
+        foreach ($birthdays as $c) {
+            $alerts[] = [
+                'key'     => 'birthday_' . $c['id'],
+                'type'    => 'birthday',
+                'message' => '🎂 Aniversário de ' . $c['name'] . ' hoje!',
+            ];
+        }
+
         $this->json($alerts);
     }
 

@@ -550,6 +550,22 @@ class Client extends Model
      *
      * @return array  Array de int client_ids com cota em atraso
      */
+    public function findBirthdaysToday(): array
+    {
+        $t = $this->currentTenantId();
+        $stmt = $this->db->prepare("
+            SELECT id, name
+            FROM clients
+            WHERE is_active = 1
+              AND tenant_id = :tenant_id
+              AND birth_date IS NOT NULL
+              AND MONTH(birth_date) = MONTH(CURDATE())
+              AND DAY(birth_date) = DAY(CURDATE())
+        ");
+        $stmt->execute([':tenant_id' => $t]);
+        return $stmt->fetchAll();
+    }
+
     public function findAllOverdueSalesByClient(): array
     {
         $ref = $this->computeRefMonth();
