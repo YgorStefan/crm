@@ -44,16 +44,8 @@ $wonRevenue = array_sum(array_column($wonStage, 'total_value'));
     </a>
 </div>
 
-<!-- Gráficos -->
-<div class="mb-8">
-    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
-        <h4 class="text-sm font-semibold text-gray-600 mb-4">Distribuição no Pipeline</h4>
-        <canvas id="chartPipeline" height="100"></canvas>
-    </div>
-</div>
-
-<!-- Linha inferior: Tarefas + Atividade Recente -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+<!-- Próximas Tarefas + Atividade Recente -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
 
     <!-- Tarefas dos próximos 7 dias -->
     <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
@@ -64,25 +56,21 @@ $wonRevenue = array_sum(array_column($wonStage, 'total_value'));
         <?php if (empty($upcomingTasks)): ?>
             <div class="px-5 py-8 text-center text-gray-400 text-sm">Nenhuma tarefa nos próximos 7 dias 🎉</div>
         <?php else: ?>
-            <div class="divide-y divide-gray-50">
+            <div class="divide-y divide-gray-50 overflow-y-auto" style="max-height: 416px;">
                 <?php
                 $priorityColors = ['low' => 'bg-green-400', 'medium' => 'bg-yellow-400', 'high' => 'bg-red-500'];
-                foreach (array_slice($upcomingTasks, 0, 6) as $task):
+                foreach ($upcomingTasks as $task):
                     ?>
                     <div class="px-5 py-3 flex items-center gap-3">
-                        <div
-                            class="w-2 h-2 rounded-full flex-shrink-0 <?= $priorityColors[$task['priority']] ?? 'bg-gray-400' ?>">
-                        </div>
+                        <div class="w-2 h-2 rounded-full flex-shrink-0 <?= $priorityColors[$task['priority']] ?? 'bg-gray-400' ?>"></div>
                         <div class="flex-1 min-w-0">
                             <a href="<?= APP_URL ?>/tasks" class="text-sm font-medium text-gray-700 hover:text-indigo-600 truncate block">
                                 <?= htmlspecialchars($task['title'], ENT_QUOTES, 'UTF-8') ?></a>
                             <?php if ($task['client_name']): ?>
-                                <p class="text-xs text-gray-400 truncate">👥
-                                    <?= htmlspecialchars($task['client_name'], ENT_QUOTES, 'UTF-8') ?></p>
+                                <p class="text-xs text-gray-400 truncate">👥 <?= htmlspecialchars($task['client_name'], ENT_QUOTES, 'UTF-8') ?></p>
                             <?php endif; ?>
                         </div>
-                        <span
-                            class="text-xs text-gray-400 flex-shrink-0"><?= date('d/m', strtotime($task['due_date'])) ?></span>
+                        <span class="text-xs text-gray-400 flex-shrink-0"><?= date('d/m', strtotime($task['due_date'])) ?></span>
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -101,7 +89,7 @@ $wonRevenue = array_sum(array_column($wonStage, 'total_value'));
             ?>
             <div class="px-5 py-8 text-center text-gray-400 text-sm">Nenhuma interação registrada.</div>
         <?php else: ?>
-            <div class="divide-y divide-gray-50">
+            <div class="divide-y divide-gray-50 overflow-y-auto" style="max-height: 416px;">
                 <?php foreach ($recentInteractions as $inter): ?>
                     <div class="px-5 py-3 flex items-start gap-3">
                         <span class="text-lg flex-shrink-0 mt-0.5"><?= $typeIcons[$inter['type']] ?? '📌' ?></span>
@@ -121,6 +109,14 @@ $wonRevenue = array_sum(array_column($wonStage, 'total_value'));
                 <?php endforeach; ?>
             </div>
         <?php endif; ?>
+    </div>
+</div>
+
+<!-- Distribuição no Pipeline -->
+<div class="mb-8">
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5">
+        <h4 class="text-sm font-semibold text-gray-600 mb-4">Distribuição no Pipeline</h4>
+        <canvas id="chartPipeline" height="100"></canvas>
     </div>
 </div>
 

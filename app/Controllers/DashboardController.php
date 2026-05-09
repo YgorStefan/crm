@@ -34,7 +34,7 @@ class DashboardController extends Controller
         $stageData = $clientModel->countByStage();
 
         // Atividade recente
-        $recentInteractions = $interactionModel->findRecent(8);
+        $recentInteractions = $interactionModel->findRecent(20);
 
         // Minhas tarefas próximas (próximos 7 dias)
         $upcomingTasks = $taskModel->findAllWithRelations([
