@@ -23,3 +23,12 @@ Options -Indexes
     Order Allow,Deny
     Deny from all
 </FilesMatch>
+
+# Bloqueia acesso ao diretório .git
+<IfModule mod_rewrite.c>
+    RewriteRule ^\.git(/.*)?$ - [F,L]
+</IfModule>
+<DirectoryMatch "^(.*/)?\.git/">
+    Order Allow,Deny
+    Deny from all
+</DirectoryMatch>
