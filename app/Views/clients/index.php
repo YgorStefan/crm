@@ -158,10 +158,10 @@
                             <a href="<?= APP_URL ?>/clients/<?= $client['id'] ?>/edit"
                                class="text-amber-600 hover:text-amber-800 text-xs font-medium" title="Editar">✏️</a>
                             <button
-                                onclick="openQuickInteraction(<?= (int)$client['id'] ?>, <?= json_encode($client['name']) ?>)"
+                                onclick="openQuickInteraction(<?= (int)$client['id'] ?>, <?= htmlspecialchars(json_encode($client['name']), ENT_QUOTES, 'UTF-8') ?>)"
                                 class="text-green-600 hover:text-green-800 text-xs font-medium" title="Nova interação">💬</button>
                             <button
-                                onclick="openQuickTask(<?= (int)$client['id'] ?>, <?= json_encode($client['name']) ?>)"
+                                onclick="openQuickTask(<?= (int)$client['id'] ?>, <?= htmlspecialchars(json_encode($client['name']), ENT_QUOTES, 'UTF-8') ?>)"
                                 class="text-purple-600 hover:text-purple-800 text-xs font-medium" title="Nova tarefa">📅</button>
                         </div>
                     </td>

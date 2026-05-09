@@ -196,6 +196,7 @@
             } else {
                 backdrop.classList.remove('hidden');
             }
+            setTimeout(() => window.dispatchEvent(new Event('resize')), 310);
         }
 
         function closeSidebar() {
@@ -203,6 +204,7 @@
             sidebar.classList.remove('translate-x-0');
             backdrop.classList.add('hidden');
             mainContent.style.marginLeft = '0';
+            setTimeout(() => window.dispatchEvent(new Event('resize')), 310);
         }
 
         // Estado inicial: aberto em desktop, fechado em mobile
