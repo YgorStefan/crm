@@ -173,14 +173,18 @@ class Task extends Model
      */
     public function findForCalendar(int $userId, bool $isAdmin = false): array
     {
+        $tenantId = $this->currentTenantId();
         $sql = "
             SELECT t.id, t.title, t.due_date, t.priority, t.status, t.client_id,
                    c.name AS client_name
             FROM tasks t
-            LEFT JOIN clients c ON c.id = t.client_id
+            LEFT JOIN clients c ON c.id = t.client_id AND c.tenant_id = :tenant_id_c
             WHERE t.status NOT IN ('cancelled')
+              AND t.assigned_to IN (
+                  SELECT id FROM users WHERE tenant_id = :tenant_id_u
+              )
         ";
-        $params = [];
+        $params = [':tenant_id_c' => $tenantId, ':tenant_id_u' => $tenantId];
         if (!$isAdmin) {
             $sql .= " AND t.assigned_to = :uid";
             $params[':uid'] = $userId;
