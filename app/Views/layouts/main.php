@@ -191,11 +191,10 @@
         function openSidebar() {
             sidebar.classList.remove('-translate-x-full');
             sidebar.classList.add('translate-x-0');
-            backdrop.classList.remove('hidden');
-            // Em desktop: empurra o conteúdo para a direita
             if (window.innerWidth >= 1024) {
                 mainContent.style.marginLeft = '256px';
-                backdrop.classList.add('hidden'); // sem backdrop em desktop
+            } else {
+                backdrop.classList.remove('hidden');
             }
         }
 
@@ -219,6 +218,18 @@
         });
         closeBtn?.addEventListener('click', closeSidebar);
         backdrop?.addEventListener('click', closeSidebar);
+
+        // Re-sync sidebar state on resize (e.g., mobile → desktop or vice-versa)
+        window.addEventListener('resize', function () {
+            const isOpen = !sidebar.classList.contains('-translate-x-full');
+            if (window.innerWidth >= 1024) {
+                backdrop.classList.add('hidden');
+                if (isOpen) mainContent.style.marginLeft = '256px';
+            } else {
+                mainContent.style.marginLeft = '0';
+                if (isOpen) backdrop.classList.remove('hidden');
+            }
+        });
 
         // Auto-remove flash message após 5 segundos
         setTimeout(() => document.getElementById('flashMsg')?.remove(), 5000);
