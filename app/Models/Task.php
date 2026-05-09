@@ -101,7 +101,8 @@ class Task extends Model
     {
         $allowed = ['title', 'description', 'due_date', 'priority', 'status', 'assigned_to'];
         $setClauses = [];
-        $params = [':id' => $id];
+        $tenantId = $this->currentTenantId();
+        $params = [':id' => $id, ':tenant_id_u' => $tenantId];
 
         foreach ($allowed as $field) {
             if (array_key_exists($field, $data)) {
@@ -113,7 +114,8 @@ class Task extends Model
         if (empty($setClauses))
             return false;
 
-        $sql = "UPDATE tasks SET " . implode(', ', $setClauses) . " WHERE id = :id";
+        $sql = "UPDATE tasks SET " . implode(', ', $setClauses) .
+               " WHERE id = :id AND assigned_to IN (SELECT id FROM users WHERE tenant_id = :tenant_id_u)";
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return $stmt->rowCount() > 0;
@@ -127,14 +129,17 @@ class Task extends Model
      */
     public function countPending(?int $userId = null): int
     {
+        $tenantId = $this->currentTenantId();
+        $sql = "SELECT COUNT(*) FROM tasks
+                WHERE status IN ('pending','in_progress')
+                  AND assigned_to IN (SELECT id FROM users WHERE tenant_id = :tenant_id_u)";
+        $params = [':tenant_id_u' => $tenantId];
         if ($userId) {
-            $stmt = $this->db->prepare(
-                "SELECT COUNT(*) FROM tasks WHERE status IN ('pending','in_progress') AND assigned_to = :uid"
-            );
-            $stmt->execute([':uid' => $userId]);
-        } else {
-            $stmt = $this->db->query("SELECT COUNT(*) FROM tasks WHERE status IN ('pending','in_progress')");
+            $sql .= " AND assigned_to = :uid";
+            $params[':uid'] = $userId;
         }
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
         return (int) $stmt->fetchColumn();
     }
 
@@ -201,13 +206,15 @@ class Task extends Model
      */
     public function findUpcoming(int $userId, string $from, string $to, bool $isAdmin = false): array
     {
+        $tenantId = $this->currentTenantId();
         $sql = "
             SELECT id, title, due_date, priority
             FROM tasks
             WHERE due_date BETWEEN :from AND :to
               AND status IN ('pending', 'in_progress')
+              AND assigned_to IN (SELECT id FROM users WHERE tenant_id = :tenant_id_u)
         ";
-        $params = [':from' => $from, ':to' => $to];
+        $params = [':from' => $from, ':to' => $to, ':tenant_id_u' => $tenantId];
         if (!$isAdmin) {
             $sql .= " AND assigned_to = :uid";
             $params[':uid'] = $userId;
