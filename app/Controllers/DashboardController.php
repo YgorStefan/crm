@@ -19,7 +19,7 @@ class DashboardController extends Controller
         $interactionModel = new Interaction();
 
         // Total de clientes ativos
-        $totalClients = count($clientModel->findAllWithRelations());
+        $totalClients = $clientModel->countAllWithRelations();
 
         // Tarefas pendentes do usuário logado
         $pendingTasks = $taskModel->countPending($_SESSION['user']['id']);
