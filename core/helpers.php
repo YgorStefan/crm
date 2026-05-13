@@ -6,24 +6,23 @@
  * Gera um link de navegação para o menu lateral, destacando o item ativo.
  *
  * @param string $href        Caminho relativo da rota (ex: '/dashboard').
- * @param string $icon        Ícone ou emoji exibido antes do rótulo.
+ * @param string $svgIcon     SVG inline (conteúdo HTML, não escapado).
  * @param string $label       Texto do link.
  * @param string $currentPath Caminho atual da requisição para comparação de ativo.
  * @return string             Marcação HTML do link de navegação.
  */
-function navLink(string $href, string $icon, string $label, string $currentPath): string
+function navLink(string $href, string $svgIcon, string $label, string $currentPath): string
 {
     $active = ($currentPath === $href || str_starts_with($currentPath, $href . '/'));
     $base   = 'flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium transition-colors';
     $cls    = $active
-        ? "$base bg-indigo-600 text-white"
-        : "$base text-indigo-200 hover:bg-indigo-800 hover:text-white";
+        ? "$base bg-indigo-50 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300"
+        : "$base text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200";
 
     $safeHref  = htmlspecialchars(APP_URL . $href, ENT_QUOTES, 'UTF-8');
-    $safeIcon  = htmlspecialchars($icon, ENT_QUOTES, 'UTF-8');
     $safeLabel = htmlspecialchars($label, ENT_QUOTES, 'UTF-8');
-
-    return "<a href=\"{$safeHref}\" class=\"{$cls}\">{$safeIcon} <span>{$safeLabel}</span></a>";
+    // $svgIcon is trusted developer-authored inline SVG, never user input
+    return "<a href=\"{$safeHref}\" class=\"{$cls}\">{$svgIcon}<span class=\"nav-label ml-1\">{$safeLabel}</span></a>";
 }
 
 /**
