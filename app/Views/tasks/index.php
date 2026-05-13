@@ -3,20 +3,20 @@
 
 <!-- Alerta: Tarefas Atrasadas -->
 <?php if (!empty($overdue)): ?>
-    <div class="bg-red-50 border-l-4 border-red-500 rounded-xl p-4 mb-6 flex items-start gap-4">
-        <div class="text-3xl flex-shrink-0">🚨</div>
+    <div class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 rounded-xl p-4 mb-6 flex items-start gap-4">
+        <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-red-500 flex-shrink-0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         <div class="flex-1">
-            <p class="font-bold text-red-700 mb-2"><?= count($overdue) ?> tarefa(s) atrasada(s) — ação necessária</p>
+            <p class="font-bold text-red-700 dark:text-red-400 mb-2"><?= count($overdue) ?> tarefa(s) atrasada(s) — ação necessária</p>
             <div class="space-y-2">
                 <?php foreach ($overdue as $t): ?>
-                    <div class="flex items-center justify-between bg-white rounded-lg px-3 py-2 border border-red-100">
-                        <span class="text-sm font-medium text-red-800">
+                    <div class="flex items-center justify-between bg-white dark:bg-slate-800 rounded-lg px-3 py-2 border border-red-100 dark:border-red-800/50">
+                        <span class="text-sm font-medium text-red-800 dark:text-red-300">
                             <?= htmlspecialchars($t['title'], ENT_QUOTES, 'UTF-8') ?>
                             <?php if (!empty($t['client_name'])): ?>
-                                <span class="text-xs text-red-400 font-normal ml-1">— <?= htmlspecialchars($t['client_name'], ENT_QUOTES, 'UTF-8') ?></span>
+                                <span class="text-xs text-red-400 dark:text-red-500 font-normal ml-1">— <?= htmlspecialchars($t['client_name'], ENT_QUOTES, 'UTF-8') ?></span>
                             <?php endif; ?>
                         </span>
-                        <span class="text-xs text-red-500 flex-shrink-0 ml-3">Venceu <?= date('d/m/Y', strtotime($t['due_date'])) ?></span>
+                        <span class="text-xs text-red-500 dark:text-red-400 flex-shrink-0 ml-3">Venceu <?= date('d/m/Y', strtotime($t['due_date'])) ?></span>
                     </div>
                 <?php endforeach; ?>
             </div>
@@ -25,45 +25,45 @@
 <?php endif; ?>
 
 <!-- Calendario FullCalendar -->
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+<div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4">
     <div id="fc-calendar"></div>
 </div>
 
 <!-- Modal: Criacao e Edicao de Tarefa -->
 <div id="modalTask" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-        <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
-            <h4 id="modalTaskTitle" class="text-lg font-bold text-gray-800">Nova Tarefa</h4>
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="px-6 py-5 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between">
+            <h4 id="modalTaskTitle" class="text-lg font-bold text-gray-800 dark:text-white">Nova Tarefa</h4>
             <button onclick="document.getElementById('modalTask').classList.add('hidden')"
-                class="text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
+                class="text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300 text-2xl">&times;</button>
         </div>
         <div class="px-6 py-5 space-y-4">
             <input type="hidden" id="task_id" value="">
             <input type="hidden" id="task_csrf" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
 
-            <div id="taskClientLink" style="display:none" class="bg-indigo-50 rounded-lg px-3 py-2 flex items-center justify-between">
-                <span class="text-sm text-indigo-700">👥 Cliente: <span id="taskClientName" class="font-medium"></span></span>
+            <div id="taskClientLink" style="display:none" class="bg-indigo-50 dark:bg-indigo-900/30 rounded-lg px-3 py-2 flex items-center justify-between">
+                <span class="text-sm text-indigo-700 dark:text-indigo-300">👥 Cliente: <span id="taskClientName" class="font-medium"></span></span>
                 <a id="taskClientUrl" href="#" class="text-xs text-indigo-600 hover:underline font-medium">Ver cadastro →</a>
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Titulo <span
+                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Titulo <span
                         class="text-red-500">*</span></label>
                 <input type="text" id="task_title" name="title" required placeholder="O que precisa ser feito?"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
 
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Prazo <span
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Prazo <span
                             class="text-red-500">*</span></label>
                     <input type="datetime-local" id="task_due_date" name="due_date" required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Prioridade</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Prioridade</label>
                     <select id="task_priority" name="priority"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                         <option value="low">Baixa</option>
                         <option value="medium" selected>Media</option>
                         <option value="high">Alta</option>
@@ -73,9 +73,9 @@
 
             <?php if (($_SESSION['user']['role'] ?? '') === 'admin'): ?>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Responsavel</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Responsavel</label>
                     <select id="task_assigned_to" name="assigned_to"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                         <?php foreach ($users as $user): ?>
                             <option value="<?= $user['id'] ?>" <?= $user['id'] == ($_SESSION['user']['id'] ?? 0) ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($user['name'], ENT_QUOTES, 'UTF-8') ?>
@@ -86,10 +86,10 @@
             <?php endif; ?>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">Descricao</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Descricao</label>
                 <textarea id="task_description" name="description" rows="2"
                     placeholder="Detalhes da tarefa (opcional)..."
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
             </div>
 
             <div class="flex justify-between gap-3 pt-2">
@@ -105,7 +105,7 @@
                 </div>
                 <div class="flex gap-3 ml-auto">
                     <button type="button" onclick="document.getElementById('modalTask').classList.add('hidden')"
-                        class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-100 transition-colors">
+                        class="px-4 py-2 border border-gray-300 text-gray-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-200 rounded-lg text-sm hover:bg-gray-100 transition-colors">
                         Cancelar
                     </button>
                     <button id="btnSaveTask"
