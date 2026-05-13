@@ -1,11 +1,11 @@
 <?php
 $interactionTypes = [
-    'call' => ['label' => 'Ligação', 'icon' => '📞', 'color' => 'blue'],
-    'email' => ['label' => 'E-mail', 'icon' => '📧', 'color' => 'green'],
-    'meeting' => ['label' => 'Reunião', 'icon' => '🤝', 'color' => 'purple'],
-    'whatsapp' => ['label' => 'WhatsApp', 'icon' => '💬', 'color' => 'teal'],
-    'note' => ['label' => 'Nota', 'icon' => '📝', 'color' => 'yellow'],
-    'other' => ['label' => 'Outro', 'icon' => '📌', 'color' => 'gray'],
+    'call' => ['label' => 'Ligação', 'icon' => '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-blue-500"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.93 12 19.79 19.79 0 0 1 1.86 3.38 2 2 0 0 1 3.84 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>', 'color' => 'blue'],
+    'email' => ['label' => 'E-mail', 'icon' => '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-green-500"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>', 'color' => 'green'],
+    'meeting' => ['label' => 'Reunião', 'icon' => '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-purple-500"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>', 'color' => 'purple'],
+    'whatsapp' => ['label' => 'WhatsApp', 'icon' => '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-teal-500"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>', 'color' => 'teal'],
+    'note' => ['label' => 'Nota', 'icon' => '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-yellow-500"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>', 'color' => 'yellow'],
+    'other' => ['label' => 'Outro', 'icon' => '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-gray-400"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>', 'color' => 'gray'],
 ];
 ?>
 
@@ -14,13 +14,13 @@ $interactionTypes = [
     <!-- Cabeçalho -->
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div class="flex items-center gap-3">
-            <a href="<?= APP_URL ?>/clients" class="text-gray-400 hover:text-gray-600">← Clientes</a>
+            <a href="<?= APP_URL ?>/clients" class="text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300">← Clientes</a>
             <div>
-                <h3 class="text-2xl font-bold text-gray-800">
+                <h3 class="text-2xl font-bold text-gray-800 dark:text-white">
                     <?= htmlspecialchars($client['name'], ENT_QUOTES, 'UTF-8') ?>
                 </h3>
                 <?php if ($client['company']): ?>
-                    <p class="text-sm text-gray-500"><?= htmlspecialchars($client['company'], ENT_QUOTES, 'UTF-8') ?></p>
+                    <p class="text-sm text-gray-500 dark:text-slate-400"><?= htmlspecialchars($client['company'], ENT_QUOTES, 'UTF-8') ?></p>
                 <?php endif; ?>
             </div>
         </div>
@@ -39,9 +39,9 @@ $interactionTypes = [
         <div class="lg:col-span-1 space-y-4">
 
             <!-- Card: informações -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-                    <h4 class="font-semibold text-gray-700">Informações</h4>
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+                <div class="px-5 py-4 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between">
+                    <h4 class="font-semibold text-gray-700 dark:text-slate-200">Informações</h4>
                     <span class="px-2.5 py-1 rounded-full text-xs font-medium text-white"
                         style="background-color: <?= htmlspecialchars($client['stage_color'] ?? '#6366f1', ENT_QUOTES, 'UTF-8') ?>">
                         <?= htmlspecialchars($client['stage_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>
@@ -69,15 +69,15 @@ $interactionTypes = [
                             continue;
                         ?>
                         <div class="flex justify-between gap-2">
-                            <span class="text-gray-400"><?= $label ?></span>
+                            <span class="text-gray-400 dark:text-slate-500"><?= $label ?></span>
                             <span
-                                class="text-gray-700 font-medium text-right"><?= htmlspecialchars($value, ENT_QUOTES, 'UTF-8') ?></span>
+                                class="text-gray-700 dark:text-slate-200 font-medium text-right"><?= htmlspecialchars($value, ENT_QUOTES, 'UTF-8') ?></span>
                         </div>
                     <?php endforeach; ?>
 
                     <?php if ($client['deal_value'] > 0): ?>
-                        <div class="flex justify-between gap-2 pt-2 border-t border-gray-100">
-                            <span class="text-gray-400">💰 Valor</span>
+                        <div class="flex justify-between gap-2 pt-2 border-t border-gray-100 dark:border-slate-700">
+                            <span class="text-gray-400 dark:text-slate-500">💰 Valor</span>
                             <span class="text-green-700 font-bold">
                                 R$ <?= number_format($client['deal_value'], 2, ',', '.') ?>
                             </span>
@@ -88,7 +88,7 @@ $interactionTypes = [
 
             <!-- Card: nota (visível apenas se o cliente tiver nota) -->
             <?php if (!empty($client['notes'])): ?>
-            <div class="bg-white shadow-sm border border-gray-100 rounded-xl p-4 text-sm text-gray-700" id="notes-card">
+            <div class="bg-white dark:bg-slate-800 shadow-sm border border-gray-100 dark:border-slate-700 rounded-xl p-4 text-sm text-gray-700 dark:text-slate-200" id="notes-card">
                 <div class="flex items-center justify-between mb-2">
                     <p class="font-semibold">📝 Nota</p>
                     <div class="flex gap-3">
@@ -113,7 +113,7 @@ $interactionTypes = [
                 <!-- Estado: edição (oculto) -->
                 <div id="notes-edit" style="display:none">
                     <textarea id="notes-textarea" rows="4"
-                        class="w-full px-2 py-1 border border-gray-300 rounded text-sm text-gray-800 bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none mb-2"><?= htmlspecialchars($client['notes'] ?? '', ENT_QUOTES, 'UTF-8') ?></textarea>
+                        class="w-full px-2 py-1 border border-gray-300 rounded text-sm text-gray-800 bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none mb-2 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400"><?= htmlspecialchars($client['notes'] ?? '', ENT_QUOTES, 'UTF-8') ?></textarea>
                     <div class="flex gap-2">
                         <button type="button" id="notes-save-btn"
                             class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">
@@ -130,20 +130,20 @@ $interactionTypes = [
             <?php endif; ?>
 
             <!-- Card: adicionar tarefa rápida -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="px-5 py-4 border-b border-gray-100">
-                    <h4 class="font-semibold text-gray-700">✅ Nova Tarefa</h4>
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+                <div class="px-5 py-4 border-b border-gray-100 dark:border-slate-700">
+                    <h4 class="font-semibold text-gray-700 dark:text-slate-200">✅ Nova Tarefa</h4>
                 </div>
                 <form method="POST" action="<?= APP_URL ?>/tasks/store" class="px-5 py-4 space-y-3">
                     <input type="hidden" name="_csrf_token"
                         value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
                     <input type="hidden" name="client_id" value="<?= $client['id'] ?>">
                     <input type="text" name="title" required placeholder="Título da tarefa"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
                     <input type="datetime-local" name="due_date" required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
                     <select name="priority"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white">
                         <option value="low">🟢 Baixa prioridade</option>
                         <option value="medium" selected>🟡 Média prioridade</option>
                         <option value="high">🔴 Alta prioridade</option>
@@ -160,9 +160,9 @@ $interactionTypes = [
         <div class="lg:col-span-2 space-y-6">
 
             <!-- Registrar interação -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="px-5 py-4 border-b border-gray-100">
-                    <h4 class="font-semibold text-gray-700">📋 Registrar Interação</h4>
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+                <div class="px-5 py-4 border-b border-gray-100 dark:border-slate-700">
+                    <h4 class="font-semibold text-gray-700 dark:text-slate-200">📋 Registrar Interação</h4>
                 </div>
                 <form method="POST" action="<?= APP_URL ?>/interactions/store" class="px-5 py-4">
                     <input type="hidden" name="_csrf_token"
@@ -170,16 +170,16 @@ $interactionTypes = [
                     <input type="hidden" name="client_id" value="<?= $client['id'] ?>">
                     <div class="grid grid-cols-2 gap-3 mb-3">
                         <select name="type"
-                            class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white">
                             <?php foreach ($interactionTypes as $key => $info): ?>
-                                <option value="<?= $key ?>"><?= $info['icon'] ?>     <?= $info['label'] ?></option>
+                                <option value="<?= $key ?>"><?= $info['label'] ?></option>
                             <?php endforeach; ?>
                         </select>
                         <input type="datetime-local" name="occurred_at" value="<?= date('Y-m-d\TH:i') ?>"
-                            class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
                     </div>
                     <textarea name="description" required rows="2" placeholder="Descreva o contato realizado..."
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none mb-3"></textarea>
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none mb-3 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400"></textarea>
                     <button type="submit"
                         class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
                         Salvar Interação
@@ -188,38 +188,38 @@ $interactionTypes = [
             </div>
 
             <!-- Timeline de interações -->
-            <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <div class="px-5 py-4 border-b border-gray-100">
-                    <h4 class="font-semibold text-gray-700">
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+                <div class="px-5 py-4 border-b border-gray-100 dark:border-slate-700">
+                    <h4 class="font-semibold text-gray-700 dark:text-slate-200">
                         🕐 Histórico de Contatos
                         <span
-                            class="ml-2 text-xs bg-gray-100 text-gray-500 px-2 py-0.5 rounded-full"><?= count($interactions) ?></span>
+                            class="ml-2 text-xs bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400 px-2 py-0.5 rounded-full"><?= count($interactions) ?></span>
                     </h4>
                 </div>
                 <?php if (empty($interactions)): ?>
-                    <div class="px-5 py-8 text-center text-gray-400 text-sm">Nenhuma interação registrada ainda.</div>
+                    <div class="px-5 py-8 text-center text-gray-400 dark:text-slate-500 text-sm">Nenhuma interação registrada ainda.</div>
                 <?php else: ?>
-                    <div class="divide-y divide-gray-50">
+                    <div class="divide-y divide-gray-50 dark:divide-slate-700">
                         <?php foreach ($interactions as $inter):
                             $typeInfo = $interactionTypes[$inter['type']] ?? $interactionTypes['other'];
                             ?>
                             <div class="px-5 py-4 flex gap-3" data-interaction-id="<?= $inter['id'] ?>">
                                 <!-- Ícone do tipo (sempre visível) -->
-                                <div class="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center text-base">
+                                <div class="flex-shrink-0 w-8 h-8 rounded-full bg-gray-100 dark:bg-slate-700/30 flex items-center justify-center">
                                     <?= $typeInfo['icon'] ?>
                                 </div>
 
                                 <!-- Estado: visualização (padrão) -->
                                 <div class="flex-1 min-w-0 inter-view">
                                     <div class="flex items-center justify-between gap-2">
-                                        <span class="text-xs font-semibold text-gray-500 inter-type-label">
+                                        <span class="text-xs font-semibold text-gray-500 dark:text-slate-400 inter-type-label">
                                             <?= $typeInfo['label'] ?> · <?= htmlspecialchars($inter['user_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>
                                         </span>
-                                        <span class="text-xs text-gray-400 flex-shrink-0 inter-date-label">
+                                        <span class="text-xs text-gray-400 dark:text-slate-500 flex-shrink-0 inter-date-label">
                                             <?= date('d/m/Y H:i', strtotime($inter['occurred_at'])) ?>
                                         </span>
                                     </div>
-                                    <p class="text-sm text-gray-700 mt-1 inter-description cursor-pointer hover:bg-gray-50 rounded px-1 -mx-1"
+                                    <p class="text-sm text-gray-700 dark:text-slate-200 mt-1 inter-description cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-700/30 rounded px-1 -mx-1"
                                        title="Clique para editar">
                                         <?= nl2br(htmlspecialchars($inter['description'], ENT_QUOTES, 'UTF-8')) ?>
                                     </p>
@@ -228,20 +228,20 @@ $interactionTypes = [
                                 <!-- Estado: edição (oculto) -->
                                 <div class="flex-1 min-w-0 inter-edit" style="display:none">
                                     <div class="grid grid-cols-2 gap-2 mb-2">
-                                        <select class="inter-edit-type px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                                        <select class="inter-edit-type px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white">
                                             <?php foreach ($interactionTypes as $key => $info): ?>
                                                 <option value="<?= $key ?>" <?= $inter['type'] === $key ? 'selected' : '' ?>>
-                                                    <?= $info['icon'] ?> <?= $info['label'] ?>
+                                                    <?= $info['label'] ?>
                                                 </option>
                                             <?php endforeach; ?>
                                         </select>
-                                        <input type="datetime-local" class="inter-edit-date px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                                        <input type="datetime-local" class="inter-edit-date px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white"
                                                value="<?= date('Y-m-d\TH:i', strtotime($inter['occurred_at'])) ?>">
                                     </div>
-                                    <textarea class="inter-edit-desc w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none mb-2" rows="3"><?= htmlspecialchars($inter['description'], ENT_QUOTES, 'UTF-8') ?></textarea>
+                                    <textarea class="inter-edit-desc w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none mb-2 dark:border-slate-600 dark:bg-slate-700 dark:text-white" rows="3"><?= htmlspecialchars($inter['description'], ENT_QUOTES, 'UTF-8') ?></textarea>
                                     <div class="flex gap-2">
                                         <button type="button" class="inter-save-btn bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">Salvar</button>
-                                        <button type="button" class="inter-cancel-btn border border-gray-300 text-gray-600 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors">Cancelar</button>
+                                        <button type="button" class="inter-cancel-btn border border-gray-300 dark:border-slate-600 text-gray-600 dark:text-slate-300 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">Cancelar</button>
                                         <span class="inter-save-error text-xs text-red-500 self-center" style="display:none">Erro ao salvar.</span>
                                     </div>
                                 </div>
@@ -262,11 +262,11 @@ $interactionTypes = [
 
             <!-- Tarefas vinculadas -->
             <?php if (!empty($tasks)): ?>
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div class="px-5 py-4 border-b border-gray-100">
-                        <h4 class="font-semibold text-gray-700">✅ Tarefas</h4>
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+                    <div class="px-5 py-4 border-b border-gray-100 dark:border-slate-700">
+                        <h4 class="font-semibold text-gray-700 dark:text-slate-200">✅ Tarefas</h4>
                     </div>
-                    <div class="divide-y divide-gray-50">
+                    <div class="divide-y divide-gray-50 dark:divide-slate-700">
                         <?php
                         $priorityColors = ['low' => 'text-green-600', 'medium' => 'text-yellow-600', 'high' => 'text-red-600'];
                         $statusLabels = ['pending' => 'Pendente', 'in_progress' => 'Em andamento', 'done' => 'Concluída', 'cancelled' => 'Cancelada'];
@@ -275,16 +275,16 @@ $interactionTypes = [
                             <div class="px-5 py-3 flex items-center justify-between gap-3">
                                 <div>
                                     <p
-                                        class="text-sm font-medium text-gray-700 <?= $task['status'] === 'done' ? 'line-through text-gray-400' : '' ?>">
+                                        class="text-sm font-medium text-gray-700 dark:text-slate-200 <?= $task['status'] === 'done' ? 'line-through text-gray-400 dark:text-slate-500' : '' ?>">
                                         <?= htmlspecialchars($task['title'], ENT_QUOTES, 'UTF-8') ?>
                                     </p>
-                                    <p class="text-xs text-gray-400 mt-0.5">
+                                    <p class="text-xs text-gray-400 dark:text-slate-500 mt-0.5">
                                         Vence: <?= date('d/m/Y H:i', strtotime($task['due_date'])) ?>
                                         · <span
                                             class="<?= $priorityColors[$task['priority']] ?? '' ?>"><?= ucfirst($task['priority']) ?></span>
                                     </p>
                                 </div>
-                                <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded-full flex-shrink-0">
+                                <span class="text-xs bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 px-2 py-1 rounded-full flex-shrink-0">
                                     <?= $statusLabels[$task['status']] ?? $task['status'] ?>
                                 </span>
                             </div>
@@ -299,9 +299,9 @@ $interactionTypes = [
                 && !empty($client['is_won_stage']);
 
             if ($isVendaFechada): ?>
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden" id="cotas-section">
-                    <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-                        <h4 class="font-semibold text-gray-700">🏦 Cotas de Consórcio</h4>
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden" id="cotas-section">
+                    <div class="px-5 py-4 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between">
+                        <h4 class="font-semibold text-gray-700 dark:text-slate-200">🏦 Cotas de Consórcio</h4>
                         <button type="button" id="btn-add-cota"
                             class="inline-flex items-center gap-1 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">
                             + Adicionar cota
@@ -309,24 +309,24 @@ $interactionTypes = [
                     </div>
 
                     <!-- Lista de cotas existentes -->
-                    <div id="cotas-list" class="divide-y divide-gray-50">
+                    <div id="cotas-list" class="divide-y divide-gray-50 dark:divide-slate-700">
                         <?php if (empty($sales)): ?>
-                            <p class="px-5 py-6 text-sm text-gray-400 text-center" id="cotas-empty">Nenhuma cota cadastrada
+                            <p class="px-5 py-6 text-sm text-gray-400 dark:text-slate-500 text-center" id="cotas-empty">Nenhuma cota cadastrada
                                 ainda.</p>
                         <?php else: ?>
                             <?php foreach ($sales as $sale): ?>
                                 <div class="px-5 py-4 flex items-start justify-between gap-3" data-sale-id="<?= $sale['id'] ?>">
                                     <div class="grid grid-cols-2 gap-x-6 gap-y-1 text-sm flex-1">
-                                        <div><span class="text-gray-400 text-xs">Grupo:</span> <span
-                                                class="text-gray-700 font-medium"><?= htmlspecialchars($sale['grupo'] ?? '—', ENT_QUOTES, 'UTF-8') ?></span>
+                                        <div><span class="text-gray-400 dark:text-slate-500 text-xs">Grupo:</span> <span
+                                                class="text-gray-700 dark:text-slate-200 font-medium"><?= htmlspecialchars($sale['grupo'] ?? '—', ENT_QUOTES, 'UTF-8') ?></span>
                                         </div>
-                                        <div><span class="text-gray-400 text-xs">Cota:</span> <span
-                                                class="text-gray-700 font-medium"><?= htmlspecialchars($sale['cota'] ?? '—', ENT_QUOTES, 'UTF-8') ?></span>
+                                        <div><span class="text-gray-400 dark:text-slate-500 text-xs">Cota:</span> <span
+                                                class="text-gray-700 dark:text-slate-200 font-medium"><?= htmlspecialchars($sale['cota'] ?? '—', ENT_QUOTES, 'UTF-8') ?></span>
                                         </div>
-                                        <div><span class="text-gray-400 text-xs">Tipo:</span> <span
-                                                class="text-gray-700 font-medium"><?= htmlspecialchars($sale['tipo'], ENT_QUOTES, 'UTF-8') ?></span>
+                                        <div><span class="text-gray-400 dark:text-slate-500 text-xs">Tipo:</span> <span
+                                                class="text-gray-700 dark:text-slate-200 font-medium"><?= htmlspecialchars($sale['tipo'], ENT_QUOTES, 'UTF-8') ?></span>
                                         </div>
-                                        <div><span class="text-gray-400 text-xs">Crédito:</span> <span
+                                        <div><span class="text-gray-400 dark:text-slate-500 text-xs">Crédito:</span> <span
                                                 class="text-green-700 font-bold">R$
                                                 <?= number_format($sale['credito_contratado'] ?? 0, 2, ',', '.') ?></span></div>
                                     </div>
@@ -341,24 +341,24 @@ $interactionTypes = [
                 </div>
 
                 <!-- Card: Pagamentos - visível somente para Venda Fechada -->
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden" id="pagamentos-section">
-                    <div class="px-5 py-4 border-b border-gray-100">
-                        <h4 class="font-semibold text-gray-700">💰 Pagamentos</h4>
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden" id="pagamentos-section">
+                    <div class="px-5 py-4 border-b border-gray-100 dark:border-slate-700">
+                        <h4 class="font-semibold text-gray-700 dark:text-slate-200">💰 Pagamentos</h4>
                     </div>
-                    <div id="pagamentos-list" class="divide-y divide-gray-50">
+                    <div id="pagamentos-list" class="divide-y divide-gray-50 dark:divide-slate-700">
                         <?php if (empty($sales)): ?>
-                            <p class="px-5 py-6 text-sm text-gray-400 text-center">Nenhuma cota cadastrada.</p>
+                            <p class="px-5 py-6 text-sm text-gray-400 dark:text-slate-500 text-center">Nenhuma cota cadastrada.</p>
                         <?php else: ?>
                             <?php foreach ($sales as $sale): ?>
                                 <div class="px-5 py-4 flex items-center justify-between gap-3" data-sale-id="<?= $sale['id'] ?>">
                                     <div class="text-sm">
-                                        <span class="text-gray-500 text-xs">Cota:</span>
+                                        <span class="text-gray-500 dark:text-slate-400 text-xs">Cota:</span>
                                         <span
-                                            class="text-gray-700 font-medium"><?= htmlspecialchars($sale['cota'] ?? '—', ENT_QUOTES, 'UTF-8') ?></span>
-                                        <span class="text-gray-400 mx-1">·</span>
-                                        <span class="text-gray-500 text-xs">Tipo:</span>
+                                            class="text-gray-700 dark:text-slate-200 font-medium"><?= htmlspecialchars($sale['cota'] ?? '—', ENT_QUOTES, 'UTF-8') ?></span>
+                                        <span class="text-gray-400 dark:text-slate-500 mx-1">·</span>
+                                        <span class="text-gray-500 dark:text-slate-400 text-xs">Tipo:</span>
                                         <span
-                                            class="text-gray-700 font-medium"><?= htmlspecialchars($sale['tipo'], ENT_QUOTES, 'UTF-8') ?></span>
+                                            class="text-gray-700 dark:text-slate-200 font-medium"><?= htmlspecialchars($sale['tipo'], ENT_QUOTES, 'UTF-8') ?></span>
                                     </div>
                                     <?php if ($sale['is_paid']): ?>
                                         <button type="button"
@@ -633,26 +633,26 @@ $interactionTypes = [
         <!-- Modal: Adicionar cota de consórcio -->
         <div id="cota-modal-overlay" style="display:none;"
             class="fixed inset-0 bg-gray-900 bg-opacity-60 z-50 flex items-center justify-center">
-            <div class="bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4">
-                <h5 class="text-base font-semibold text-gray-800 mb-4">Nova Cota de Consórcio</h5>
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl p-6 max-w-md w-full mx-4">
+                <h5 class="text-base font-semibold text-gray-800 dark:text-white mb-4">Nova Cota de Consórcio</h5>
                 <div class="space-y-3">
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Grupo</label>
+                            <label class="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Grupo</label>
                             <input type="text" id="cota-grupo" placeholder="Ex: 0042"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-600 mb-1">Cota</label>
+                            <label class="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Cota</label>
                             <input type="text" id="cota-cota" placeholder="Ex: 128"
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
                         </div>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">Tipo <span
+                        <label class="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Tipo <span
                                 class="text-red-500">*</span></label>
                         <select id="cota-tipo"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white">
                             <option value="">Selecione...</option>
                             <option value="Imóvel">Imóvel</option>
                             <option value="Veículo">Veículo</option>
@@ -660,14 +660,14 @@ $interactionTypes = [
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 mb-1">Crédito contratado (R$)</label>
+                        <label class="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Crédito contratado (R$)</label>
                         <input type="text" id="cota-credito" placeholder="0,00"
-                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
                     </div>
                 </div>
                 <div class="flex justify-end gap-2 mt-5">
                     <button type="button" id="cota-cancel"
-                        class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-100 transition-colors">
+                        class="px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-200 rounded-lg text-sm hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
                         Cancelar
                     </button>
                     <button type="button" id="cota-save"

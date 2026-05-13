@@ -13,54 +13,53 @@ function val(array $client, string $key): string
 ?>
 <div class="max-w-4xl mx-auto">
     <div class="flex items-center gap-3 mb-6">
-        <a href="<?= APP_URL ?>/clients/<?= $client['id'] ?>" class="text-gray-400 hover:text-gray-600">← Voltar</a>
-        <h3 class="text-2xl font-bold text-gray-800">Editar: <?= val($client, 'name') ?></h3>
+        <a href="<?= APP_URL ?>/clients/<?= $client['id'] ?>" class="text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300">← Voltar</a>
+        <h3 class="text-2xl font-bold text-gray-800 dark:text-white">Editar: <?= val($client, 'name') ?></h3>
     </div>
 
     <form method="POST" action="<?= APP_URL ?>/clients/<?= $client['id'] ?>/update"
-        class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+        class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
         <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
 
         <!-- Seção: Dados Pessoais -->
-        <div class="px-6 py-5 border-b border-gray-100">
-            <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Dados Pessoais</h4>
+        <div class="px-6 py-5 border-b border-gray-100 dark:border-slate-700">
+            <h4 class="text-sm font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-4">Dados Pessoais</h4>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                 <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Nome <span
-                            class="text-red-500">*</span></label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Nome <span class="text-red-500">*</span></label>
                     <input type="text" name="name" required value="<?= val($client, 'name') ?>"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">E-mail</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">E-mail</label>
                     <input type="email" name="email" value="<?= val($client, 'email') ?>"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Telefone</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Telefone</label>
                     <input type="text" name="phone" value="<?= val($client, 'phone') ?>"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Empresa</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Empresa</label>
                     <input type="text" name="company" value="<?= val($client, 'company') ?>"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">CPF / CNPJ</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">CPF / CNPJ</label>
                     <input type="text" name="cnpj_cpf" value="<?= val($client, 'cnpj_cpf') ?>"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Data de Nascimento</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Data de Nascimento</label>
                     <input type="text" name="birth_date" id="birth_date" maxlength="10"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400"
                         placeholder="DD/MM/AAAA" value="<?php
                         $bd = $client['birth_date'] ?? '';
                         if ($bd && strlen($bd) === 10) {
@@ -73,46 +72,46 @@ function val(array $client, string $key): string
         </div>
 
         <!-- Seção: Endereço -->
-        <div class="px-6 py-5 border-b border-gray-100">
-            <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Endereço</h4>
+        <div class="px-6 py-5 border-b border-gray-100 dark:border-slate-700">
+            <h4 class="text-sm font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-4">Endereço</h4>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Logradouro</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Logradouro</label>
                     <input type="text" name="address" value="<?= val($client, 'address') ?>"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Número</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Número</label>
                     <input type="text" name="address_number" maxlength="20" value="<?= val($client, 'address_number') ?>"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400"
                         placeholder="123">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">CEP <span id="cep_status" class="text-xs text-indigo-500 font-normal"></span></label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">CEP <span id="cep_status" class="text-xs text-indigo-500 font-normal"></span></label>
                     <input type="text" name="zip_code" value="<?= val($client, 'zip_code') ?>" maxlength="10"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
                 </div>
                 <div class="md:col-span-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Bairro</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Bairro</label>
                     <input type="text" name="neighborhood" id="neighborhood" value="<?= val($client, 'neighborhood') ?>"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400"
                         placeholder="Bairro">
                 </div>
                 <div class="md:col-span-4">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Complemento</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Complemento</label>
                     <input type="text" name="address_complement" maxlength="100" value="<?= val($client, 'address_complement') ?>"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400"
                         placeholder="Apto 42, Bloco B...">
                 </div>
                 <div class="md:col-span-3">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Cidade</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Cidade</label>
                     <input type="text" name="city" value="<?= val($client, 'city') ?>"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">UF</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">UF</label>
                     <select name="state"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
                         <option value="">—</option>
                         <?php foreach (['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'] as $uf): ?>
                             <option value="<?= $uf ?>" <?= val($client, 'state') === $uf ? 'selected' : '' ?>><?= $uf ?>
@@ -124,14 +123,14 @@ function val(array $client, string $key): string
         </div>
 
         <!-- Seção: CRM -->
-        <div class="px-6 py-5 border-b border-gray-100">
-            <h4 class="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-4">Informações Comerciais</h4>
+        <div class="px-6 py-5 border-b border-gray-100 dark:border-slate-700">
+            <h4 class="text-sm font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-4">Informações Comerciais</h4>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Etapa do Funil <span
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Etapa do Funil <span
                             class="text-red-500">*</span></label>
                     <select name="pipeline_stage_id" id="pipeline_stage_select" required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
                         <?php foreach ($stages as $stage): ?>
                             <option value="<?= $stage['id'] ?>"
                                 data-venda-fechada="<?= !empty($stage['is_won_stage']) ? '1' : '0' ?>"
@@ -147,10 +146,10 @@ function val(array $client, string $key): string
                 $currentIsVF  = !empty($currentStage) && !empty($currentStage[0]['is_won_stage']);
                 ?>
                 <div id="closed_at_wrapper" <?= $currentIsVF ? '' : 'style="display:none;"' ?>>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Data de Fechamento</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Data de Fechamento</label>
                     <input type="text" name="closed_at" id="closed_at" maxlength="10"
                         placeholder="DD/MM/AAAA"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400"
                         value="<?php
                             $ca = $client['closed_at'] ?? '';
                             if ($ca && strlen($ca) === 10) {
@@ -161,9 +160,9 @@ function val(array $client, string $key): string
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Responsável</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Responsável</label>
                     <select name="assigned_to"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
                         <option value="">Sem responsável</option>
                         <?php foreach ($users as $user): ?>
                             <option value="<?= $user['id'] ?>" <?= $client['assigned_to'] == $user['id'] ? 'selected' : '' ?>>
@@ -174,16 +173,16 @@ function val(array $client, string $key): string
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Crédito contratado (R$)</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Crédito contratado (R$)</label>
                     <input type="text" name="deal_value"
                         value="<?= number_format($client['deal_value'] ?? 0, 2, ',', '.') ?>"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Origem</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Origem</label>
                     <select name="source" id="source_select"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
                         <option value="">Desconhecida</option>
                         <?php foreach (['Google Ads', 'Indicação', 'LinkedIn', 'Instagram', 'Site Orgânico', 'Evento', 'Lista fria', 'AVA Pro', 'Amigo/Conhecido', 'Outro'] as $src): ?>
                             <option value="<?= $src ?>" <?= val($client, 'source') === $src ? 'selected' : '' ?>><?= $src ?>
@@ -194,22 +193,22 @@ function val(array $client, string $key): string
 
                 <div id="indicacao_wrapper" <?= (val($client, 'source') !== 'Indicação') ? 'style="display:none;"' : '' ?>
                     class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Nome de quem indicou</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Nome de quem indicou</label>
                     <input type="text" name="referido_por" id="referido_por"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400"
                         placeholder="Nome da pessoa que indicou" value="<?= val($client, 'referido_por') ?>">
                 </div>
 
                 <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 mb-1">Nota</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Nota</label>
                     <textarea name="notes" rows="3"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"><?= val($client, 'notes') ?></textarea>
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400"><?= val($client, 'notes') ?></textarea>
                 </div>
             </div>
         </div>
 
         <!-- Botões -->
-        <div class="px-6 py-4 bg-gray-50 flex flex-col sm:flex-row justify-between gap-3">
+        <div class="px-6 py-4 bg-gray-50 dark:bg-slate-700/30 dark:border-t dark:border-slate-700 flex flex-col sm:flex-row justify-between gap-3">
             <!-- Placeholder para manter o layout (form delete fica fora) -->
             <div>
                 <button type="button" form="form-delete-client"
@@ -221,7 +220,7 @@ function val(array $client, string $key): string
             <!-- Salvar (direita) -->
             <div class="flex gap-3">
                 <a href="<?= APP_URL ?>/clients/<?= $client['id'] ?>"
-                    class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-100 transition-colors">
+                    class="px-4 py-2 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-200 rounded-lg text-sm hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
                     Cancelar
                 </a>
                 <button type="submit"
