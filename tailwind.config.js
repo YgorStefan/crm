@@ -1,11 +1,19 @@
 /** @type {import('tailwindcss').Config} */
 module.exports = {
+    darkMode: 'class',
     content: [
         "./app/Views/**/*.php",
         "./public/assets/js/**/*.js",
     ],
+    safelist: [
+        'lg:ml-16',
+        'lg:ml-64',
+    ],
     theme: {
         extend: {
+            fontFamily: {
+                sans: ['Inter', 'system-ui', 'sans-serif'],
+            },
             colors: {
                 primary: {
                     50: '#eef2ff',
@@ -14,7 +22,6 @@ module.exports = {
                     600: '#4f46e5',
                     700: '#4338ca',
                 },
-                sidebar: '#1e1b4b',
             },
         },
     },

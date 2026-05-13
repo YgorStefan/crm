@@ -2,27 +2,107 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Scrollbar personalizada para o Kanban */
+/* ── Sidebar mini state ─────────────────────────────────── */
+#sidebar {
+    transition: width 0.3s ease-in-out;
+}
+#sidebar .nav-label,
+#sidebar .sidebar-brand,
+#sidebar .sidebar-section-label,
+#sidebar .user-info {
+    overflow: hidden;
+    white-space: nowrap;
+    transition: opacity 0.15s ease-in-out, max-width 0.3s ease-in-out;
+    max-width: 200px;
+    opacity: 1;
+}
+#sidebar.sidebar-mini {
+    width: 4rem;
+}
+#sidebar.sidebar-mini .nav-label,
+#sidebar.sidebar-mini .sidebar-brand,
+#sidebar.sidebar-mini .sidebar-section-label,
+#sidebar.sidebar-mini .user-info {
+    max-width: 0;
+    opacity: 0;
+}
+#sidebar.sidebar-mini nav a {
+    justify-content: center;
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+    gap: 0;
+}
+
+/* ── Kanban scrollbar ───────────────────────────────────── */
 .kanban-scroll::-webkit-scrollbar {
     height: 6px;
 }
-
 .kanban-scroll::-webkit-scrollbar-track {
     background: #f1f5f9;
 }
-
+.dark .kanban-scroll::-webkit-scrollbar-track {
+    background: #1e293b;
+}
 .kanban-scroll::-webkit-scrollbar-thumb {
     background: #94a3b8;
     border-radius: 3px;
 }
+.dark .kanban-scroll::-webkit-scrollbar-thumb {
+    background: #475569;
+}
 
-/* Cartão Kanban sendo arrastado */
+/* ── Kanban drag states ─────────────────────────────────── */
 .dragging {
     opacity: 0.4;
     transform: rotate(2deg);
 }
-
 .drag-over {
     outline: 2px dashed #4f46e5;
     outline-offset: 2px;
+}
+
+/* ── FullCalendar dark mode overrides ───────────────────── */
+.dark .fc {
+    color: #cbd5e1;
+}
+.dark .fc-theme-standard .fc-scrollgrid,
+.dark .fc-theme-standard td,
+.dark .fc-theme-standard th {
+    border-color: rgba(255,255,255,0.08);
+}
+.dark .fc-col-header-cell-cushion,
+.dark .fc-daygrid-day-number,
+.dark .fc-list-day-text,
+.dark .fc-list-day-side-text {
+    color: #94a3b8;
+}
+.dark .fc-daygrid-day.fc-day-today,
+.dark .fc-timegrid-col.fc-day-today {
+    background-color: rgba(99, 102, 241, 0.08);
+}
+.dark .fc-button-primary {
+    background-color: #4f46e5;
+    border-color: #4338ca;
+}
+.dark .fc-button-primary:hover {
+    background-color: #4338ca;
+}
+.dark .fc-button-primary:disabled {
+    background-color: #334155;
+    border-color: #334155;
+}
+.dark .fc-event {
+    background-color: rgba(99, 102, 241, 0.75);
+    border-color: #6366f1;
+}
+.dark .fc-list-event:hover td {
+    background-color: rgba(255,255,255,0.05);
+}
+.dark .fc-popover {
+    background-color: #1e293b;
+    border-color: rgba(255,255,255,0.08);
+}
+.dark .fc-popover-header {
+    background-color: #0f172a;
+    color: #cbd5e1;
 }
