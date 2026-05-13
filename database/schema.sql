@@ -111,6 +111,8 @@ CREATE TABLE IF NOT EXISTS clients (
     company           VARCHAR(150)    NULL,
     cnpj_cpf          VARCHAR(20)     NULL     COMMENT 'CPF (11 dígitos) ou CNPJ (14 dígitos) sem máscara',
     address           VARCHAR(255)    NULL,
+    address_number    VARCHAR(20)     NULL     COMMENT 'Número do endereço',
+    address_complement VARCHAR(100)   NULL     COMMENT 'Complemento do endereço',
     neighborhood      VARCHAR(100)    NULL     COMMENT 'Bairro — preenchido via ViaCEP',
     city              VARCHAR(100)    NULL,
     state             CHAR(2)         NULL     COMMENT 'UF em maiúsculas: SP, RJ, MG...',
