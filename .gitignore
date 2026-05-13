@@ -73,7 +73,7 @@ tests/smoke/
 storage/
 
 # --- Documentação interna (planos e specs ficam somente local) ---
-docs/superpowers/
+docs/
 
 # --- Testes Playwright e artefatos npm ---
 node_modules/
