@@ -47,8 +47,10 @@ class Client extends Model
         }
 
         if (!empty($filters['search'])) {
-            $sql .= " AND (c.name LIKE :search OR c.company LIKE :search OR c.email LIKE :search)";
-            $params[':search'] = '%' . $filters['search'] . '%';
+            $sql .= " AND (c.name LIKE :search1 OR c.company LIKE :search2 OR c.email LIKE :search3)";
+            $params[':search1'] = '%' . $filters['search'] . '%';
+            $params[':search2'] = '%' . $filters['search'] . '%';
+            $params[':search3'] = '%' . $filters['search'] . '%';
         }
 
         if (!empty($filters['tipo_venda'])) {
@@ -97,8 +99,10 @@ class Client extends Model
 
         // Busca por nome, empresa ou e-mail (pesquisa livre)
         if (!empty($filters['search'])) {
-            $sql .= " AND (c.name LIKE :search OR c.company LIKE :search OR c.email LIKE :search)";
-            $params[':search'] = '%' . $filters['search'] . '%';
+            $sql .= " AND (c.name LIKE :search1 OR c.company LIKE :search2 OR c.email LIKE :search3)";
+            $params[':search1'] = '%' . $filters['search'] . '%';
+            $params[':search2'] = '%' . $filters['search'] . '%';
+            $params[':search3'] = '%' . $filters['search'] . '%';
         }
 
         // Filtro por tipo de venda (Imóvel, Veículo, Serviço)
