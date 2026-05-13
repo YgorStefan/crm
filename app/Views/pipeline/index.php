@@ -4,28 +4,32 @@
 <!-- Cabeçalho -->
 <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
     <div>
-        <h3 class="text-2xl font-bold text-gray-800">Pipeline de Vendas</h3>
-        <p class="text-sm text-gray-500 mt-1">Arraste os cartões para mover clientes entre etapas</p>
+        <h3 class="text-2xl font-bold text-gray-800 dark:text-white">Pipeline de Vendas</h3>
+        <p class="text-sm text-gray-500 dark:text-slate-500 mt-1">Arraste os cartões para mover clientes entre etapas</p>
     </div>
     <div class="flex gap-2">
         <a href="<?= APP_URL ?>/clients/create"
            class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors">
-            ➕ Novo Cliente
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+            Novo Cliente
         </a>
         <?php if (($_SESSION['user']['role'] ?? '') === 'admin'): ?>
         <a href="<?= APP_URL ?>/pipeline/stages"
-           class="inline-flex items-center gap-2 border border-gray-300 text-gray-600 hover:bg-gray-50 font-medium px-4 py-2 rounded-lg text-sm transition-colors">
-            ⚙️ Etapas
+           class="inline-flex items-center gap-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700 font-medium px-3 py-2 rounded-lg text-sm transition-colors"
+           title="Gerenciar etapas">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+            Etapas
         </a>
         <?php endif; ?>
     </div>
 </div>
 
-<!-- Board Kanban (quebra de linha automática) -->
-<div class="flex flex-wrap items-start gap-4 pb-6" id="kanbanBoard"
+<!-- Board Kanban (scroll horizontal) -->
+<div class="kanban-scroll overflow-x-auto pb-4" id="kanbanBoard"
      data-move-url="<?= APP_URL ?>/pipeline/move"
      data-stats-url="<?= APP_URL ?>/api/dashboard/stats"
      data-csrf="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
+    <div class="flex gap-4 items-start min-w-max">
 
     <?php foreach ($stages as $stage):
         // Clientes nesta etapa (pode ser array vazio)
@@ -34,7 +38,7 @@
         $totalValue = array_sum(array_column($stageClients, 'deal_value'));
     ?>
     <!-- Coluna da Etapa -->
-    <div class="kanban-column w-full sm:w-72 flex flex-col"
+    <div class="kanban-column w-72 flex-shrink-0 flex flex-col"
          data-stage-id="<?= $stage['id'] ?>">
 
         <!-- Cabeçalho da coluna -->
@@ -52,13 +56,12 @@
         </div>
 
         <!-- Área de drop dos cartões -->
-        <div class="kanban-drop-zone flex-1 min-h-24 bg-gray-100 rounded-b-xl p-2 space-y-2"
+        <div class="kanban-drop-zone flex-1 min-h-24 bg-gray-100 dark:bg-slate-700/50 rounded-b-xl p-2 space-y-2"
              data-stage-id="<?= $stage['id'] ?>">
 
             <?php foreach ($stageClients as $client): ?>
             <!-- Cartão do cliente (draggable) -->
-            <div class="kanban-card bg-white rounded-lg shadow-sm border border-gray-200 p-3 cursor-grab
-                        hover:shadow-md transition-shadow"
+            <div class="kanban-card bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-600 p-3 cursor-grab hover:shadow-md transition-shadow"
                  draggable="true"
                  data-client-id="<?= $client['id'] ?>"
                  data-current-stage="<?= $client['pipeline_stage_id'] ?>"
@@ -66,18 +69,19 @@
 
                 <!-- Nome e empresa -->
                 <a href="<?= APP_URL ?>/clients/<?= $client['id'] ?>"
-                   class="block font-semibold text-gray-800 text-sm hover:text-indigo-700 truncate"
+                   class="block font-semibold text-gray-800 dark:text-white text-sm hover:text-indigo-700 truncate"
                    onclick="event.stopPropagation()">
                     <?= htmlspecialchars($client['name'], ENT_QUOTES, 'UTF-8') ?>
                 </a>
                 <?php if ($client['company']): ?>
-                <p class="text-xs text-gray-400 truncate mt-0.5">
-                    🏢 <?= htmlspecialchars($client['company'], ENT_QUOTES, 'UTF-8') ?>
+                <p class="text-xs text-gray-400 dark:text-slate-500 truncate mt-0.5 flex items-center gap-1">
+                    <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
+                    <?= htmlspecialchars($client['company'], ENT_QUOTES, 'UTF-8') ?>
                 </p>
                 <?php endif; ?>
 
                 <!-- Rodapé do cartão -->
-                <div class="flex items-center justify-between mt-2 pt-2 border-t border-gray-100">
+                <div class="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 dark:border-slate-600">
                     <?php if ($client['deal_value'] > 0): ?>
                     <span class="text-xs font-bold text-green-700">
                         <?= format_currency($client['deal_value']) ?>
@@ -100,7 +104,7 @@
 
             <!-- Placeholder visível quando a coluna está vazia -->
             <?php if (empty($stageClients)): ?>
-            <div class="kanban-empty text-center py-6 text-gray-400 text-xs">
+            <div class="kanban-empty text-center py-6 text-gray-400 dark:text-slate-500 text-xs">
                 Arraste um cartão aqui
             </div>
             <?php endif; ?>
@@ -108,6 +112,7 @@
     </div>
     <?php endforeach; ?>
 
+    </div>
 </div>
 
 <!-- Notificação de movimento (toast) -->
