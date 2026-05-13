@@ -116,6 +116,11 @@
     outline-offset: 2px;
 }
 
+/* ── FullCalendar interaction ──────────────────────────── */
+.fc-event {
+    cursor: pointer;
+}
+
 /* ── FullCalendar dark mode overrides ───────────────────── */
 .dark .fc {
     color: #cbd5e1;
