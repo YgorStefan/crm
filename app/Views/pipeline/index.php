@@ -25,11 +25,11 @@
 </div>
 
 <!-- Board Kanban (scroll horizontal) -->
-<div class="kanban-scroll overflow-x-auto pb-4" id="kanbanBoard"
+<div class="pb-4" id="kanbanBoard"
      data-move-url="<?= APP_URL ?>/pipeline/move"
      data-stats-url="<?= APP_URL ?>/api/dashboard/stats"
      data-csrf="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
-    <div class="flex gap-4 items-start min-w-max">
+    <div class="flex flex-wrap gap-4 items-start">
 
     <?php foreach ($stages as $stage):
         // Clientes nesta etapa (pode ser array vazio)
@@ -38,7 +38,7 @@
         $totalValue = array_sum(array_column($stageClients, 'deal_value'));
     ?>
     <!-- Coluna da Etapa -->
-    <div class="kanban-column w-72 flex-shrink-0 flex flex-col"
+    <div class="kanban-column w-72 flex flex-col"
          data-stage-id="<?= $stage['id'] ?>">
 
         <!-- Cabeçalho da coluna -->

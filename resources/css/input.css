@@ -69,6 +69,23 @@
     max-height: 480px;
     overflow-y: auto;
 }
+.kanban-drop-zone::-webkit-scrollbar {
+    width: 4px;
+}
+.kanban-drop-zone::-webkit-scrollbar-track {
+    background: #e2e8f0;
+    border-radius: 2px;
+}
+.dark .kanban-drop-zone::-webkit-scrollbar-track {
+    background: #1e293b;
+}
+.kanban-drop-zone::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 2px;
+}
+.dark .kanban-drop-zone::-webkit-scrollbar-thumb {
+    background: #475569;
+}
 
 /* ── Kanban drag states ─────────────────────────────────── */
 .dragging {
