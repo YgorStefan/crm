@@ -48,6 +48,9 @@ CLAUDE.md
 # --- Scripts de Infra ---
 deploy.sh
 
+# --- Router PHP built-in (somente dev local; produção usa Apache + .htaccess) ---
+router.php
+
 # --- Tailwind CLI binary (downloaded via scripts/setup_tailwind.php) ---
 .bin/
 
