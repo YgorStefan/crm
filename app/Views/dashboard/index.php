@@ -8,45 +8,45 @@ $wonRevenue = array_sum(array_column($wonStage, 'total_value'));
 <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
 
     <a href="<?= APP_URL ?>/clients"
-       class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-5 flex items-center gap-4 hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-700 transition-all">
-        <div class="w-12 h-12 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400 flex-shrink-0">
-            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+       class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 flex items-center gap-3 hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-700 transition-all">
+        <div class="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400 flex-shrink-0">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
         </div>
         <div>
-            <p class="text-2xl font-bold text-gray-800 dark:text-white"><?= number_format($totalClients) ?></p>
+            <p class="text-xl font-bold text-gray-800 dark:text-white"><?= number_format($totalClients) ?></p>
             <p class="text-sm text-gray-500 dark:text-slate-400">Clientes ativos</p>
         </div>
     </a>
 
     <a href="<?= APP_URL ?>/tasks"
-       class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-5 flex items-center gap-4 hover:shadow-md hover:border-amber-200 dark:hover:border-amber-700 transition-all">
-        <div class="w-12 h-12 rounded-xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center text-amber-600 dark:text-amber-400 flex-shrink-0">
-            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M9 14l2 2 4-4"/></svg>
+       class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 flex items-center gap-3 hover:shadow-md hover:border-amber-200 dark:hover:border-amber-700 transition-all">
+        <div class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center text-amber-600 dark:text-amber-400 flex-shrink-0">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/><path d="M9 14l2 2 4-4"/></svg>
         </div>
         <div>
-            <p class="text-2xl font-bold text-gray-800 dark:text-white"><?= $pendingTasks ?></p>
+            <p class="text-xl font-bold text-gray-800 dark:text-white"><?= $pendingTasks ?></p>
             <p class="text-sm text-gray-500 dark:text-slate-400">Minhas tarefas abertas</p>
         </div>
     </a>
 
     <a href="<?= APP_URL ?>/tasks"
-       class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border <?= count($overdueTasks) > 0 ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20' : 'border-gray-100 dark:border-slate-700' ?> p-5 flex items-center gap-4 hover:shadow-md transition-all">
-        <div class="w-12 h-12 rounded-xl <?= count($overdueTasks) > 0 ? 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400' : 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400' ?> flex items-center justify-center flex-shrink-0">
-            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+       class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border <?= count($overdueTasks) > 0 ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20' : 'border-gray-100 dark:border-slate-700' ?> p-4 flex items-center gap-3 hover:shadow-md transition-all">
+        <div class="w-10 h-10 rounded-xl <?= count($overdueTasks) > 0 ? 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400' : 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400' ?> flex items-center justify-center flex-shrink-0">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
         </div>
         <div>
-            <p class="text-2xl font-bold <?= count($overdueTasks) > 0 ? 'text-red-700 dark:text-red-400' : 'text-gray-800 dark:text-white' ?>"><?= count($overdueTasks) ?></p>
+            <p class="text-xl font-bold <?= count($overdueTasks) > 0 ? 'text-red-700 dark:text-red-400' : 'text-gray-800 dark:text-white' ?>"><?= count($overdueTasks) ?></p>
             <p class="text-sm <?= count($overdueTasks) > 0 ? 'text-red-500 dark:text-red-400' : 'text-gray-500 dark:text-slate-400' ?>">Tarefas atrasadas</p>
         </div>
     </a>
 
     <a href="<?= APP_URL ?>/pipeline"
-       class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-5 flex items-center gap-4 hover:shadow-md hover:border-green-200 dark:hover:border-green-700 transition-all">
-        <div class="w-12 h-12 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center text-green-600 dark:text-green-400 flex-shrink-0">
-            <svg width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+       class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 flex items-center gap-3 hover:shadow-md hover:border-green-200 dark:hover:border-green-700 transition-all">
+        <div class="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center text-green-600 dark:text-green-400 flex-shrink-0">
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
         </div>
         <div>
-            <p class="text-2xl font-bold text-green-700 dark:text-green-400">R$ <?= number_format($wonRevenue, 2, ',', '.') ?></p>
+            <p class="text-xl font-bold text-green-700 dark:text-green-400 whitespace-nowrap">R$ <?= number_format($wonRevenue, 2, ',', '.') ?></p>
             <p class="text-sm text-gray-500 dark:text-slate-400">Negócios ganhos</p>
         </div>
     </a>

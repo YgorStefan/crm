@@ -131,8 +131,13 @@
 
         <!-- Perfil do usuário -->
         <div class="px-3 py-3 border-t border-gray-200 dark:border-slate-700 flex-shrink-0">
-            <div class="flex items-center gap-3 px-2 py-2 rounded-lg">
-                <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-sm font-bold text-white flex-shrink-0">
+            <div class="sidebar-user-footer flex items-center gap-3 px-2 py-2 rounded-lg">
+                <a href="<?= $safeAppUrl ?>/logout" title="Sair"
+                    class="sidebar-avatar-logout w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-sm font-bold text-white flex-shrink-0 hover:ring-2 hover:ring-red-400 transition-all"
+                    style="display:none">
+                    <?= strtoupper(substr($_SESSION['user']['name'] ?? 'U', 0, 1)) ?>
+                </a>
+                <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-sm font-bold text-white flex-shrink-0 sidebar-avatar-normal">
                     <?= strtoupper(substr($_SESSION['user']['name'] ?? 'U', 0, 1)) ?>
                 </div>
                 <div class="user-info flex-1 min-w-0">
@@ -144,7 +149,7 @@
                     </p>
                 </div>
                 <a href="<?= $safeAppUrl ?>/logout" title="Sair"
-                    class="flex-shrink-0 text-gray-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 transition-colors">
+                    class="sidebar-logout flex-shrink-0 text-gray-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 transition-colors">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
                     </svg>
@@ -160,9 +165,9 @@
         <!-- Topbar -->
         <header class="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-4 sm:px-6 py-3 flex items-center gap-3 flex-shrink-0 z-10 relative">
 
-            <!-- Hambúrguer (mobile: abre overlay | desktop: também usado como fallback) -->
+            <!-- Hambúrguer (mobile apenas) -->
             <button id="sidebarToggle"
-                class="text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
+                class="lg:hidden text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
                 <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
             </button>
 
@@ -172,25 +177,6 @@
 
             <!-- Ações do topbar -->
             <div class="flex items-center gap-2 ml-auto">
-
-                <!-- Relógio -->
-                <span class="text-sm text-gray-400 dark:text-slate-500 hidden sm:block" id="clock"></span>
-
-                <!-- Toggle de tema -->
-                <div class="flex items-center gap-1.5">
-                    <!-- Sol: visível no dark mode -->
-                    <svg class="hidden dark:block w-4 h-4 text-slate-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
-                    <!-- Lua: visível no light mode -->
-                    <svg class="block dark:hidden w-4 h-4 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-                    <button id="themeToggle" role="switch"
-                        class="relative inline-flex w-9 h-5 rounded-full cursor-pointer
-                               bg-gray-200 dark:bg-indigo-600
-                               transition-colors duration-300
-                               focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 dark:focus:ring-offset-slate-800"
-                        title="Alternar tema (Ctrl+Shift+L)">
-                        <span class="absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform duration-300 dark:translate-x-4"></span>
-                    </button>
-                </div>
 
                 <!-- Notificações -->
                 <div class="relative" id="notification-bell">
@@ -217,6 +203,24 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Toggle de tema com sol/lua dentro -->
+                <button id="themeToggle" role="switch"
+                    class="relative inline-flex w-11 h-6 rounded-full cursor-pointer
+                           bg-gray-200 dark:bg-indigo-600
+                           transition-colors duration-300
+                           focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 dark:focus:ring-offset-slate-800"
+                    title="Alternar tema (Ctrl+Shift+L)">
+                    <!-- Lua: lado esquerdo, light mode -->
+                    <svg class="absolute left-1 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-500 transition-opacity duration-300 dark:opacity-0" fill="currentColor" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                    <!-- Sol: lado direito, dark mode -->
+                    <svg class="absolute right-1 top-1/2 -translate-y-1/2 w-3 h-3 text-yellow-300 opacity-0 transition-opacity duration-300 dark:opacity-100" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+                    <!-- Círculo deslizante -->
+                    <span class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-300 dark:translate-x-5"></span>
+                </button>
+
+                <!-- Data/Relógio -->
+                <span class="text-sm text-gray-400 dark:text-slate-500 hidden sm:block" id="clock"></span>
             </div>
         </header>
 
@@ -240,7 +244,7 @@
             </div>
         <?php endif; ?>
 
-        <main class="flex-1 overflow-y-auto p-4 sm:p-6 w-full">
+        <main class="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 w-full">
             <?= $content ?>
         </main>
     </div>
