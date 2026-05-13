@@ -4,15 +4,15 @@
 <!-- Cabeçalho da página -->
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
     <div>
-        <h3 class="text-2xl font-bold text-gray-800">Contatos Frios</h3>
-        <p class="text-sm text-gray-500 mt-1">Importação e gestão de listas de prospecção</p>
+        <h3 class="text-2xl font-bold text-gray-800 dark:text-white">Contatos Frios</h3>
+        <p class="text-sm text-gray-500 dark:text-slate-400 mt-1">Importação e gestão de listas de prospecção</p>
     </div>
 </div>
 
 <!-- Formulário de importação -->
-<div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 mb-8">
-    <h4 class="font-semibold text-gray-700 mb-4">Importar lista</h4>
-    <p class="text-sm text-gray-500 mb-4">
+<div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-5 mb-8">
+    <h4 class="font-semibold text-gray-700 dark:text-slate-200 mb-4">Importar lista</h4>
+    <p class="text-sm text-gray-500 dark:text-slate-400 mb-4">
         O arquivo deve ter: <strong>coluna A = Nome</strong>, <strong>coluna B = Celular</strong>.
         Header é opcional (será ignorado automaticamente se a primeira linha não contiver número no Celular).
         Formatos aceitos: <strong>.csv, .xls, .xlsx</strong>.
@@ -23,39 +23,39 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end mb-4">
             <!-- Tipo de lista -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
+                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Tipo de lista <span class="text-red-500">*</span>
                 </label>
                 <input type="text" name="tipo_lista" required maxlength="100"
                     placeholder="Ex: Lista Webinar Jan"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
 
             <!-- Upload do arquivo -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
+                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Arquivo CSV/XLSX
                 </label>
                 <input type="file" name="csv_file" accept=".csv,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required
-                    class="w-full text-sm text-gray-600 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                    class="w-full text-sm text-gray-600 dark:text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/30 dark:file:text-indigo-300">
             </div>
 
             <!-- Telefone enviado -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
+                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Final Tel. Enviado
                 </label>
                 <input type="text" name="telefone_enviado" maxlength="4" placeholder="Ex: 1234"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
 
             <!-- Data Mensagem -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 mb-1">
+                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Data do Envio
                 </label>
                 <input type="date" name="data_mensagem" max="9999-12-31"
-                    class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
         </div>
 
@@ -70,26 +70,26 @@
 
 <!-- Cards Mensais -->
 <div>
-    <h4 class="font-semibold text-gray-700 mb-4">Importações por mês</h4>
+    <h4 class="font-semibold text-gray-700 dark:text-slate-200 mb-4">Importações por mês</h4>
 
     <?php if (empty($summaries)): ?>
-        <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-10 text-center">
-            <p class="text-gray-400 text-sm">Nenhuma lista importada ainda. Use o formulário acima para importar seu
+        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-10 text-center">
+            <p class="text-gray-400 dark:text-slate-500 text-sm">Nenhuma lista importada ainda. Use o formulário acima para importar seu
                 primeiro CSV.</p>
         </div>
     <?php else: ?>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             <?php foreach ($summaries as $s): ?>
-                <div class="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
-                    <div class="px-5 py-4 border-b border-gray-100">
-                        <h5 class="font-semibold text-gray-800 capitalize">
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 hover:shadow-md transition-shadow">
+                    <div class="px-5 py-4 border-b border-gray-100 dark:border-slate-700">
+                        <h5 class="font-semibold text-gray-800 dark:text-white capitalize">
                             <?= htmlspecialchars($s['month_label'], ENT_QUOTES, 'UTF-8') ?>
                         </h5>
                     </div>
                     <div class="px-5 py-4 flex items-center justify-between gap-2">
                         <div>
                             <p class="text-3xl font-bold text-indigo-600"><?= (int) $s['total'] ?></p>
-                            <p class="text-xs text-gray-500 mt-0.5">contato(s)</p>
+                            <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">contato(s)</p>
                         </div>
                         <div class="flex flex-col gap-2">
                             <!-- Botão abre modal -->
@@ -122,33 +122,33 @@
 <!-- Modal de listagem de contatos -->
 <div id="modalColdContacts"
     class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
 
         <!-- Header da modal -->
-        <div class="px-6 py-4 border-b border-gray-100 flex items-center justify-between flex-shrink-0">
-            <h4 id="modalTitle" class="font-semibold text-gray-800 text-lg">Contatos do mês</h4>
+        <div class="px-6 py-4 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between flex-shrink-0">
+            <h4 id="modalTitle" class="font-semibold text-gray-800 dark:text-white text-lg">Contatos do mês</h4>
             <button id="btnCloseModal"
-                class="text-gray-400 hover:text-gray-600 text-2xl font-bold leading-none">&times;</button>
+                class="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 text-2xl font-bold leading-none">&times;</button>
         </div>
 
         <!-- Filtros e exportação -->
-        <div class="px-6 py-3 border-b border-gray-100 flex flex-col sm:flex-row gap-3 items-end flex-shrink-0">
+        <div class="px-6 py-3 border-b border-gray-100 dark:border-slate-700 flex flex-col sm:flex-row gap-3 items-end flex-shrink-0">
             <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Filtrar por dia (1-31)</label>
+                <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Filtrar por dia (1-31)</label>
                 <input type="number" id="filterDia" min="1" max="31" placeholder="Dia"
-                    class="w-24 px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    class="w-24 px-3 py-1.5 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
             <div>
-                <label class="block text-xs font-medium text-gray-600 mb-1">Filtrar por tel. enviado</label>
+                <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Filtrar por tel. enviado</label>
                 <input type="text" id="filterTelEnviado" placeholder="Ex: 1234"
-                    class="w-32 px-3 py-1.5 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    class="w-32 px-3 py-1.5 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
             <button id="btnApplyFilter"
                 class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-1.5 rounded-lg text-sm transition-colors">
                 Filtrar
             </button>
             <button id="btnClearFilter"
-                class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium px-4 py-1.5 rounded-lg text-sm transition-colors">
+                class="bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-200 font-medium px-4 py-1.5 rounded-lg text-sm transition-colors">
                 Limpar
             </button>
             <div class="flex-1"></div>
@@ -160,7 +160,7 @@
 
         <!-- Barra de ação em lote -->
         <div id="bulkBar"
-            class="hidden px-6 py-2 bg-indigo-50 border-b border-indigo-100 flex flex-wrap items-center gap-3 flex-shrink-0">
+            class="hidden px-6 py-2 bg-indigo-50 dark:bg-indigo-900/20 border-b border-indigo-100 dark:border-indigo-800/40 flex flex-wrap items-center gap-3 flex-shrink-0">
             <span id="bulkCount" class="text-sm font-medium text-indigo-700"></span>
             
             <label class="text-sm text-gray-600 font-medium">Tel:</label>
@@ -188,8 +188,8 @@
         </div>
 
         <!-- Footer da modal: total visível -->
-        <div class="px-6 py-3 border-t border-gray-100 flex-shrink-0">
-            <p id="modalTotal" class="text-xs text-gray-500"></p>
+        <div class="px-6 py-3 border-t border-gray-100 dark:border-slate-700 flex-shrink-0">
+            <p id="modalTotal" class="text-xs text-gray-500 dark:text-slate-400"></p>
         </div>
     </div>
 </div>
