@@ -30,11 +30,11 @@
 </div>
 
 <!-- Modal: Criacao e Edicao de Tarefa -->
-<div id="modalTask" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
+<div id="modalTask" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4" style="display:none">
     <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
         <div class="px-6 py-5 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between">
             <h4 id="modalTaskTitle" class="text-lg font-bold text-gray-800 dark:text-white">Nova Tarefa</h4>
-            <button onclick="document.getElementById('modalTask').classList.add('hidden')"
+            <button onclick="document.getElementById('modalTask').style.display='none'"
                 class="text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300 text-2xl">&times;</button>
         </div>
         <div class="px-6 py-5 space-y-4">
@@ -104,7 +104,7 @@
                     </button>
                 </div>
                 <div class="flex gap-3 ml-auto">
-                    <button type="button" onclick="document.getElementById('modalTask').classList.add('hidden')"
+                    <button type="button" onclick="document.getElementById('modalTask').style.display='none'"
                         class="px-4 py-2 border border-gray-300 text-gray-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-200 rounded-lg text-sm hover:bg-gray-100 transition-colors">
                         Cancelar
                     </button>
@@ -120,7 +120,7 @@
 
 <!-- Modal: Conflito de dia -->
 <div id="modalDayConflict"
-    class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
+    class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4" style="display:none">
     <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
         <div class="px-6 py-5 border-b border-gray-100">
             <h4 class="text-lg font-bold text-gray-800">Ja existem eventos neste dia:</h4>
@@ -176,6 +176,7 @@
             },
             dayMaxEvents: false,
             eventDidMount: function (info) {
+                info.el.style.cursor = 'pointer';
                 if (info.event.extendedProps.status === 'done') {
                     info.el.style.textDecoration = 'line-through';
                     info.el.style.opacity = '0.6';
@@ -200,7 +201,7 @@
                     div.textContent = ev.title;
                     list.appendChild(div);
                 });
-                document.getElementById('modalDayConflict').classList.remove('hidden');
+                document.getElementById('modalDayConflict').style.display = 'flex';
             } else {
                 openNewTaskModal(dateStr);
             }
@@ -215,7 +216,7 @@
             document.getElementById('task_priority').value = 'medium';
             document.getElementById('task_description').value = '';
             document.getElementById('taskActionBtns').style.display = 'none';
-            document.getElementById('modalTask').classList.remove('hidden');
+            document.getElementById('modalTask').style.display = 'flex';
         }
 
         // Abre modal de edicao carregando dados via API
@@ -246,7 +247,7 @@
                     btnToggle.textContent = 'Concluída';
                     btnToggle.dataset.nextStatus = 'done';
                 }
-                document.getElementById('modalTask').classList.remove('hidden');
+                document.getElementById('modalTask').style.display = 'flex';
                 // Mostra link do cliente se a tarefa estiver vinculada
                 const clientLinkEl = document.getElementById('taskClientLink');
                 const clientNameEl = document.getElementById('taskClientName');
@@ -295,7 +296,7 @@
                 if (resp.ok) {
                     const data = await resp.json();
                     if (data && data.csrf_token) csrfToken = data.csrf_token;
-                    document.getElementById('modalTask').classList.add('hidden');
+                    document.getElementById('modalTask').style.display = 'none';
                     calendar.refetchEvents();
                 } else {
                     alert('Erro ao salvar tarefa. Verifique os campos e tente novamente.');
@@ -307,18 +308,18 @@
 
         // Botoes do dialog de conflito
         document.getElementById('btnConflictView').addEventListener('click', function () {
-            document.getElementById('modalDayConflict').classList.add('hidden');
+            document.getElementById('modalDayConflict').style.display = 'none';
             calendar.changeView('timeGridWeek', selectedDate);
         });
         document.getElementById('btnConflictCreate').addEventListener('click', function () {
-            document.getElementById('modalDayConflict').classList.add('hidden');
+            document.getElementById('modalDayConflict').style.display = 'none';
             openNewTaskModal(selectedDate);
         });
 
         // Fecha modais ao clicar no backdrop
         ['modalTask', 'modalDayConflict'].forEach(function (id) {
             document.getElementById(id).addEventListener('click', function (e) {
-                if (e.target === this) this.classList.add('hidden');
+                if (e.target === this) this.style.display = 'none';
             });
         });
 
@@ -343,7 +344,7 @@
                 if (data.success) {
                     const ev = calendar.getEventById(taskId);
                     if (ev) ev.remove();
-                    document.getElementById('modalTask').classList.add('hidden');
+                    document.getElementById('modalTask').style.display = 'none';
                 } else {
                     alert('Erro ao excluir tarefa.');
                 }
@@ -374,7 +375,7 @@
                 const data = await resp.json();
                 if (data.csrf_token) csrfToken = data.csrf_token;
                 if (data.success) {
-                    document.getElementById('modalTask').classList.add('hidden');
+                    document.getElementById('modalTask').style.display = 'none';
                     calendar.refetchEvents();
                 } else {
                     alert('Erro ao atualizar tarefa.');
