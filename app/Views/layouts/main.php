@@ -211,10 +211,10 @@
                            transition-colors duration-300
                            focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 dark:focus:ring-offset-slate-800"
                     title="Alternar tema (Ctrl+Shift+L)">
-                    <!-- Sol: lado esquerdo, visível no dark mode (círculo move p/ direita) -->
-                    <svg class="absolute left-1 top-1/2 -translate-y-1/2 w-3 h-3 text-yellow-300 opacity-0 transition-opacity duration-300 dark:opacity-100" fill="currentColor" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
-                    <!-- Lua: lado direito, visível no light mode (círculo fica na esquerda) -->
-                    <svg class="absolute right-1 top-1/2 -translate-y-1/2 w-3 h-3 text-gray-500 transition-opacity duration-300 dark:opacity-0" fill="currentColor" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                    <!-- Lua: lado esquerdo, visível no dark mode (círculo move p/ direita) -->
+                    <svg class="absolute left-1 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-300 opacity-0 transition-opacity duration-300 dark:opacity-100" fill="currentColor" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+                    <!-- Sol: lado direito, visível no light mode (círculo fica na esquerda) -->
+                    <svg class="absolute right-1 top-1/2 -translate-y-1/2 w-3 h-3 text-amber-500 transition-opacity duration-300 dark:opacity-0" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.07" y2="4.93"/></svg>
                     <!-- Círculo deslizante -->
                     <span class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-300 dark:translate-x-5"></span>
                 </button>
