@@ -4,6 +4,9 @@
   "description": "Sistema de CRM (Customer Relationship Management) empresarial desenvolvido do zero com **PHP 8 puro**, arquitetura **MVC**, **MySQL/PDO** e **Tailwind CSS**.",
   "main": "tailwind.config.js",
   "scripts": {
+    "build": "tailwindcss -i ./resources/css/input.css -o ./public/assets/css/tailwind.css",
+    "build:prod": "tailwindcss -i ./resources/css/input.css -o ./public/assets/css/tailwind.css --minify",
+    "watch": "tailwindcss -i ./resources/css/input.css -o ./public/assets/css/tailwind.css --watch",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {

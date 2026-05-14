@@ -106,7 +106,7 @@ crm/
 │   ├── index.php
 │   ├── .htaccess             ← mod_rewrite → index.php
 │   ├── assets/
-│   │   ├── css/tailwind.css  ← saída do build (versionada)
+│   │   ├── css/tailwind.css  ← saída do build (versionada / não-minificada por padrão)
 │   │   └── js/               ← pipeline.js, dashboard.js, acompanhamento.js,
 │   │                           masks.js, custom-select.js
 │   └── uploads/              ← uploads de usuários (gitkeep)
@@ -177,13 +177,16 @@ php database/migrations/002_migrate_cold_contacts_tenant.php
 Opção A — via **npm** (recomendado para dev):
 ```bash
 npm install
-npx tailwindcss -i ./resources/css/input.css -o ./public/assets/css/tailwind.css --minify
+npm run build          # build legível (dev)
+npm run build:prod     # build minificado (produção)
+npm run watch          # recompila ao salvar
 ```
 
 Opção B — via **binário standalone** (sem Node):
 ```bash
-php scripts/setup_tailwind.php   # baixa o binário para .bin/
-php scripts/build_css.php        # compila
+php scripts/setup_tailwind.php           # baixa o binário para .bin/
+php scripts/build_css.php                # build legível (dev)
+php scripts/build_css.php --minify       # build minificado (produção)
 ```
 
 > Reexecute o build sempre que mudar arquivos em `app/Views/**/*.php` ou `resources/css/input.css`.
@@ -214,14 +217,18 @@ http://localhost:8000
 # Iniciar servidor dev
 php -S localhost:8000 -t public router.php
 
-# Rebuild do CSS (npm)
-npx tailwindcss -i ./resources/css/input.css -o ./public/assets/css/tailwind.css --minify
+# Rebuild do CSS (npm) — legível
+npm run build
+
+# Rebuild do CSS (npm) — minificado para produção
+npm run build:prod
 
 # Rebuild do CSS (sem npm)
-php scripts/build_css.php
+php scripts/build_css.php            # dev (legível)
+php scripts/build_css.php --minify   # produção
 
 # Watch mode (npm) — recompila ao salvar
-npx tailwindcss -i ./resources/css/input.css -o ./public/assets/css/tailwind.css --watch
+npm run watch
 ```
 
 ---

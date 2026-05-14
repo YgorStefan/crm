@@ -3,9 +3,11 @@
  * build_css.php
  *
  * Compiles Tailwind CSS using the standalone CLI binary located in .bin/.
- * Output is written to public/assets/css/tailwind.css (minified).
+ * Output is written to public/assets/css/tailwind.css.
  *
- * Usage: php scripts/build_css.php
+ * Usage:
+ *   php scripts/build_css.php            # build legível (dev)
+ *   php scripts/build_css.php --minify   # build minificado (produção)
  */
 
 // Determine project root (one level up from scripts/)
@@ -53,12 +55,17 @@ $configPathQ  = escapeshellarg($configPath);
 $inputCssQ    = escapeshellarg($inputCss);
 $outputCssQ   = escapeshellarg($outputCss);
 
-$cmd = "{$binaryPathQ} --config {$configPathQ} -i {$inputCssQ} -o {$outputCssQ} --minify 2>&1";
+// Opt-in para minificação (produção). Padrão = legível (dev).
+$minify    = in_array('--minify', $argv, true);
+$minifyArg = $minify ? ' --minify' : '';
+
+$cmd = "{$binaryPathQ} --config {$configPathQ} -i {$inputCssQ} -o {$outputCssQ}{$minifyArg} 2>&1";
 
 echo "Building Tailwind CSS...\n";
 echo "Input : {$inputCss}\n";
 echo "Output: {$outputCss}\n";
 echo "Config: {$configPath}\n";
+echo "Mode  : " . ($minify ? 'minified (production)' : 'readable (dev)') . "\n";
 echo "\n";
 
 // Pre-flight: verify exec() is available before invoking it
