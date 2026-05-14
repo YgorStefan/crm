@@ -10,20 +10,21 @@
 </div>
 
 <!-- Formulário de importação -->
-<div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-5 mb-8">
-    <h4 class="font-semibold text-gray-700 dark:text-slate-200 mb-4">Importar lista</h4>
-    <p class="text-sm text-gray-500 dark:text-slate-400 mb-4">
-        O arquivo deve ter: <strong>coluna A = Nome</strong>, <strong>coluna B = Celular</strong>.
-        Header é opcional (será ignorado automaticamente se a primeira linha não contiver número no Celular).
-        Formatos aceitos: <strong>.csv, .xls, .xlsx</strong>.
-    </p>
+<div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 mb-8">
+    <div class="flex items-center gap-2 mb-3">
+        <h4 class="font-semibold text-gray-700 dark:text-slate-200">Importar lista</h4>
+        <span class="has-tooltip text-gray-400 dark:text-slate-500 cursor-help"
+              data-tooltip="Coluna A = Nome, Coluna B = Celular. Header opcional. Formatos: .csv, .xls, .xlsx">
+            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+        </span>
+    </div>
     <form method="POST" action="<?= APP_URL ?>/cold-contacts/import" enctype="multipart/form-data">
         <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 items-end mb-4">
+        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 items-end">
             <!-- Tipo de lista -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Tipo de lista <span class="text-red-500">*</span>
                 </label>
                 <input type="text" name="tipo_lista" required maxlength="100"
@@ -33,16 +34,16 @@
 
             <!-- Upload do arquivo -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Arquivo CSV/XLSX
                 </label>
                 <input type="file" name="csv_file" accept=".csv,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required
-                    class="w-full text-sm text-gray-600 dark:text-slate-400 file:mr-3 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/30 dark:file:text-indigo-300">
+                    class="w-full text-sm text-gray-600 dark:text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/30 dark:file:text-indigo-300">
             </div>
 
             <!-- Telefone enviado -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Final Tel. Enviado
                 </label>
                 <input type="text" name="telefone_enviado" maxlength="4" placeholder="Ex: 1234"
@@ -51,19 +52,20 @@
 
             <!-- Data Mensagem -->
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
                     Data do Envio
                 </label>
                 <input type="date" name="data_mensagem" max="9999-12-31"
                     class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
-        </div>
 
-        <div class="flex justify-end">
-            <button type="submit"
-                class="w-full md:w-auto bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-2 rounded-lg text-sm transition-colors">
-                Importar contatos
-            </button>
+            <!-- Botão -->
+            <div>
+                <button type="submit"
+                    class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors whitespace-nowrap">
+                    Importar
+                </button>
+            </div>
         </div>
     </form>
 </div>
@@ -80,7 +82,7 @@
     <?php else: ?>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             <?php foreach ($summaries as $s): ?>
-                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 hover:shadow-md transition-shadow">
+                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-500 transition-all">
                     <div class="px-5 py-4 border-b border-gray-100 dark:border-slate-700">
                         <h5 class="font-semibold text-gray-800 dark:text-white capitalize">
                             <?= htmlspecialchars($s['month_label'], ENT_QUOTES, 'UTF-8') ?>
@@ -88,24 +90,24 @@
                     </div>
                     <div class="px-5 py-4 flex items-center justify-between gap-2">
                         <div>
-                            <p class="text-3xl font-bold text-indigo-600"><?= (int) $s['total'] ?></p>
+                            <p class="text-3xl font-bold text-indigo-600 dark:text-indigo-400"><?= (int) $s['total'] ?></p>
                             <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">contato(s)</p>
                         </div>
                         <div class="flex flex-col gap-2">
                             <!-- Botão abre modal -->
                             <button type="button"
-                                class="btn-open-modal bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-medium px-3 py-2 rounded-lg text-sm transition-colors"
+                                class="btn-open-modal bg-indigo-50 hover:bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 dark:text-indigo-300 font-medium px-3 py-2 rounded-lg text-sm transition-colors"
                                 data-year-month="<?= htmlspecialchars($s['mes_ano'], ENT_QUOTES, 'UTF-8') ?>"
                                 data-month-label="<?= htmlspecialchars($s['month_label'], ENT_QUOTES, 'UTF-8') ?>">
                                 Ver lista
                             </button>
                             <!-- Botão excluir mês -->
                             <button type="button"
-                                class="btn-delete-month bg-red-50 hover:bg-red-100 text-red-600 px-2.5 py-2 rounded-lg transition-colors flex items-center justify-center"
+                                class="btn-delete-month bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-900/20 dark:hover:bg-red-900/30 dark:text-red-400 px-2.5 py-2 rounded-lg transition-colors flex items-center justify-center"
                                 data-year-month="<?= htmlspecialchars($s['mes_ano'], ENT_QUOTES, 'UTF-8') ?>"
                                 data-month-label="<?= htmlspecialchars($s['month_label'], ENT_QUOTES, 'UTF-8') ?>"
                                 title="Excluir">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 block" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                <svg class="w-4 h-4 block" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                             </button>
                         </div>
                     </div>
@@ -161,30 +163,30 @@
         <!-- Barra de ação em lote -->
         <div id="bulkBar"
             class="hidden px-6 py-2 bg-indigo-50 dark:bg-indigo-900/20 border-b border-indigo-100 dark:border-indigo-800/40 flex flex-wrap items-center gap-3 flex-shrink-0">
-            <span id="bulkCount" class="text-sm font-medium text-indigo-700"></span>
-            
-            <label class="text-sm text-gray-600 font-medium">Tel:</label>
+            <span id="bulkCount" class="text-sm font-medium text-indigo-700 dark:text-indigo-300"></span>
+
+            <label class="text-sm text-gray-600 dark:text-slate-300 font-medium">Tel:</label>
             <input type="text" id="bulkTelEnviado" maxlength="4" placeholder="Ex: 1234"
                 title="Deixe em branco para manter, ou preencha para alterar em todos"
-                class="w-20 px-2 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                
-            <label class="text-sm text-gray-600 font-medium ml-2">Data:</label>
+                class="w-20 px-2 py-1 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+
+            <label class="text-sm text-gray-600 dark:text-slate-300 font-medium ml-2">Data:</label>
             <input type="date" id="bulkDataMensagem" max="9999-12-31"
                 title="Deixe em branco para manter, ou preencha para alterar em todos"
-                class="w-32 px-2 py-1 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                class="w-32 px-2 py-1 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
 
             <button id="btnBulkSave"
                 class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-1 rounded-lg text-sm transition-colors ml-auto">
                 Atualizar Marcados
             </button>
-            <button id="btnBulkCancel" class="text-gray-500 hover:text-gray-700 text-sm font-medium">
+            <button id="btnBulkCancel" class="text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200 text-sm font-medium">
                 Cancelar
             </button>
         </div>
 
         <!-- Corpo da modal: tabela de contatos -->
         <div id="modalBody" class="flex-1 overflow-y-auto overflow-x-auto px-6 py-4">
-            <p class="text-gray-400 text-sm text-center">Carregando...</p>
+            <p class="text-gray-400 dark:text-slate-500 text-sm text-center">Carregando...</p>
         </div>
 
         <!-- Footer da modal: total visível -->
@@ -401,13 +403,13 @@
             }
 
             let html = '<table class="w-full text-sm">';
-            html += '<thead><tr class="border-b border-gray-200">';
+            html += '<thead><tr class="border-b border-gray-200 dark:border-slate-600">';
             html += '<th class="py-2 px-2"><input type="checkbox" id="checkAll" class="rounded"></th>';
-            html += '<th class="text-left py-2 px-2 text-xs font-semibold text-gray-500 uppercase">Celular</th>';
-            html += '<th class="text-left py-2 px-2 text-xs font-semibold text-gray-500 uppercase">Nome</th>';
-            html += '<th class="text-left py-2 px-2 text-xs font-semibold text-gray-500 uppercase">Tipo de lista</th>';
-            html += '<th class="text-left py-2 px-2 text-xs font-semibold text-gray-500 uppercase">Tel. enviado</th>';
-            html += '<th class="text-left py-2 px-2 text-xs font-semibold text-gray-500 uppercase">Data mensagem</th>';
+            html += '<th class="text-left py-2 px-2 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">Celular</th>';
+            html += '<th class="text-left py-2 px-2 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">Nome</th>';
+            html += '<th class="text-left py-2 px-2 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">Tipo de lista</th>';
+            html += '<th class="text-left py-2 px-2 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">Tel. enviado</th>';
+            html += '<th class="text-left py-2 px-2 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">Data mensagem</th>';
             html += '<th class="py-2 px-2"></th>';
             html += '</tr></thead>';
             html += '<tbody id="contactsTableBody">';
@@ -498,36 +500,38 @@
 
         function renderRow(c, editMode) {
             const id = c.id;
+            const inputCls = 'w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded px-2 py-1 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none';
             if (editMode) {
-                return '<tr data-id="' + id + '" class="border-b border-gray-100 bg-indigo-50">' +
+                return '<tr data-id="' + id + '" class="border-b border-gray-100 dark:border-slate-700 bg-indigo-50 dark:bg-indigo-900/20">' +
                     '<td class="py-2 px-2"></td>' +
-                    '<td class="py-2 px-2"><input class="w-full border border-gray-300 rounded px-2 py-1 text-xs" name="phone" value="' + esc(c.phone) + '"></td>' +
-                    '<td class="py-2 px-2"><input class="w-full border border-gray-300 rounded px-2 py-1 text-xs" name="name" value="' + esc(c.name) + '"></td>' +
-                    '<td class="py-2 px-2 text-gray-500 text-xs">' + esc(c.tipo_lista) + '</td>' +
-                    '<td class="py-2 px-2"><input class="w-16 border border-gray-300 rounded px-2 py-1 text-xs" name="telefone_enviado" maxlength="4" value="' + esc(c.telefone_enviado || '') + '"></td>' +
-                    '<td class="py-2 px-2"><input type="date" max="9999-12-31" class="border border-gray-300 rounded px-2 py-1 text-xs" name="data_mensagem" value="' + esc(c.data_mensagem || '') + '"></td>' +
+                    '<td class="py-2 px-2"><input class="' + inputCls + '" name="phone" value="' + esc(c.phone) + '"></td>' +
+                    '<td class="py-2 px-2"><input class="' + inputCls + '" name="name" value="' + esc(c.name) + '"></td>' +
+                    '<td class="py-2 px-2 text-gray-500 dark:text-slate-400 text-xs">' + esc(c.tipo_lista) + '</td>' +
+                    '<td class="py-2 px-2"><input class="w-16 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded px-2 py-1 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" name="telefone_enviado" maxlength="4" value="' + esc(c.telefone_enviado || '') + '"></td>' +
+                    '<td class="py-2 px-2"><input type="date" max="9999-12-31" class="border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded px-2 py-1 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" name="data_mensagem" value="' + esc(c.data_mensagem || '') + '"></td>' +
                     '<td class="py-2 px-2 whitespace-nowrap">' +
-                    '<button class="btn-save text-green-600 hover:text-green-800 font-medium text-xs mr-2" data-id="' + id + '">Salvar</button>' +
-                    '<button class="btn-cancel text-gray-500 hover:text-gray-700 font-medium text-xs" data-id="' + id + '">Cancelar</button>' +
+                    '<button class="btn-save text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 font-medium text-xs mr-2" data-id="' + id + '">Salvar</button>' +
+                    '<button class="btn-cancel text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200 font-medium text-xs" data-id="' + id + '">Cancelar</button>' +
                     '</td>' +
                     '</tr>';
             }
-            return '<tr data-id="' + id + '" class="border-b border-gray-100 hover:bg-gray-50">' +
+            return '<tr data-id="' + id + '" class="border-b border-gray-100 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700/30">' +
                 '<td class="py-2 px-2"><input type="checkbox" class="row-check rounded" data-id="' + id + '"></td>' +
-                '<td class="py-2 px-2 text-gray-800">' + esc(c.phone) + '</td>' +
-                '<td class="py-2 px-2 text-gray-800">' + esc(c.name) + '</td>' +
-                '<td class="py-2 px-2 text-gray-500 text-xs">' + esc(c.tipo_lista) + '</td>' +
-                '<td class="py-2 px-2 text-gray-500 text-xs">' + esc(c.telefone_enviado || '\u2014') + '</td>' +
-                '<td class="py-2 px-2 text-gray-500 text-xs">' + (c.data_mensagem ? formatDate(c.data_mensagem) : '\u2014') + '</td>' +
+                '<td class="py-2 px-2 text-gray-800 dark:text-slate-200">' + esc(c.phone) + '</td>' +
+                '<td class="py-2 px-2 text-gray-800 dark:text-slate-200">' + esc(c.name) + '</td>' +
+                '<td class="py-2 px-2 text-gray-500 dark:text-slate-400 text-xs">' + esc(c.tipo_lista) + '</td>' +
+                '<td class="py-2 px-2 text-gray-500 dark:text-slate-400 text-xs">' + esc(c.telefone_enviado || '\u2014') + '</td>' +
+                '<td class="py-2 px-2 text-gray-500 dark:text-slate-400 text-xs">' + (c.data_mensagem ? formatDate(c.data_mensagem) : '\u2014') + '</td>' +
                 '<td class="py-2 px-2 whitespace-nowrap">' +
-                '<button class="btn-edit text-indigo-600 hover:text-indigo-800" title="Editar" data-id="' + id + '" data-contact=\'' + JSON.stringify(c).replace(/'/g, '&#39;') + '\'><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg></button>' +
-                '<button class="btn-delete text-red-500 hover:text-red-700 ml-2" title="Excluir" data-id="' + id + '"><svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg></button>' +
+                '<button class="btn-edit text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300" title="Editar" data-id="' + id + '" data-contact=\'' + JSON.stringify(c).replace(/'/g, '&#39;') + '\'><svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>' +
+                '<button class="btn-delete text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 ml-2" title="Excluir" data-id="' + id + '"><svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>' +
                 '</td>' +
                 '</tr>';
         }
 
         function handleTableClick(e) {
-            const btn = e.target;
+            const btn = e.target.closest('.btn-edit, .btn-delete, .btn-save, .btn-cancel');
+            if (!btn) return;
             const id = btn.dataset.id;
             if (!id) return;
 

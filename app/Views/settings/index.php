@@ -1,7 +1,7 @@
 <?php ?>
 <div class="max-w-2xl mx-auto">
     <div class="flex items-center gap-3 mb-6">
-        <h3 class="text-2xl font-bold text-gray-800">Configurações da Organização</h3>
+        <h3 class="text-2xl font-bold text-gray-800 dark:text-white">Configurações da Organização</h3>
     </div>
 
     <form method="POST" action="<?= APP_URL ?>/settings/update">

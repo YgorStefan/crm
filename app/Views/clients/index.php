@@ -1,63 +1,65 @@
 <?php
 ?>
-<!-- Cabeçalho da página -->
-<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-    <div>
-        <h3 class="text-2xl font-bold text-gray-800">Clientes</h3>
-        <p class="text-sm text-gray-500 mt-1"><?= isset($pagination) ? (int) $pagination['total_items'] : count($clients) ?> cliente(s) encontrado(s)</p>
-    </div>
-    <a href="<?= APP_URL ?>/clients/create"
-       class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white
-              font-medium px-4 py-2 rounded-lg text-sm transition-colors">
-        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Novo Cliente
-    </a>
+<!-- Toolbar unificada: titulo + filtros + acoes em uma linha -->
+<div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-3 mb-4">
+    <form id="filterForm" method="GET" action="<?= APP_URL ?>/clients"
+          class="flex flex-col lg:flex-row lg:items-center gap-2">
+
+        <div class="flex items-baseline gap-3 lg:mr-2 flex-shrink-0">
+            <h3 class="text-xl font-bold text-gray-800 dark:text-white">Clientes</h3>
+            <span class="text-xs text-gray-500 dark:text-slate-400 whitespace-nowrap"><?= isset($pagination) ? (int) $pagination['total_items'] : count($clients) ?> encontrado(s)</span>
+        </div>
+
+        <div class="grid grid-cols-2 lg:flex lg:items-center gap-2 flex-1">
+            <input type="text" name="search" value="<?= htmlspecialchars($filters['search'], ENT_QUOTES, 'UTF-8') ?>"
+                   placeholder="Buscar por nome, empresa..."
+                   class="col-span-2 lg:flex-1 lg:min-w-[180px] px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+
+            <select name="stage_id" class="lg:w-36 px-2 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                <option value="">Etapa</option>
+                <?php foreach ($stages as $stage): ?>
+                <option value="<?= $stage['id'] ?>" <?= $filters['stage_id'] == $stage['id'] ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($stage['name'], ENT_QUOTES, 'UTF-8') ?>
+                </option>
+                <?php endforeach; ?>
+            </select>
+
+            <select name="assigned_to" class="lg:w-36 px-2 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                <option value="">Responsável</option>
+                <?php foreach ($users as $user): ?>
+                <option value="<?= $user['id'] ?>" <?= $filters['assigned_to'] == $user['id'] ? 'selected' : '' ?>>
+                    <?= htmlspecialchars($user['name'], ENT_QUOTES, 'UTF-8') ?>
+                </option>
+                <?php endforeach; ?>
+            </select>
+
+            <select name="tipo_venda" class="lg:w-32 px-2 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                <option value="">Tipo</option>
+                <option value="Imóvel"  <?= ($filters['tipo_venda'] ?? '') === 'Imóvel'  ? 'selected' : '' ?>>Imóvel</option>
+                <option value="Veículo" <?= ($filters['tipo_venda'] ?? '') === 'Veículo' ? 'selected' : '' ?>>Veículo</option>
+                <option value="Serviço" <?= ($filters['tipo_venda'] ?? '') === 'Serviço' ? 'selected' : '' ?>>Serviço</option>
+            </select>
+        </div>
+
+        <div class="flex items-center gap-1.5 flex-shrink-0">
+            <button type="submit"
+                    title="Aplicar filtros" data-tooltip="Aplicar filtros"
+                    class="has-tooltip inline-flex items-center justify-center w-9 h-9 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg transition-colors">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"/></svg>
+            </button>
+            <a href="<?= APP_URL ?>/clients"
+               title="Limpar filtros" data-tooltip="Limpar filtros"
+               class="has-tooltip inline-flex items-center justify-center w-9 h-9 bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-200 rounded-lg transition-colors">
+                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </a>
+            <a href="<?= APP_URL ?>/clients/create"
+               class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-3 py-2 rounded-lg text-sm transition-colors ml-1 whitespace-nowrap">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                Novo
+            </a>
+        </div>
+    </form>
 </div>
-
-<!-- Filtros de busca -->
-<form id="filterForm" method="GET" action="<?= APP_URL ?>/clients"
-      class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 mb-6 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3">
-
-    <input type="text" name="search" value="<?= htmlspecialchars($filters['search'], ENT_QUOTES, 'UTF-8') ?>"
-           placeholder="Buscar por nome, empresa..."
-           class="px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-
-    <select name="stage_id" class="px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-        <option value="">Todas as etapas</option>
-        <?php foreach ($stages as $stage): ?>
-        <option value="<?= $stage['id'] ?>" <?= $filters['stage_id'] == $stage['id'] ? 'selected' : '' ?>>
-            <?= htmlspecialchars($stage['name'], ENT_QUOTES, 'UTF-8') ?>
-        </option>
-        <?php endforeach; ?>
-    </select>
-
-    <select name="assigned_to" class="px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-        <option value="">Todos os responsáveis</option>
-        <?php foreach ($users as $user): ?>
-        <option value="<?= $user['id'] ?>" <?= $filters['assigned_to'] == $user['id'] ? 'selected' : '' ?>>
-            <?= htmlspecialchars($user['name'], ENT_QUOTES, 'UTF-8') ?>
-        </option>
-        <?php endforeach; ?>
-    </select>
-
-    <select name="tipo_venda" class="px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-        <option value="">Todos os tipos</option>
-        <option value="Imóvel"  <?= ($filters['tipo_venda'] ?? '') === 'Imóvel'  ? 'selected' : '' ?>>Imóvel</option>
-        <option value="Veículo" <?= ($filters['tipo_venda'] ?? '') === 'Veículo' ? 'selected' : '' ?>>Veículo</option>
-        <option value="Serviço" <?= ($filters['tipo_venda'] ?? '') === 'Serviço' ? 'selected' : '' ?>>Serviço</option>
-    </select>
-
-    <div class="flex gap-2">
-        <button type="submit"
-                class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
-            Filtrar
-        </button>
-        <a href="<?= APP_URL ?>/clients"
-           class="flex-1 text-center bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-200 text-sm font-medium px-4 py-2 rounded-lg transition-colors">
-            Limpar
-        </a>
-    </div>
-</form>
 <script nonce="<?= CSP_NONCE ?>">
 // Ao submeter o formulário de filtros, reseta para a página 1
 (function () {
@@ -156,28 +158,28 @@
                         <div class="inline-flex items-center gap-0.5 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg p-1">
                             <!-- Ver -->
                             <a href="<?= APP_URL ?>/clients/<?= $client['id'] ?>"
-                               title="Ver detalhes"
-                               class="w-7 h-7 flex items-center justify-center rounded-md text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 transition-colors">
+                               data-tooltip="Ver detalhes"
+                               class="has-tooltip w-7 h-7 flex items-center justify-center rounded-md text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 transition-colors">
                                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
                             </a>
                             <!-- Editar -->
                             <a href="<?= APP_URL ?>/clients/<?= $client['id'] ?>/edit"
-                               title="Editar"
-                               class="w-7 h-7 flex items-center justify-center rounded-md text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/40 transition-colors">
+                               data-tooltip="Editar"
+                               class="has-tooltip w-7 h-7 flex items-center justify-center rounded-md text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/40 transition-colors">
                                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
                             </a>
                             <!-- Nova interação -->
                             <button
                                 onclick="openQuickInteraction(<?= (int)$client['id'] ?>, <?= htmlspecialchars(json_encode($client['name']), ENT_QUOTES, 'UTF-8') ?>)"
-                                title="Nova interação"
-                                class="w-7 h-7 flex items-center justify-center rounded-md text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/40 transition-colors">
+                                data-tooltip="Nova interação"
+                                class="has-tooltip w-7 h-7 flex items-center justify-center rounded-md text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/40 transition-colors">
                                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
                             </button>
                             <!-- Nova tarefa -->
                             <button
                                 onclick="openQuickTask(<?= (int)$client['id'] ?>, <?= htmlspecialchars(json_encode($client['name']), ENT_QUOTES, 'UTF-8') ?>)"
-                                title="Nova tarefa"
-                                class="w-7 h-7 flex items-center justify-center rounded-md text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/40 transition-colors">
+                                data-tooltip="Nova tarefa"
+                                class="has-tooltip w-7 h-7 flex items-center justify-center rounded-md text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/40 transition-colors">
                                 <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="12" y1="14" x2="12" y2="18"/><line x1="10" y1="16" x2="14" y2="16"/></svg>
                             </button>
                         </div>

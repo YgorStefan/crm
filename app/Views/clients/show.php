@@ -19,18 +19,18 @@ $interactionTypes = [
                 Clientes
             </a>
             <div>
-                <h3 class="text-2xl font-bold text-gray-800 dark:text-white">
-                    <?= htmlspecialchars($client['name'], ENT_QUOTES, 'UTF-8') ?>
+                <h3 class="text-2xl font-bold text-gray-800 dark:text-white flex items-baseline gap-2 flex-wrap">
+                    <span><?= htmlspecialchars($client['name'], ENT_QUOTES, 'UTF-8') ?></span>
+                    <?php if ($client['company']): ?>
+                        <span class="text-base font-normal text-gray-500 dark:text-slate-400">·&nbsp;<?= htmlspecialchars($client['company'], ENT_QUOTES, 'UTF-8') ?></span>
+                    <?php endif; ?>
                 </h3>
-                <?php if ($client['company']): ?>
-                    <p class="text-sm text-gray-500 dark:text-slate-400"><?= htmlspecialchars($client['company'], ENT_QUOTES, 'UTF-8') ?></p>
-                <?php endif; ?>
             </div>
         </div>
         <div class="flex gap-2">
             <a href="<?= APP_URL ?>/clients/<?= $client['id'] ?>/edit"
                 class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors" title="Editar">
-                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
                 Editar
             </a>
         </div>
@@ -97,11 +97,11 @@ $interactionTypes = [
                     <div class="flex gap-3">
                         <button type="button" id="btn-edit-notes"
                             class="text-gray-500 hover:text-gray-700" title="Editar Nota">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
                         </button>
                         <button type="button" id="btn-delete-notes"
                             class="text-red-500 hover:text-red-700" title="Excluir Nota">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                         </button>
                     </div>
                 </div>
@@ -642,12 +642,12 @@ $interactionTypes = [
                     <div class="grid grid-cols-2 gap-3">
                         <div>
                             <label class="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Grupo</label>
-                            <input type="text" id="cota-grupo" placeholder="Ex: 0042"
+                            <input type="text" id="cota-grupo" data-mask="digits" placeholder="Ex: 0042"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
                         </div>
                         <div>
                             <label class="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Cota</label>
-                            <input type="text" id="cota-cota" placeholder="Ex: 128"
+                            <input type="text" id="cota-cota" data-mask="digits" placeholder="Ex: 128"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
                         </div>
                     </div>
@@ -664,7 +664,7 @@ $interactionTypes = [
                     </div>
                     <div>
                         <label class="block text-xs font-medium text-gray-600 dark:text-slate-300 mb-1">Crédito contratado (R$)</label>
-                        <input type="text" id="cota-credito" placeholder="0,00"
+                        <input type="text" id="cota-credito" data-mask="currency" placeholder="R$ 0,00"
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
                     </div>
                 </div>
@@ -695,7 +695,9 @@ $interactionTypes = [
                 btnAdd.addEventListener('click', function () {
                     document.getElementById('cota-grupo').value = '';
                     document.getElementById('cota-cota').value = '';
-                    document.getElementById('cota-tipo').value = '';
+                    var sel = document.getElementById('cota-tipo');
+                    sel.value = '';
+                    sel.dispatchEvent(new Event('change', { bubbles: true }));
                     document.getElementById('cota-credito').value = '';
                     overlay.style.display = 'flex';
                 });
@@ -711,12 +713,15 @@ $interactionTypes = [
                     const tipo = document.getElementById('cota-tipo').value;
                     if (!tipo) { alert('Selecione o Tipo de consórcio.'); return; }
 
+                    const creditoRaw = (document.getElementById('cota-credito').value || '').replace(/\D/g, '');
+                    const credito = creditoRaw ? (parseInt(creditoRaw, 10) / 100).toFixed(2) : '0.00';
+
                     const body = new URLSearchParams({
                         _csrf_token: window.crmCsrfToken,
                         grupo: document.getElementById('cota-grupo').value.trim(),
                         cota: document.getElementById('cota-cota').value.trim(),
                         tipo: tipo,
-                        credito_contratado: document.getElementById('cota-credito').value.trim().replace(/\./g, '').replace(',', '.'),
+                        credito_contratado: credito,
                     });
 
                     fetch(appUrl + '/clients/' + clientId + '/sales', {

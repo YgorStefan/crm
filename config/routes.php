@@ -56,6 +56,9 @@ $router->get('/api/tasks/{id}', 'TaskController', 'getTask', ['AuthMiddleware', 
 // ---- API AJAX — dados para gráficos do dashboard ----
 $router->get('/api/dashboard/stats', 'DashboardController', 'stats', ['AuthMiddleware', 'CspMiddleware']);
 
+// ---- Administração (painel unificado com abas) ----
+$router->get('/admin', 'AdminController', 'index', ['AuthMiddleware', 'CspMiddleware']);
+
 // ---- Administração de Usuários (somente admin) ----
 $router->get('/admin/users', 'UserController', 'index', ['AuthMiddleware', 'CspMiddleware']);
 $router->get('/admin/users/create', 'UserController', 'create', ['AuthMiddleware', 'CspMiddleware']);

@@ -7,7 +7,7 @@ $roleLabels = ['admin' => 'Admin', 'seller' => 'Vendedor', 'viewer' => 'Leitor']
 $roleBadges = ['admin' => 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300', 'seller' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300', 'viewer' => 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-slate-400'];
 ?>
 <div class="flex items-center justify-between mb-6">
-    <h3 class="text-2xl font-bold text-gray-800">Usuários</h3>
+    <h3 class="text-2xl font-bold text-gray-800 dark:text-white">Usuários</h3>
     <a href="<?= APP_URL ?>/admin/users/create"
        class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors">
         <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
@@ -24,7 +24,7 @@ $roleBadges = ['admin' => 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 d
                 <th class="text-left px-5 py-3 font-semibold text-gray-600 dark:text-slate-400">E-mail</th>
                 <th class="text-left px-5 py-3 font-semibold text-gray-600 dark:text-slate-400">Perfil</th>
                 <th class="text-left px-5 py-3 font-semibold text-gray-600 dark:text-slate-400">Status</th>
-                <th class="text-center px-5 py-3 font-semibold text-gray-600">Ações</th>
+                <th class="text-center px-5 py-3 font-semibold text-gray-600 dark:text-slate-400">Ações</th>
             </tr>
         </thead>
         <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
@@ -53,8 +53,9 @@ $roleBadges = ['admin' => 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 d
                 </td>
                 <td class="px-5 py-3 text-center">
                     <a href="<?= APP_URL ?>/admin/users/<?= $user['id'] ?>/edit"
-                       class="text-amber-600 hover:text-amber-800" title="Editar">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>
+                       data-tooltip="Editar"
+                       class="has-tooltip inline-flex items-center justify-center w-7 h-7 rounded-md text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/40 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
                     </a>
                 </td>
             </tr>

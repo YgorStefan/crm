@@ -7,7 +7,7 @@ module.exports = {
     ],
     safelist: [
         'lg:ml-16',
-        'lg:ml-64',
+        'lg:ml-56',
     ],
     theme: {
         extend: {

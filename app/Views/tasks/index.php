@@ -1,33 +1,104 @@
 <?php
 ?>
 
-<!-- Alerta: Tarefas Atrasadas -->
+<!-- Alerta compacto: Tarefas Atrasadas (colapsavel + dispensavel por sessao) -->
 <?php if (!empty($overdue)): ?>
-    <div class="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 rounded-xl p-4 mb-6 flex items-start gap-4">
-        <svg width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-red-500 flex-shrink-0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
-        <div class="flex-1">
-            <p class="font-bold text-red-700 dark:text-red-400 mb-2"><?= count($overdue) ?> tarefa(s) atrasada(s) — ação necessária</p>
-            <div class="space-y-2">
-                <?php foreach ($overdue as $t): ?>
-                    <div class="flex items-center justify-between bg-white dark:bg-slate-800 rounded-lg px-3 py-2 border border-red-100 dark:border-red-800/50">
-                        <span class="text-sm font-medium text-red-800 dark:text-red-300">
-                            <?= htmlspecialchars($t['title'], ENT_QUOTES, 'UTF-8') ?>
-                            <?php if (!empty($t['client_name'])): ?>
-                                <span class="text-xs text-red-400 dark:text-red-500 font-normal ml-1">— <?= htmlspecialchars($t['client_name'], ENT_QUOTES, 'UTF-8') ?></span>
-                            <?php endif; ?>
-                        </span>
-                        <span class="text-xs text-red-500 dark:text-red-400 flex-shrink-0 ml-3">Venceu <?= date('d/m/Y', strtotime($t['due_date'])) ?></span>
-                    </div>
-                <?php endforeach; ?>
-            </div>
+    <div id="overdueBanner"
+         class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-lg mb-4">
+        <div class="flex items-center gap-2 px-3 py-2">
+            <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" class="text-red-500 flex-shrink-0"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="17" r="0.5" fill="currentColor"/></svg>
+            <span class="text-sm font-medium text-red-700 dark:text-red-300 flex-1">
+                <?= count($overdue) ?> tarefa(s) atrasada(s)
+            </span>
+            <button type="button" id="overdueToggle"
+                class="inline-flex items-center gap-1 text-xs font-medium text-red-700 hover:text-red-900 dark:text-red-300 dark:hover:text-red-200 px-2 py-1 rounded-md hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors">
+                <span data-label-collapsed>Ver lista</span>
+                <span data-label-expanded class="hidden">Ocultar</span>
+                <svg id="overdueChevron" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24" class="transition-transform"><polyline points="6 9 12 15 18 9"/></svg>
+            </button>
+            <button type="button" id="overdueDismiss"
+                data-tooltip="Dispensar (volta no F5)"
+                class="has-tooltip text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-200 p-1 rounded-md hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors">
+                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            </button>
+        </div>
+        <div id="overdueList" class="hidden border-t border-red-200 dark:border-red-800/50 px-3 py-2 space-y-1.5 max-h-60 overflow-y-auto">
+            <?php foreach ($overdue as $t): ?>
+                <div class="flex items-center justify-between bg-white dark:bg-slate-800 rounded-md px-3 py-1.5 border border-red-100 dark:border-red-800/50">
+                    <span class="text-sm font-medium text-red-800 dark:text-red-300 truncate flex-1 min-w-0">
+                        <?= htmlspecialchars($t['title'], ENT_QUOTES, 'UTF-8') ?>
+                        <?php if (!empty($t['client_name'])): ?>
+                            <span class="text-xs text-red-400 dark:text-red-500 font-normal ml-1">— <?= htmlspecialchars($t['client_name'], ENT_QUOTES, 'UTF-8') ?></span>
+                        <?php endif; ?>
+                    </span>
+                    <span class="text-xs text-red-500 dark:text-red-400 flex-shrink-0 ml-3">Venceu <?= date('d/m/Y', strtotime($t['due_date'])) ?></span>
+                </div>
+            <?php endforeach; ?>
         </div>
     </div>
+    <script nonce="<?= CSP_NONCE ?>">
+    (function () {
+        const banner   = document.getElementById('overdueBanner');
+        const toggle   = document.getElementById('overdueToggle');
+        const dismiss  = document.getElementById('overdueDismiss');
+        const list     = document.getElementById('overdueList');
+        const chevron  = document.getElementById('overdueChevron');
+        const lblCol   = toggle.querySelector('[data-label-collapsed]');
+        const lblExp   = toggle.querySelector('[data-label-expanded]');
+
+        toggle.addEventListener('click', function () {
+            const isHidden = list.classList.toggle('hidden');
+            chevron.style.transform = isHidden ? '' : 'rotate(180deg)';
+            lblCol.classList.toggle('hidden', !isHidden);
+            lblExp.classList.toggle('hidden', isHidden);
+        });
+
+        dismiss.addEventListener('click', function () {
+            banner.style.display = 'none';
+        });
+    })();
+    </script>
 <?php endif; ?>
 
 <!-- Calendario FullCalendar -->
 <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4">
+    <!-- Filtros rapidos -->
+    <div class="flex flex-wrap items-center gap-2 mb-3 pb-3 border-b border-gray-100 dark:border-slate-700">
+        <span class="text-xs font-medium text-gray-500 dark:text-slate-400 mr-1">Filtrar:</span>
+        <div class="inline-flex rounded-lg bg-gray-100 dark:bg-slate-700 p-0.5" role="tablist">
+            <button type="button" class="fc-filter-btn px-3 py-1 text-xs font-medium rounded-md transition-colors active" data-filter="all">Todas</button>
+            <button type="button" class="fc-filter-btn px-3 py-1 text-xs font-medium rounded-md transition-colors" data-filter="pending">Pendentes</button>
+            <button type="button" class="fc-filter-btn px-3 py-1 text-xs font-medium rounded-md transition-colors" data-filter="done">Concluídas</button>
+            <button type="button" class="fc-filter-btn px-3 py-1 text-xs font-medium rounded-md transition-colors" data-filter="overdue">Atrasadas</button>
+        </div>
+        <select id="fcPriorityFilter" data-no-custom
+            class="px-2 py-1 text-xs border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md focus:ring-2 focus:ring-indigo-500 focus:outline-none ml-2">
+            <option value="all">Qualquer prioridade</option>
+            <option value="high">Alta</option>
+            <option value="medium">Média</option>
+            <option value="low">Baixa</option>
+        </select>
+    </div>
     <div id="fc-calendar"></div>
 </div>
+
+<style>
+.fc-filter-btn {
+    color: rgb(75 85 99);
+}
+.dark .fc-filter-btn {
+    color: rgb(203 213 225);
+}
+.fc-filter-btn.active {
+    background: white;
+    color: rgb(67 56 202);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+}
+.dark .fc-filter-btn.active {
+    background: rgb(99 102 241);
+    color: white;
+}
+</style>
 
 <!-- Modal: Criacao e Edicao de Tarefa -->
 <div id="modalTask" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4" style="display:none">
@@ -96,7 +167,7 @@
                 <div class="flex gap-2" id="taskActionBtns" style="display:none!important">
                     <button id="btnDeleteTask" title="Excluir"
                         class="px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
                     </button>
                     <button id="btnToggleDone"
                         class="px-4 py-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg text-sm transition-colors">
@@ -121,15 +192,15 @@
 <!-- Modal: Conflito de dia -->
 <div id="modalDayConflict"
     class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4" style="display:none">
-    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
-        <div class="px-6 py-5 border-b border-gray-100">
-            <h4 class="text-lg font-bold text-gray-800">Ja existem eventos neste dia:</h4>
+    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-gray-100 dark:border-slate-700">
+            <h4 class="text-lg font-bold text-gray-800 dark:text-white">Ja existem eventos neste dia:</h4>
         </div>
         <div class="px-6 py-4">
             <div id="conflictEventsList" class="space-y-1 mb-4 max-h-40 overflow-y-auto"></div>
             <div class="flex gap-3">
                 <button id="btnConflictView"
-                    class="flex-1 px-4 py-2 border border-indigo-300 text-indigo-700 rounded-lg text-sm font-medium hover:bg-indigo-50 transition-colors">
+                    class="flex-1 px-4 py-2 border border-indigo-300 dark:border-indigo-700 text-indigo-700 dark:text-indigo-300 rounded-lg text-sm font-medium hover:bg-indigo-50 dark:hover:bg-indigo-900/30 transition-colors">
                     Ver existentes
                 </button>
                 <button id="btnConflictCreate"
@@ -148,6 +219,51 @@
         let csrfToken = '<?= htmlspecialchars($csrf_token, ENT_QUOTES, "UTF-8") ?>';
         let selectedDate = null;
 
+        // Estado dos filtros rapidos
+        let filterStatus = 'all';
+        let filterPriority = 'all';
+        // Flag de reentrancia: ev.setProp dispara eventsSet, evita loop infinito
+        let _applyingFilters = false;
+
+        function passesFilter(ev) {
+            const status = ev.extendedProps.status;
+            const priority = ev.extendedProps.priority;
+            // Filtro de status
+            if (filterStatus === 'pending' && status !== 'pending' && status !== 'in_progress') return false;
+            if (filterStatus === 'done' && status !== 'done') return false;
+            if (filterStatus === 'overdue') {
+                if (status === 'done') return false;
+                if (ev.start && ev.start > new Date()) return false;
+            }
+            // Filtro de prioridade
+            if (filterPriority !== 'all' && priority !== filterPriority) return false;
+            return true;
+        }
+
+        function applyFilters() {
+            if (_applyingFilters) return;
+            _applyingFilters = true;
+            try {
+                calendar.getEvents().forEach(function (ev) {
+                    const wanted = passesFilter(ev) ? 'auto' : 'none';
+                    if (ev.display !== wanted) ev.setProp('display', wanted);
+                });
+            } finally {
+                _applyingFilters = false;
+            }
+        }
+
+        // Tooltip simples (titulo nativo) com descricao + cliente + prioridade
+        function buildTooltip(ev) {
+            const lines = [ev.title];
+            const props = ev.extendedProps || {};
+            if (props.client_name) lines.push('Cliente: ' + props.client_name);
+            const prioLabel = { high: 'Alta', medium: 'Média', low: 'Baixa' }[props.priority] || props.priority;
+            if (prioLabel) lines.push('Prioridade: ' + prioLabel);
+            if (props.status === 'done') lines.push('(concluída)');
+            return lines.join('\n');
+        }
+
         // Inicializa calendario FullCalendar em pt-BR com visualizacao mes/semana
         const calendar = new FullCalendar.Calendar(calendarEl, {
             initialView: 'dayGridMonth',
@@ -165,6 +281,9 @@
             },
             // Eventos carregados do feed JSON backend
             events: appUrl + '/api/tasks/calendar',
+            // Mostra ate 3 eventos por dia; resto vira "+N mais" com popover do FullCalendar
+            dayMaxEventRows: 3,
+            moreLinkText: function (n) { return '+' + n + ' mais'; },
             // Clicar em data
             dateClick: function (info) {
                 handleDateClick(info.dateStr);
@@ -174,16 +293,32 @@
                 info.jsEvent.preventDefault();
                 openEditTaskModal(info.event.id);
             },
-            dayMaxEvents: false,
             eventDidMount: function (info) {
                 info.el.style.cursor = 'pointer';
+                info.el.setAttribute('title', buildTooltip(info.event));
                 if (info.event.extendedProps.status === 'done') {
                     info.el.style.textDecoration = 'line-through';
                     info.el.style.opacity = '0.6';
                 }
-            }
+            },
+            // Reaplica filtros sempre que eventos sao (re)carregados
+            eventsSet: function () { applyFilters(); }
         });
         calendar.render();
+
+        // Wiring dos filtros
+        document.querySelectorAll('.fc-filter-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                document.querySelectorAll('.fc-filter-btn').forEach(function (b) { b.classList.remove('active'); });
+                btn.classList.add('active');
+                filterStatus = btn.dataset.filter;
+                applyFilters();
+            });
+        });
+        document.getElementById('fcPriorityFilter').addEventListener('change', function (e) {
+            filterPriority = e.target.value;
+            applyFilters();
+        });
 
         // Verifica se ha eventos no dia clicado
         function handleDateClick(dateStr) {
@@ -197,7 +332,7 @@
                 list.innerHTML = '';
                 eventsOnDate.forEach(function (ev) {
                     const div = document.createElement('div');
-                    div.className = 'text-sm text-gray-700 py-1 border-b border-gray-100 last:border-0';
+                    div.className = 'text-sm text-gray-700 dark:text-slate-200 py-1 border-b border-gray-100 dark:border-slate-700 last:border-0';
                     div.textContent = ev.title;
                     list.appendChild(div);
                 });

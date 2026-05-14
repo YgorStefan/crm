@@ -5,7 +5,7 @@ $wonRevenue = array_sum(array_column($wonStage, 'total_value'));
 ?>
 
 <!-- KPI Cards -->
-<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
+<div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 mb-8">
 
     <a href="<?= APP_URL ?>/clients"
        class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 flex items-center gap-3 hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-700 transition-all">
@@ -32,7 +32,7 @@ $wonRevenue = array_sum(array_column($wonStage, 'total_value'));
     <a href="<?= APP_URL ?>/tasks"
        class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border <?= count($overdueTasks) > 0 ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20' : 'border-gray-100 dark:border-slate-700' ?> p-4 flex items-center gap-3 hover:shadow-md transition-all">
         <div class="w-10 h-10 rounded-xl <?= count($overdueTasks) > 0 ? 'bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400' : 'bg-gray-100 dark:bg-slate-700 text-gray-500 dark:text-slate-400' ?> flex items-center justify-center flex-shrink-0">
-            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><circle cx="12" cy="17" r="0.5" fill="currentColor"/></svg>
         </div>
         <div>
             <p class="text-xl font-bold <?= count($overdueTasks) > 0 ? 'text-red-700 dark:text-red-400' : 'text-gray-800 dark:text-white' ?>"><?= count($overdueTasks) ?></p>
@@ -62,7 +62,10 @@ $wonRevenue = array_sum(array_column($wonStage, 'total_value'));
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-indigo-500 flex-shrink-0"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>
                 <span class="font-semibold text-gray-700 dark:text-slate-200">Próximas Tarefas (7 dias)</span>
             </div>
-            <a href="<?= APP_URL ?>/tasks" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">Ver todas</a>
+            <a href="<?= APP_URL ?>/tasks" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 transition-colors">
+                Ver todas
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </a>
         </div>
         <?php if (empty($upcomingTasks)): ?>
             <div class="px-5 py-8 text-center text-gray-400 dark:text-slate-500 text-sm">Nenhuma tarefa nos próximos 7 dias 🎉</div>
@@ -95,7 +98,10 @@ $wonRevenue = array_sum(array_column($wonStage, 'total_value'));
                 <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-indigo-500 flex-shrink-0"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
                 <span class="font-semibold text-gray-700 dark:text-slate-200">Atividade Recente</span>
             </div>
-            <a href="<?= APP_URL ?>/clients" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">Ver clientes</a>
+            <a href="<?= APP_URL ?>/clients" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 transition-colors">
+                Ver clientes
+                <svg width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+            </a>
         </div>
         <?php
         $typeIcons = [

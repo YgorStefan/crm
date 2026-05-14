@@ -1,4 +1,10 @@
-<?php $safeAppUrl = htmlspecialchars(APP_URL, ENT_QUOTES, 'UTF-8'); ?>
+<?php
+$safeAppUrl = htmlspecialchars(APP_URL, ENT_QUOTES, 'UTF-8');
+$assetV = static function (string $rel): string {
+    $abs = __DIR__ . '/../../../public/' . ltrim($rel, '/');
+    return is_file($abs) ? (string) filemtime($abs) : '0';
+};
+?>
 <!DOCTYPE html>
 <html lang="pt-BR">
 
@@ -19,7 +25,7 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="<?= $safeAppUrl ?>/assets/css/tailwind.css">
+    <link rel="stylesheet" href="<?= $safeAppUrl ?>/assets/css/tailwind.css?v=<?= $assetV('assets/css/tailwind.css') ?>">
     <script nonce="<?= CSP_NONCE ?>" src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script nonce="<?= CSP_NONCE ?>" src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.20/index.global.min.js"></script>
     <script nonce="<?= CSP_NONCE ?>" src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.20/locales-all.global.min.js"></script>
@@ -38,15 +44,14 @@
         class="fixed inset-y-0 left-0 z-50 flex flex-col
                bg-white dark:bg-slate-800
                border-r border-gray-200 dark:border-slate-700
-               w-64 -translate-x-full lg:translate-x-0">
+               w-56 -translate-x-full lg:translate-x-0">
 
-        <!-- Header: brand + hambúrguer -->
-        <div class="flex items-center justify-between px-4 py-4 border-b border-gray-200 dark:border-slate-700 flex-shrink-0">
+        <!-- Header: brand + hambúrguer (mesma altura do topbar) -->
+        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-700 flex-shrink-0">
             <div class="sidebar-brand">
-                <p class="text-sm font-bold text-gray-800 dark:text-white">
+                <p class="text-sm font-bold text-gray-800 dark:text-white leading-tight">
                     <?= htmlspecialchars(APP_NAME, ENT_QUOTES, 'UTF-8') ?>
                 </p>
-                <p class="text-xs text-gray-400 dark:text-slate-500">Gestão de Relacionamento</p>
             </div>
             <!-- Desktop: colapsa para mini -->
             <button id="sidebarCollapseBtn"
@@ -118,12 +123,9 @@
             <div class="mt-3 pt-3 border-t border-gray-100 dark:border-slate-700 px-3">
                 <p class="sidebar-section-label text-xs uppercase font-semibold text-gray-400 dark:text-slate-600 px-2 mb-1">Administração</p>
                 <div class="space-y-0.5">
-                    <?= navLink('/admin/users',
-                        '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>',
-                        'Usuários', $currentPath) ?>
-                    <?= navLink('/settings',
-                        '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>',
-                        'Configurações', $currentPath) ?>
+                    <?= navLink('/admin',
+                        '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/><path d="M3 21h.01"/></svg>',
+                        'Admin', $currentPath) ?>
                 </div>
             </div>
             <?php endif; ?>
@@ -150,8 +152,8 @@
                 </div>
                 <a href="<?= $safeAppUrl ?>/logout" title="Sair"
                     class="sidebar-logout flex-shrink-0 text-gray-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 transition-colors">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" class="w-5 h-5">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0013.5 3h-6a2.25 2.25 0 00-2.25 2.25v13.5A2.25 2.25 0 007.5 21h6a2.25 2.25 0 002.25-2.25V15M12 9l-3 3m0 0l3 3m-3-3h12.75" />
+                    <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
                     </svg>
                 </a>
             </div>
@@ -183,8 +185,8 @@
                     <button id="btnNotifications"
                         class="relative text-gray-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-colors p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700"
                         title="Notificações">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-5 h-5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0" />
+                        <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
+                            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
                         </svg>
                         <span id="notifBadge"
                             class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">0</span>
@@ -196,7 +198,10 @@
                                z-50 max-h-64 overflow-y-auto">
                         <div class="px-4 py-3 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between">
                             <span class="text-sm font-semibold text-gray-700 dark:text-slate-200">Notificações</span>
-                            <button id="btnClearNotifs" class="text-xs text-indigo-600 dark:text-indigo-400 hover:underline">Limpar</button>
+                            <button id="btnClearNotifs" data-tooltip="Limpar todas"
+                                class="has-tooltip text-gray-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-colors p-1 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700">
+                                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 20H7L3 16a2 2 0 0 1 0-2.83l9.17-9.17a2 2 0 0 1 2.83 0l6 6a2 2 0 0 1 0 2.83L12 20"/><line x1="18" y1="13" x2="9" y2="4"/></svg>
+                            </button>
                         </div>
                         <div id="notifList" class="divide-y divide-gray-50 dark:divide-slate-700">
                             <div class="px-4 py-3 text-sm text-gray-400 dark:text-slate-500 text-center">Nenhuma notificação</div>
@@ -299,12 +304,12 @@
         isMini = mini;
         if (mini) {
             sidebar.classList.add('sidebar-mini');
-            mainContent.classList.remove('lg:ml-64');
+            mainContent.classList.remove('lg:ml-56');
             mainContent.classList.add('lg:ml-16');
         } else {
             sidebar.classList.remove('sidebar-mini');
             mainContent.classList.remove('lg:ml-16');
-            mainContent.classList.add('lg:ml-64');
+            mainContent.classList.add('lg:ml-56');
         }
         localStorage.setItem('sidebar', mini ? 'mini' : 'expanded');
         setTimeout(() => window.dispatchEvent(new Event('resize')), 320);
@@ -351,14 +356,14 @@
             backdrop.classList.add('hidden');
             // Reaplica as classes de margem (podem ter sido removidas no resize para mobile)
             if (isMini) {
-                mainContent.classList.remove('lg:ml-64');
+                mainContent.classList.remove('lg:ml-56');
                 mainContent.classList.add('lg:ml-16');
             } else {
                 mainContent.classList.remove('lg:ml-16');
-                mainContent.classList.add('lg:ml-64');
+                mainContent.classList.add('lg:ml-56');
             }
         } else {
-            mainContent.classList.remove('lg:ml-64', 'lg:ml-16');
+            mainContent.classList.remove('lg:ml-56', 'lg:ml-16');
         }
     });
 
@@ -370,14 +375,44 @@
     // Notificações (polling a cada 60s)
     (function () {
         const appUrl = <?= json_encode(APP_URL) ?>;
-        const NOTIFIED = new Set();
-        const notifAlerts = [];
+        const DISMISS_KEY = 'crm.notif_dismissed';
+        const TOASTED = new Set();
+        let notifAlerts = [];
 
         const badge    = document.getElementById('notifBadge');
         const list     = document.getElementById('notifList');
         const dropdown = document.getElementById('notifDropdown');
         const btnBell  = document.getElementById('btnNotifications');
         const btnClear = document.getElementById('btnClearNotifs');
+
+        function getDismissed() {
+            try {
+                const raw = localStorage.getItem(DISMISS_KEY);
+                return new Set(raw ? JSON.parse(raw) : []);
+            } catch (e) { return new Set(); }
+        }
+        function saveDismissed(set) {
+            try { localStorage.setItem(DISMISS_KEY, JSON.stringify(Array.from(set))); } catch (e) {}
+        }
+        function isDismissed(key) { return getDismissed().has(key); }
+        function dismissKey(key) {
+            const set = getDismissed();
+            set.add(key);
+            saveDismissed(set);
+        }
+        function dismissAll(keys) {
+            const set = getDismissed();
+            keys.forEach(function (k) { set.add(k); });
+            saveDismissed(set);
+        }
+        function cleanupDismissed(activeKeys) {
+            // Remove do localStorage chaves que nao estao mais no payload do servidor
+            const set = getDismissed();
+            const active = new Set(activeKeys);
+            const next = new Set();
+            set.forEach(function (k) { if (active.has(k)) next.add(k); });
+            if (next.size !== set.size) saveDismissed(next);
+        }
 
         btnBell.addEventListener('click', function(e) {
             e.stopPropagation();
@@ -387,9 +422,9 @@
         dropdown.addEventListener('click', function(e) { e.stopPropagation(); });
 
         btnClear.addEventListener('click', function() {
-            notifAlerts.length = 0;
-            updateBadge();
-            list.innerHTML = '<div class="px-4 py-3 text-sm text-gray-400 dark:text-slate-500 text-center">Nenhuma notificação</div>';
+            dismissAll(notifAlerts.map(function (a) { return a.key; }));
+            notifAlerts = [];
+            render();
         });
 
         function updateBadge() {
@@ -410,13 +445,36 @@
             setTimeout(() => toast.remove(), 8000);
         }
 
-        function addToDropdown(item) {
-            const empty = list.querySelector('.text-gray-400, .text-slate-500');
-            if (empty) empty.remove();
-            const div = document.createElement('div');
-            div.className = 'px-4 py-3 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700/50';
-            div.textContent = (item.type === 'birthday' ? '🎂 ' : '⏰ ') + item.message;
-            list.prepend(div);
+        function render() {
+            list.innerHTML = '';
+            if (notifAlerts.length === 0) {
+                list.innerHTML = '<div class="px-4 py-3 text-sm text-gray-400 dark:text-slate-500 text-center">Nenhuma notificação</div>';
+                updateBadge();
+                return;
+            }
+            notifAlerts.forEach(function (item) {
+                const row = document.createElement('div');
+                row.className = 'px-4 py-3 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700/50 flex items-start gap-2';
+                const icon = item.type === 'birthday' ? '🎂' : '⏰';
+                const msgSpan = document.createElement('span');
+                msgSpan.className = 'flex-1 min-w-0';
+                msgSpan.textContent = icon + ' ' + item.message;
+                const btnX = document.createElement('button');
+                btnX.type = 'button';
+                btnX.className = 'flex-shrink-0 text-gray-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 transition-colors p-0.5 rounded';
+                btnX.setAttribute('aria-label', 'Dispensar');
+                btnX.dataset.key = item.key;
+                btnX.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+                btnX.addEventListener('click', function () {
+                    dismissKey(item.key);
+                    notifAlerts = notifAlerts.filter(function (a) { return a.key !== item.key; });
+                    render();
+                });
+                row.appendChild(msgSpan);
+                row.appendChild(btnX);
+                list.appendChild(row);
+            });
+            updateBadge();
         }
 
         async function checkNotifications() {
@@ -424,21 +482,31 @@
                 const resp = await fetch(appUrl + '/api/tasks/upcoming');
                 if (!resp.ok) return;
                 const data = await resp.json();
+                cleanupDismissed(data.map(function (i) { return i.key; }));
+                notifAlerts = [];
                 data.forEach(function(item) {
-                    if (NOTIFIED.has(item.key)) return;
-                    NOTIFIED.add(item.key);
+                    if (isDismissed(item.key)) return;
                     notifAlerts.push(item);
-                    showToast(item.message, item.type);
-                    addToDropdown(item);
+                    if (!TOASTED.has(item.key)) {
+                        TOASTED.add(item.key);
+                        showToast(item.message, item.type);
+                    }
                 });
-                updateBadge();
+                render();
             } catch (e) { /* silencia erros de rede */ }
         }
 
+        render();
         checkNotifications();
         setInterval(checkNotifications, 60000);
     })();
 </script>
+
+<!-- Mascaras globais (data-mask="currency" / data-mask="digits") -->
+<script nonce="<?= CSP_NONCE ?>" src="<?= $safeAppUrl ?>/assets/js/masks.js?v=<?= $assetV('assets/js/masks.js') ?>"></script>
+
+<!-- Custom Select global (substitui <select> nativos) -->
+<script nonce="<?= CSP_NONCE ?>" src="<?= $safeAppUrl ?>/assets/js/custom-select.js?v=<?= $assetV('assets/js/custom-select.js') ?>"></script>
 
 </body>
 </html>

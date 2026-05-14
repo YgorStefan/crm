@@ -51,11 +51,17 @@ class SettingsController extends Controller
 
         $tenantId = (int) ($_SESSION['tenant_id'] ?? 0);
 
+        // Determina destino do redirect: prioridade para hidden _redirect_to (valida prefixo)
+        $redirectTo = $this->inputRaw('_redirect_to', '');
+        if ($redirectTo === '' || !preg_match('#^/(settings|admin)(\?[A-Za-z0-9_=&-]+)?$#', $redirectTo)) {
+            $redirectTo = '/settings';
+        }
+
         // Validação: payment_cutoff_day 1–28
         $cutoffDay = (int) $this->inputRaw('payment_cutoff_day', '20');
         if ($cutoffDay < 1 || $cutoffDay > 28) {
             $this->flash('error', 'Dia de corte inválido. Informe um valor entre 1 e 28.');
-            $this->redirect('/settings');
+            $this->redirect($redirectTo);
             return;
         }
 
@@ -63,7 +69,7 @@ class SettingsController extends Controller
         $name = $this->input('tenant_name');
         if (empty($name)) {
             $this->flash('error', 'O nome da organização não pode ficar vazio.');
-            $this->redirect('/settings');
+            $this->redirect($redirectTo);
             return;
         }
 
@@ -83,6 +89,6 @@ class SettingsController extends Controller
         }
 
         $this->flash('success', 'Configurações salvas com sucesso.');
-        $this->redirect('/settings');
+        $this->redirect($redirectTo);
     }
 }

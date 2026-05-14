@@ -18,10 +18,10 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="<?= $safeAppUrl ?>/assets/css/tailwind.css">
+    <link rel="stylesheet" href="<?= $safeAppUrl ?>/assets/css/tailwind.css?v=<?= file_exists(__DIR__ . '/../../../public/assets/css/tailwind.css') ? filemtime(__DIR__ . '/../../../public/assets/css/tailwind.css') : '0' ?>">
 </head>
 
-<body class="bg-gray-50 dark:bg-slate-900 min-h-screen flex items-center justify-center transition-colors duration-300">
+<body class="bg-gradient-to-br from-indigo-50 to-slate-100 dark:from-slate-900 dark:to-indigo-950 min-h-screen flex items-center justify-center transition-colors duration-300">
     <?= $content ?>
 </body>
 

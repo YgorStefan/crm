@@ -42,17 +42,17 @@
          data-stage-id="<?= $stage['id'] ?>">
 
         <!-- Cabeçalho da coluna -->
-        <div class="rounded-t-xl px-4 py-3 text-white font-semibold text-sm flex items-center justify-between"
+        <div class="rounded-t-xl px-4 py-3 text-white font-semibold text-sm flex items-center justify-between gap-2"
              style="background-color: <?= htmlspecialchars($stage['color'], ENT_QUOTES, 'UTF-8') ?>">
-            <span><?= htmlspecialchars($stage['name'], ENT_QUOTES, 'UTF-8') ?></span>
-            <div class="text-right">
-                <span class="bg-white bg-opacity-20 px-2 py-0.5 rounded-full text-xs">
-                    <?= count($stageClients) ?>
-                </span>
+            <div class="flex items-baseline gap-2 min-w-0 flex-1">
+                <span class="truncate"><?= htmlspecialchars($stage['name'], ENT_QUOTES, 'UTF-8') ?></span>
                 <?php if ($totalValue > 0): ?>
-                <div class="kanban-value-total text-xs opacity-80 mt-0.5"><?= format_currency($totalValue) ?></div>
+                <span class="kanban-value-total text-xs opacity-80 font-normal whitespace-nowrap"><?= format_currency($totalValue) ?></span>
                 <?php endif; ?>
             </div>
+            <span class="bg-white bg-opacity-20 px-2 py-0.5 rounded-full text-xs flex-shrink-0">
+                <?= count($stageClients) ?>
+            </span>
         </div>
 
         <!-- Área de drop dos cartões -->
@@ -60,19 +60,29 @@
              data-stage-id="<?= $stage['id'] ?>">
 
             <?php foreach ($stageClients as $client): ?>
+            <?php $hasValue = ($client['deal_value'] ?? 0) > 0; ?>
             <!-- Cartão do cliente (draggable) -->
-            <div class="kanban-card bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-600 p-3 cursor-grab hover:shadow-md transition-shadow"
+            <div class="kanban-card bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-600 p-3 cursor-grab hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-400 dark:hover:bg-slate-700 transition-all"
                  draggable="true"
                  data-client-id="<?= $client['id'] ?>"
                  data-current-stage="<?= $client['pipeline_stage_id'] ?>"
                  data-deal-value="<?= (float)($client['deal_value'] ?? 0) ?>">
 
-                <!-- Nome e empresa -->
-                <a href="<?= APP_URL ?>/clients/<?= $client['id'] ?>"
-                   class="block font-semibold text-gray-800 dark:text-white text-sm hover:text-indigo-700 truncate"
-                   onclick="event.stopPropagation()">
-                    <?= htmlspecialchars($client['name'], ENT_QUOTES, 'UTF-8') ?>
-                </a>
+                <!-- Nome (+ avatar inline quando nao ha valor) e empresa -->
+                <div class="flex items-center justify-between gap-2">
+                    <a href="<?= APP_URL ?>/clients/<?= $client['id'] ?>"
+                       class="block font-semibold text-gray-800 dark:text-white text-sm hover:text-indigo-700 dark:hover:text-indigo-400 truncate flex-1 min-w-0"
+                       onclick="event.stopPropagation()">
+                        <?= htmlspecialchars($client['name'], ENT_QUOTES, 'UTF-8') ?>
+                    </a>
+                    <?php if (!$hasValue && $client['assigned_name']): ?>
+                    <div class="w-5 h-5 rounded-full bg-indigo-500 flex items-center justify-center text-white text-xs font-bold flex-shrink-0"
+                         title="<?= htmlspecialchars($client['assigned_name'], ENT_QUOTES, 'UTF-8') ?>">
+                        <?= strtoupper(substr($client['assigned_name'], 0, 1)) ?>
+                    </div>
+                    <?php endif; ?>
+                </div>
+
                 <?php if ($client['company']): ?>
                 <p class="text-xs text-gray-400 dark:text-slate-500 truncate mt-0.5 flex items-center gap-1">
                     <svg width="10" height="10" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="1"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/></svg>
@@ -80,25 +90,20 @@
                 </p>
                 <?php endif; ?>
 
-                <!-- Rodapé do cartão -->
+                <?php if ($hasValue): ?>
+                <!-- Rodapé do cartão: valor + avatar -->
                 <div class="flex items-center justify-between mt-2 pt-2 border-t border-gray-100 dark:border-slate-600">
-                    <?php if ($client['deal_value'] > 0): ?>
-                    <span class="text-xs font-bold text-green-700">
+                    <span class="text-xs font-bold text-green-700 dark:text-green-400">
                         <?= format_currency($client['deal_value']) ?>
                     </span>
-                    <?php else: ?>
-                    <span></span>
-                    <?php endif; ?>
-
                     <?php if ($client['assigned_name']): ?>
-                    <div class="flex items-center gap-1">
-                        <div class="w-5 h-5 rounded-full bg-indigo-500 flex items-center justify-center text-white text-xs font-bold"
-                             title="<?= htmlspecialchars($client['assigned_name'], ENT_QUOTES, 'UTF-8') ?>">
-                            <?= strtoupper(substr($client['assigned_name'], 0, 1)) ?>
-                        </div>
+                    <div class="w-5 h-5 rounded-full bg-indigo-500 flex items-center justify-center text-white text-xs font-bold"
+                         title="<?= htmlspecialchars($client['assigned_name'], ENT_QUOTES, 'UTF-8') ?>">
+                        <?= strtoupper(substr($client['assigned_name'], 0, 1)) ?>
                     </div>
                     <?php endif; ?>
                 </div>
+                <?php endif; ?>
             </div>
             <?php endforeach; ?>
 

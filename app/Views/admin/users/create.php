@@ -5,7 +5,7 @@
             <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
             Usuários
         </a>
-        <h3 class="text-2xl font-bold text-gray-800">Novo Usuário</h3>
+        <h3 class="text-2xl font-bold text-gray-800 dark:text-white">Novo Usuário</h3>
     </div>
     <form method="POST" action="<?= APP_URL ?>/admin/users/store"
           class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">

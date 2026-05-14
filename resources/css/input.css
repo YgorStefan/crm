@@ -46,64 +46,40 @@
     display: flex !important;
 }
 
-/* ── Scrollbar global dark mode ─────────────────────────── */
+/* ── Scrollbar unificado 4px (light + dark, mesmo visual) ─ */
+* {
+    scrollbar-color: #94a3b8 #e2e8f0;
+    scrollbar-width: thin;
+}
 .dark * {
     scrollbar-color: #475569 #1e293b;
 }
-.dark *::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+*::-webkit-scrollbar {
+    width: 4px;
+    height: 4px;
+}
+*::-webkit-scrollbar-track {
+    background: #e2e8f0;
+    border-radius: 2px;
 }
 .dark *::-webkit-scrollbar-track {
     background: #1e293b;
 }
+*::-webkit-scrollbar-thumb {
+    background: #94a3b8;
+    border-radius: 2px;
+}
 .dark *::-webkit-scrollbar-thumb {
     background: #475569;
-    border-radius: 3px;
 }
-.dark *::-webkit-scrollbar-thumb:hover {
+*::-webkit-scrollbar-thumb:hover {
     background: #64748b;
 }
 
-/* ── Kanban scrollbar ───────────────────────────────────── */
-.kanban-scroll::-webkit-scrollbar {
-    height: 6px;
-}
-.kanban-scroll::-webkit-scrollbar-track {
-    background: #f1f5f9;
-}
-.dark .kanban-scroll::-webkit-scrollbar-track {
-    background: #1e293b;
-}
-.kanban-scroll::-webkit-scrollbar-thumb {
-    background: #94a3b8;
-    border-radius: 3px;
-}
-.dark .kanban-scroll::-webkit-scrollbar-thumb {
-    background: #475569;
-}
-
-/* ── Kanban column scroll ───────────────────────────────── */
+/* ── Kanban column scroll (mantém max-height + overflow) ── */
 .kanban-drop-zone {
     max-height: 480px;
     overflow-y: auto;
-}
-.kanban-drop-zone::-webkit-scrollbar {
-    width: 4px;
-}
-.kanban-drop-zone::-webkit-scrollbar-track {
-    background: #e2e8f0;
-    border-radius: 2px;
-}
-.dark .kanban-drop-zone::-webkit-scrollbar-track {
-    background: #1e293b;
-}
-.kanban-drop-zone::-webkit-scrollbar-thumb {
-    background: #94a3b8;
-    border-radius: 2px;
-}
-.dark .kanban-drop-zone::-webkit-scrollbar-thumb {
-    background: #475569;
 }
 
 /* ── Kanban drag states ─────────────────────────────────── */
@@ -116,9 +92,228 @@
     outline-offset: 2px;
 }
 
+/* ── Custom Select (substitui <select> nativo) ─────────── */
+.cs-native-hidden {
+    position: absolute !important;
+    width: 1px !important;
+    height: 1px !important;
+    padding: 0 !important;
+    margin: -1px !important;
+    overflow: hidden !important;
+    clip: rect(0, 0, 0, 0) !important;
+    white-space: nowrap !important;
+    border: 0 !important;
+}
+.cs-wrapper {
+    position: relative;
+    display: inline-block;
+    min-width: 0;
+}
+.cs-trigger {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    text-align: left;
+    background: #fff;
+    cursor: pointer;
+    line-height: 1.25;
+    width: 100%;
+}
+.dark .cs-trigger {
+    background: #334155;
+}
+.cs-trigger:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px #6366f1;
+}
+.cs-trigger .cs-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.cs-trigger .cs-label.cs-placeholder {
+    color: #9ca3af;
+}
+.dark .cs-trigger .cs-label.cs-placeholder {
+    color: #64748b;
+}
+.cs-trigger .cs-chevron {
+    flex-shrink: 0;
+    opacity: 0.6;
+    transition: transform 0.15s ease;
+}
+.cs-wrapper.cs-open .cs-chevron {
+    transform: rotate(180deg);
+}
+.cs-listbox {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    min-width: 100%;
+    max-height: 240px;
+    overflow-y: auto;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    z-index: 40;
+    padding: 4px;
+    margin: 0;
+    list-style: none;
+}
+.dark .cs-listbox {
+    background: #1e293b;
+    border-color: #334155;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.35);
+}
+.cs-option {
+    padding: 7px 10px;
+    border-radius: 6px;
+    font-size: 13px;
+    color: #1f2937;
+    cursor: pointer;
+    transition: background-color 0.1s ease;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.dark .cs-option {
+    color: #e2e8f0;
+}
+.cs-option.cs-active {
+    background-color: #eef2ff;
+}
+.dark .cs-option.cs-active {
+    background-color: #312e81;
+}
+.cs-option.cs-selected {
+    color: #4338ca;
+    font-weight: 500;
+}
+.dark .cs-option.cs-selected {
+    color: #a5b4fc;
+}
+.cs-option.cs-disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+/* ── Custom tooltip (data-tooltip) ──────────────────────── */
+.has-tooltip {
+    position: relative;
+}
+.has-tooltip::after,
+.has-tooltip::before {
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+    position: absolute;
+    z-index: 50;
+}
+.has-tooltip::after {
+    content: attr(data-tooltip);
+    bottom: calc(100% + 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: #0f172a;
+    color: #fff;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    font-weight: 500;
+    white-space: nowrap;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+.has-tooltip::before {
+    content: '';
+    bottom: calc(100% + 2px);
+    left: 50%;
+    transform: translateX(-50%);
+    border: 4px solid transparent;
+    border-top-color: #0f172a;
+}
+.has-tooltip:hover::after,
+.has-tooltip:hover::before,
+.has-tooltip:focus-visible::after,
+.has-tooltip:focus-visible::before {
+    opacity: 1;
+}
+.dark .has-tooltip::after {
+    background: #e2e8f0;
+    color: #0f172a;
+}
+.dark .has-tooltip::before {
+    border-top-color: #e2e8f0;
+}
+
 /* ── FullCalendar interaction ──────────────────────────── */
 .fc-event {
     cursor: pointer;
+}
+
+/* ── FullCalendar header buttons (estilo do app) ────────── */
+.fc .fc-button-primary {
+    background-color: #4f46e5;
+    border-color: #4338ca;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-transform: none;
+    box-shadow: none;
+}
+.fc .fc-button-primary:hover {
+    background-color: #4338ca;
+    border-color: #3730a3;
+}
+.fc .fc-button-primary:not(:disabled):active,
+.fc .fc-button-primary:not(:disabled).fc-button-active {
+    background-color: #3730a3;
+    border-color: #312e81;
+}
+
+/* Remove borda persistente de focus em botoes FullCalendar */
+.fc .fc-button:focus,
+.fc .fc-button:active,
+.fc .fc-button-primary:not(:disabled):active:focus,
+.fc .fc-button-primary:not(:disabled).fc-button-active:focus {
+    box-shadow: none !important;
+    outline: none !important;
+}
+.fc .fc-button:focus-visible {
+    outline: 2px solid #6366f1 !important;
+    outline-offset: 2px;
+}
+
+/* Dia atual: fundo sutil + badge no numero */
+.fc-daygrid-day.fc-day-today {
+    background-color: rgba(99, 102, 241, 0.06) !important;
+}
+.fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+    background-color: #4f46e5;
+    color: white;
+    border-radius: 50%;
+    width: 26px;
+    height: 26px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    margin: 2px;
+    font-weight: 600;
+}
+
+/* Fim de semana: leve diferencia em ambos os temas */
+.fc-day-sat,
+.fc-day-sun {
+    background-color: rgba(241, 245, 249, 0.5);
+}
+.dark .fc-day-sat,
+.dark .fc-day-sun {
+    background-color: rgba(15, 23, 42, 0.5);
 }
 
 /* ── FullCalendar dark mode overrides ───────────────────── */
@@ -130,15 +325,24 @@
 .dark .fc-theme-standard th {
     border-color: rgba(255,255,255,0.08);
 }
-.dark .fc-col-header-cell-cushion,
+/* Header dos dias da semana (Dom/Seg/Ter) - antes brancos */
+.dark .fc-col-header-cell {
+    background-color: #1e293b;
+}
+.dark .fc-col-header-cell-cushion {
+    color: #94a3b8;
+    font-weight: 600;
+}
 .dark .fc-daygrid-day-number,
 .dark .fc-list-day-text,
 .dark .fc-list-day-side-text {
-    color: #94a3b8;
+    color: #cbd5e1;
 }
-.dark .fc-daygrid-day.fc-day-today,
-.dark .fc-timegrid-col.fc-day-today {
-    background-color: rgba(99, 102, 241, 0.08);
+.dark .fc-daygrid-day.fc-day-today {
+    background-color: rgba(99, 102, 241, 0.12) !important;
+}
+.dark .fc-daygrid-day.fc-day-today .fc-daygrid-day-number {
+    color: #fff;
 }
 .dark .fc-button-primary {
     background-color: #4f46e5;
@@ -165,4 +369,14 @@
 .dark .fc-popover-header {
     background-color: #0f172a;
     color: #cbd5e1;
+}
+.dark .fc-list-empty {
+    background-color: transparent;
+    color: #94a3b8;
+}
+.dark .fc-day-other .fc-daygrid-day-number {
+    opacity: 0.4;
+}
+.dark .fc-list-day-cushion {
+    background-color: #0f172a !important;
 }

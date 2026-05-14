@@ -58,7 +58,7 @@ class TaskController extends Controller
     }
 
     /**
-     * Retorna alertas para notificacoes: tarefas nos proximos 15 min e aniversarios do dia.
+     * Retorna alertas para notificacoes: tarefas atrasadas, tarefas das proximas 24h e aniversarios do dia.
      * Consumido pelo polling JS a cada 60 segundos.
      */
     public function upcoming(array $params = []): void
@@ -67,26 +67,49 @@ class TaskController extends Controller
         $userId = (int) ($_SESSION['user']['id'] ?? 0);
         $isAdmin = ($_SESSION['user']['role'] ?? '') === 'admin';
 
-        // Usa timezone America/Sao_Paulo (consistente com config/app.php)
-        $now = new \DateTime('now', new \DateTimeZone('America/Sao_Paulo'));
-        $in15 = (clone $now)->modify('+15 minutes');
+        $tz   = new \DateTimeZone('America/Sao_Paulo');
+        $now  = new \DateTime('now', $tz);
+        $in24 = (clone $now)->modify('+24 hours');
 
+        $alerts = [];
+
+        // Tarefas atrasadas (status pending/in_progress, due_date no passado, limite 7 dias)
+        $overdue = $taskModel->findOverdue($isAdmin ? null : $userId);
+        $cutoff  = (clone $now)->modify('-7 days');
+        foreach ($overdue as $t) {
+            $due = new \DateTime($t['due_date'], $tz);
+            if ($due < $cutoff) continue;
+            $alerts[] = [
+                'key'      => 'task_overdue_' . $t['id'],
+                'type'     => 'task',
+                'message'  => 'Tarefa atrasada: ' . $t['title'] . ' (venceu ' . $due->format('d/m H:i') . ')',
+                'priority' => $t['priority'] ?? null,
+            ];
+        }
+
+        // Tarefas com vencimento nas proximas 24h
         $upcoming = $taskModel->findUpcoming(
             $userId,
             $now->format('Y-m-d H:i:s'),
-            $in15->format('Y-m-d H:i:s'),
+            $in24->format('Y-m-d H:i:s'),
             $isAdmin
         );
-
-        $alerts = [];
         foreach ($upcoming as $t) {
-            $dueTime = new \DateTime($t['due_date'], new \DateTimeZone('America/Sao_Paulo'));
+            $dueTime = new \DateTime($t['due_date'], $tz);
             $diffMin = (int) round(($dueTime->getTimestamp() - $now->getTimestamp()) / 60);
 
+            if ($diffMin <= 60) {
+                $msg = 'Tarefa em ' . max(0, $diffMin) . ' min: ' . $t['title'];
+            } elseif ($dueTime->format('Y-m-d') === $now->format('Y-m-d')) {
+                $msg = 'Tarefa hoje as ' . $dueTime->format('H:i') . ': ' . $t['title'];
+            } else {
+                $msg = 'Tarefa amanha as ' . $dueTime->format('H:i') . ': ' . $t['title'];
+            }
+
             $alerts[] = [
-                'key' => 'task_' . $t['id'],
-                'type' => 'task',
-                'message' => 'Tarefa em ' . $diffMin . ' min: ' . $t['title'],
+                'key'      => 'task_' . $t['id'],
+                'type'     => 'task',
+                'message'  => $msg,
                 'priority' => $t['priority'],
             ];
         }
@@ -98,7 +121,7 @@ class TaskController extends Controller
             $alerts[] = [
                 'key'     => 'birthday_' . $c['id'],
                 'type'    => 'birthday',
-                'message' => '🎂 Aniversário de ' . $c['name'] . ' hoje!',
+                'message' => 'Aniversario de ' . $c['name'] . ' hoje!',
             ];
         }
 

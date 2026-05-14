@@ -159,9 +159,9 @@
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Crédito contratado (R$)</label>
-                    <input type="text" name="deal_value"
+                    <input type="text" name="deal_value" data-mask="currency"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400"
-                        placeholder="0,00">
+                        placeholder="R$ 0,00">
                 </div>
 
                 <div>
