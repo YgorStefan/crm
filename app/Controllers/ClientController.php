@@ -23,10 +23,12 @@ class ClientController extends Controller
 
         // Lê os filtros da query string (?search=...&stage_id=...&assigned_to=...&tipo_venda=...)
         $filters = [
-            'search' => $_GET['search'] ?? '',
-            'stage_id' => $_GET['stage_id'] ?? '',
+            'search'      => $_GET['search'] ?? '',
+            'stage_id'    => $_GET['stage_id'] ?? '',
             'assigned_to' => $_GET['assigned_to'] ?? '',
-            'tipo_venda' => $_GET['tipo_venda'] ?? '',
+            'tipo_venda'  => $_GET['tipo_venda'] ?? '',
+            'sort'        => $_GET['sort'] ?? 'name',
+            'dir'         => $_GET['dir'] ?? 'asc',
         ];
 
         // Paginação: página atual

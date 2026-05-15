@@ -86,16 +86,32 @@
         </p>
     </div>
     <?php else: ?>
+    <?php
+    $sortLink = function (string $col, string $label) use ($filters, $pagination): string {
+        $active = ($filters['sort'] === $col);
+        $nextDir = ($active && $filters['dir'] === 'asc') ? 'desc' : 'asc';
+        $icon = $active ? ($filters['dir'] === 'asc' ? ' ↑' : ' ↓') : '';
+        $params = array_merge(
+            array_diff_key($pagination['query_params'], ['sort' => 1, 'dir' => 1]),
+            ['sort' => $col, 'dir' => $nextDir, 'page' => 1]
+        );
+        $qs = http_build_query($params);
+        $cls = $active
+            ? 'text-indigo-600 dark:text-indigo-400 font-semibold'
+            : 'hover:text-indigo-600 dark:hover:text-indigo-400';
+        return "<a href=\"" . APP_URL . "/clients?{$qs}\" class=\"{$cls}\">{$label}{$icon}</a>";
+    };
+    ?>
     <div class="overflow-x-auto">
         <table class="w-full text-sm">
             <thead class="bg-gray-50 dark:bg-slate-700/50 border-b border-gray-200 dark:border-slate-600">
                 <tr>
-                    <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-slate-400">Nome</th>
+                    <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-slate-400"><?= $sortLink('name', 'Nome') ?></th>
                     <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-slate-400 hidden md:table-cell">Empresa</th>
                     <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-slate-400 hidden lg:table-cell">Contato</th>
-                    <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-slate-400">Etapa</th>
+                    <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-slate-400"><?= $sortLink('stage', 'Etapa') ?></th>
                     <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-slate-400 hidden lg:table-cell">Tipo</th>
-                    <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-slate-400 hidden lg:table-cell">Valor</th>
+                    <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-slate-400 hidden lg:table-cell"><?= $sortLink('value', 'Valor') ?></th>
                     <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-slate-400 hidden xl:table-cell">Responsável</th>
                     <th class="text-center px-4 py-3 font-semibold text-gray-600 dark:text-slate-400">Ações</th>
                 </tr>

@@ -112,7 +112,14 @@ class Client extends Model
         }
 
         $sql .= " GROUP BY c.id";
-        $sql .= " ORDER BY c.name ASC";
+        $allowedSorts = [
+            'name'  => 'c.name',
+            'stage' => 'ps.name',
+            'value' => 'c.deal_value',
+        ];
+        $sortCol = $allowedSorts[$filters['sort'] ?? ''] ?? 'c.name';
+        $sortDir = ($filters['dir'] ?? 'asc') === 'desc' ? 'DESC' : 'ASC';
+        $sql .= " ORDER BY {$sortCol} {$sortDir}";
 
         if ($limit !== null) {
             $sql .= " LIMIT :limit OFFSET :offset";
