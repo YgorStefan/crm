@@ -150,7 +150,7 @@ $assetV = static function (string $rel): string {
                     </p>
                 </div>
                 <a href="<?= $safeAppUrl ?>/logout" title="Sair"
-                    class="sidebar-logout flex-shrink-0 text-gray-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 transition-colors">
+                    class="sidebar-logout flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 dark:text-slate-500 dark:hover:text-red-400 dark:hover:bg-red-900/40 transition-colors">
                     🏃
                 </a>
             </div>

@@ -63,7 +63,7 @@ $wonRevenue = array_sum(array_column($wonStage, 'total_value'));
                 <span class="font-semibold text-gray-700 dark:text-slate-200">Próximas Tarefas (7 dias)</span>
             </div>
             <a href="<?= APP_URL ?>/tasks" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 transition-colors">
-                Ver todas →
+                Ver todas ➜
             </a>
         </div>
         <?php if (empty($upcomingTasks)): ?>
@@ -98,7 +98,7 @@ $wonRevenue = array_sum(array_column($wonStage, 'total_value'));
                 <span class="font-semibold text-gray-700 dark:text-slate-200">Atividade Recente</span>
             </div>
             <a href="<?= APP_URL ?>/clients" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-md text-xs font-medium bg-indigo-50 hover:bg-indigo-100 dark:bg-indigo-900/30 dark:hover:bg-indigo-900/50 text-indigo-700 dark:text-indigo-300 transition-colors">
-                Ver clientes →
+                Ver clientes ➜
             </a>
         </div>
         <?php

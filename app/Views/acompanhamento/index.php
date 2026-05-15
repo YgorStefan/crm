@@ -3,7 +3,7 @@ $totalClientes = !empty($stages) ? array_sum(array_column($stages, 'total')) : 0
 $temDados = $totalClientes > 0 || $abordados > 0;
 ?>
 
-<div class="max-w-4xl mx-auto">
+<div>
 
     <!-- Cabeçalho com navegação de meses -->
     <div class="flex items-center justify-between mb-6">
@@ -22,11 +22,11 @@ $temDados = $totalClientes > 0 || $abordados > 0;
             <?php if (!$isMesAtual): ?>
                 <a href="<?= APP_URL ?>/acompanhamento?mes=<?= urlencode($nextMes) ?>"
                    class="px-3 py-1.5 text-sm border border-gray-300 dark:border-slate-600 rounded-lg text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
-                    Próximo →
+                    Próximo ↪
                 </a>
             <?php else: ?>
                 <span class="px-3 py-1.5 text-sm border border-gray-200 dark:border-slate-700 rounded-lg text-gray-300 dark:text-slate-600 cursor-default">
-                    Próximo →
+                    Próximo ↪
                 </span>
             <?php endif; ?>
         </div>
