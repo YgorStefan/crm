@@ -29,6 +29,7 @@ desktop.ini
 
 # --- IDEs e editores ---
 .vscode/
+.cursor/
 .idea/
 *.swp
 *.swo
