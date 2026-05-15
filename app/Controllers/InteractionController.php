@@ -33,13 +33,21 @@ class InteractionController extends Controller
         $occurredAt = str_replace('T', ' ', $occurredAt) . ':00';
 
         $interactionModel = new Interaction();
-        $interactionModel->create([
-            'client_id'   => $clientId,
-            'user_id'     => $_SESSION['user']['id'],
-            'type'        => $this->inputRaw('type', 'note'),
-            'description' => $description,
-            'occurred_at' => $occurredAt,
-        ]);
+        try {
+            $interactionModel->create([
+                'client_id'   => $clientId,
+                'user_id'     => $_SESSION['user']['id'],
+                'type'        => $this->inputRaw('type', 'note'),
+                'description' => $description,
+                'occurred_at' => $occurredAt,
+            ]);
+        } catch (\Throwable $e) {
+            // Logar a exceção real evita que erros de schema retornem 500 silenciosos
+            error_log('[InteractionController::store] client_id=' . $clientId . ' exception: ' . $e->getMessage());
+            $this->flash('error', 'Não foi possível registrar a interação. Detalhe técnico: ' . $e->getMessage());
+            $this->redirect('/clients/' . $clientId);
+            return;
+        }
 
         $this->flash('success', 'Interação registrada com sucesso!');
         $this->redirect('/clients/' . $clientId);

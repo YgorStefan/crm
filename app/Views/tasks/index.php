@@ -18,7 +18,7 @@
             </button>
             <button type="button" id="overdueDismiss"
                 data-tooltip="Dispensar (volta no F5)"
-                class="has-tooltip text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-200 p-1 rounded-md hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors">
+                class="has-tooltip has-tooltip-right text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-200 p-1 rounded-md hover:bg-red-100 dark:hover:bg-red-900/40 transition-colors">
                 ✕
             </button>
         </div>

@@ -152,7 +152,7 @@
                     </td>
                     <!-- Ações -->
                     <td class="px-4 py-3 text-center">
-                        <div class="inline-flex items-center gap-0.5 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg p-1">
+                        <div class="actions-group inline-flex items-center gap-0.5 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg p-1">
                             <!-- Ver -->
                             <a href="<?= APP_URL ?>/clients/<?= $client['id'] ?>"
                                data-tooltip="Ver detalhes"

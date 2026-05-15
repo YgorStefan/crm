@@ -35,13 +35,19 @@ $rangeEnd   = min($currentPage * $perPage, $totalItems);
 
 /**
  * Monta a URL de uma página preservando os filtros activos.
+ *
+ * O componente recebe base_url relativa (ex.: '/clients'); aqui prefixamos
+ * APP_URL para que o link funcione em produção sob subdiretório (ex.:
+ * https://exemplo.com/crm/clients?page=2). Em localhost APP_URL é apenas
+ * o host, então o resultado também é correto.
  */
 function paginationUrl(string $baseUrl, array $queryParams, int $page, int $perPage): string
 {
     $params = array_filter($queryParams, fn($v) => $v !== '' && $v !== null);
     $params['page']     = $page;
     $params['per_page'] = $perPage;
-    return htmlspecialchars($baseUrl . '?' . http_build_query($params), ENT_QUOTES, 'UTF-8');
+    $absolute = rtrim(APP_URL, '/') . '/' . ltrim($baseUrl, '/');
+    return htmlspecialchars($absolute . '?' . http_build_query($params), ENT_QUOTES, 'UTF-8');
 }
 
 /**
@@ -84,10 +90,10 @@ function paginationRange(int $current, int $total): array
 $pages = paginationRange($currentPage, $totalPages);
 ?>
 
-<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mt-4 px-1">
+<div class="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-3 mt-4 px-1 min-w-0">
 
     <!-- Informações de resultado e seletor de itens por página -->
-    <div class="flex items-center gap-3 text-sm text-gray-500 dark:text-slate-400">
+    <div class="flex items-center flex-wrap gap-x-3 gap-y-2 text-sm text-gray-500 dark:text-slate-400 min-w-0">
         <span>
             Mostrando
             <strong class="text-gray-700 dark:text-slate-200"><?= $rangeStart ?></strong>–<strong class="text-gray-700 dark:text-slate-200"><?= $rangeEnd ?></strong>
@@ -100,7 +106,7 @@ $pages = paginationRange($currentPage, $totalPages);
             Itens por página:
             <select id="perPageSelect"
                     class="per-page-select ml-1 px-2 py-1 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
-                    data-base-url="<?= htmlspecialchars($baseUrl, ENT_QUOTES, 'UTF-8') ?>"
+                    data-base-url="<?= htmlspecialchars(rtrim(APP_URL, '/') . '/' . ltrim($baseUrl, '/'), ENT_QUOTES, 'UTF-8') ?>"
                     data-query-params="<?= htmlspecialchars(http_build_query(array_filter($queryParams, fn($v) => $v !== '' && $v !== null)), ENT_QUOTES, 'UTF-8') ?>">
                 <?php foreach ([15, 25, 50, 100] as $opt): ?>
                     <option value="<?= $opt ?>" <?= $opt === $perPage ? 'selected' : '' ?>><?= $opt ?></option>
@@ -111,7 +117,7 @@ $pages = paginationRange($currentPage, $totalPages);
 
     <!-- Botões de navegação de página -->
     <?php if ($totalPages > 1): ?>
-    <nav class="flex items-center gap-1" aria-label="Paginação">
+    <nav class="flex items-center flex-wrap gap-1 min-w-0" aria-label="Paginação">
 
         <!-- Anterior -->
         <?php if ($currentPage > 1): ?>
