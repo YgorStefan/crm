@@ -14,7 +14,7 @@ $temDados = $totalClientes > 0 || $abordados > 0;
         <div class="flex items-center gap-2">
             <a href="<?= APP_URL ?>/acompanhamento?mes=<?= urlencode($prevMes) ?>"
                class="px-3 py-1.5 text-sm border border-gray-300 dark:border-slate-600 rounded-lg text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
-                ← Anterior
+                ↩ Anterior
             </a>
             <span class="px-3 py-1.5 text-sm font-semibold text-gray-800 dark:text-white bg-gray-100 dark:bg-slate-700 rounded-lg min-w-[130px] text-center">
                 <?= htmlspecialchars($mesLabel, ENT_QUOTES, 'UTF-8') ?>
@@ -34,8 +34,8 @@ $temDados = $totalClientes > 0 || $abordados > 0;
 
     <?php if (!$temDados): ?>
         <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-12 text-center">
-            <div class="flex justify-center">
-                <svg width="40" height="40" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" class="text-gray-300 dark:text-slate-600 mb-4"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+            <div class="flex justify-center text-5xl mb-4 text-gray-300 dark:text-slate-600">
+                📊
             </div>
             <p class="text-gray-500 dark:text-slate-400 font-medium">Nenhum dado registrado em <?= htmlspecialchars($mesLabel, ENT_QUOTES, 'UTF-8') ?>.</p>
             <?php if ($isMesAtual): ?>

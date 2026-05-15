@@ -22,8 +22,7 @@
 <div class="max-w-2xl mx-auto">
     <div class="flex items-center gap-3 mb-6">
         <a href="<?= APP_URL ?>/pipeline" class="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 bg-gray-100 hover:bg-indigo-50 dark:bg-slate-700 dark:hover:bg-indigo-900/30 px-3 py-1.5 rounded-lg transition-all">
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-            Pipeline
+            ↩ Pipeline
         </a>
         <h3 class="text-2xl font-bold text-gray-800 dark:text-white">Etapas do Funil</h3>
     </div>
@@ -108,7 +107,7 @@
 
                         <!-- Botão Editar -->
                         <button type="button" class="btn-edit text-indigo-500 hover:text-indigo-700" title="Editar">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                            ✏️
                         </button>
 
                         <!-- Botão Salvar -->

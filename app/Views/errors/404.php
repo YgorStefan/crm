@@ -20,16 +20,14 @@
 </head>
 <body class="bg-gray-50 dark:bg-slate-900 min-h-screen flex items-center justify-center font-sans transition-colors">
     <div class="text-center">
-        <div class="flex justify-center mb-6">
-            <svg width="64" height="64" fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24" class="text-gray-300 dark:text-slate-700">
-                <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
-            </svg>
+        <div class="flex justify-center mb-6 text-7xl">
+            🔍
         </div>
         <h1 class="text-6xl font-bold text-gray-800 dark:text-white mb-2">404</h1>
         <p class="text-xl text-gray-500 dark:text-slate-400 mb-6">Página não encontrada</p>
         <a href="<?= defined('APP_URL') ? APP_URL : '' ?>/dashboard"
            class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-3 rounded-lg transition-colors">
-            ← Voltar ao Dashboard
+            ↩ Voltar ao Dashboard
         </a>
     </div>
 </body>

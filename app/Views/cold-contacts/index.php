@@ -15,7 +15,7 @@
         <h4 class="font-semibold text-gray-700 dark:text-slate-200">Importar lista</h4>
         <span class="has-tooltip text-gray-400 dark:text-slate-500 cursor-help"
               data-tooltip="Coluna A = Nome, Coluna B = Celular. Header opcional. Formatos: .csv, .xls, .xlsx">
-            <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+            ❓
         </span>
     </div>
     <form method="POST" action="<?= APP_URL ?>/cold-contacts/import" enctype="multipart/form-data">
@@ -107,7 +107,7 @@
                                 data-year-month="<?= htmlspecialchars($s['mes_ano'], ENT_QUOTES, 'UTF-8') ?>"
                                 data-month-label="<?= htmlspecialchars($s['month_label'], ENT_QUOTES, 'UTF-8') ?>"
                                 title="Excluir">
-                                <svg class="w-4 h-4 block" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                                🗑️
                             </button>
                         </div>
                     </div>
@@ -523,8 +523,8 @@
                 '<td class="py-2 px-2 text-gray-500 dark:text-slate-400 text-xs">' + esc(c.telefone_enviado || '\u2014') + '</td>' +
                 '<td class="py-2 px-2 text-gray-500 dark:text-slate-400 text-xs">' + (c.data_mensagem ? formatDate(c.data_mensagem) : '\u2014') + '</td>' +
                 '<td class="py-2 px-2 whitespace-nowrap">' +
-                '<button class="btn-edit text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300" title="Editar" data-id="' + id + '" data-contact=\'' + JSON.stringify(c).replace(/'/g, '&#39;') + '\'><svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg></button>' +
-                '<button class="btn-delete text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 ml-2" title="Excluir" data-id="' + id + '"><svg class="w-4 h-4 pointer-events-none" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg></button>' +
+                '<button class="btn-edit text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300" title="Editar" data-id="' + id + '" data-contact=\'' + JSON.stringify(c).replace(/'/g, '&#39;') + '\'>✏️</button>' +
+                '<button class="btn-delete text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 ml-2" title="Excluir" data-id="' + id + '">🗑️</button>' +
                 '</td>' +
                 '</tr>';
         }

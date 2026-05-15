@@ -1,11 +1,11 @@
 <?php
 $interactionTypes = [
-    'call' => ['label' => 'Ligação', 'icon' => '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-blue-500"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.93 12 19.79 19.79 0 0 1 1.86 3.38 2 2 0 0 1 3.84 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>', 'color' => 'blue'],
-    'email' => ['label' => 'E-mail', 'icon' => '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-green-500"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>', 'color' => 'green'],
-    'meeting' => ['label' => 'Reunião', 'icon' => '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-purple-500"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>', 'color' => 'purple'],
-    'whatsapp' => ['label' => 'WhatsApp', 'icon' => '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-teal-500"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>', 'color' => 'teal'],
-    'note' => ['label' => 'Nota', 'icon' => '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-yellow-500"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>', 'color' => 'yellow'],
-    'other' => ['label' => 'Outro', 'icon' => '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24" class="text-gray-400"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>', 'color' => 'gray'],
+    'call'     => ['label' => 'Ligação',  'icon' => '📞', 'color' => 'blue'],
+    'email'    => ['label' => 'E-mail',   'icon' => '📧', 'color' => 'green'],
+    'meeting'  => ['label' => 'Reunião',  'icon' => '🤝', 'color' => 'purple'],
+    'whatsapp' => ['label' => 'WhatsApp', 'icon' => '💬', 'color' => 'teal'],
+    'note'     => ['label' => 'Nota',     'icon' => '📝', 'color' => 'yellow'],
+    'other'    => ['label' => 'Outro',    'icon' => 'ℹ️', 'color' => 'gray'],
 ];
 ?>
 
@@ -15,8 +15,7 @@ $interactionTypes = [
     <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div class="flex items-center gap-3">
             <a href="<?= APP_URL ?>/clients" class="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 bg-gray-100 hover:bg-indigo-50 dark:bg-slate-700 dark:hover:bg-indigo-900/30 px-3 py-1.5 rounded-lg transition-all">
-                <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><polyline points="15 18 9 12 15 6"/></svg>
-                Clientes
+                ↩ Clientes
             </a>
             <div>
                 <h3 class="text-2xl font-bold text-gray-800 dark:text-white flex items-baseline gap-2 flex-wrap">
@@ -30,8 +29,7 @@ $interactionTypes = [
         <div class="flex gap-2">
             <a href="<?= APP_URL ?>/clients/<?= $client['id'] ?>/edit"
                 class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors" title="Editar">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
-                Editar
+                ✏️ Editar
             </a>
         </div>
     </div>
@@ -121,11 +119,11 @@ $interactionTypes = [
                     <div class="flex gap-3">
                         <button type="button" id="btn-edit-notes"
                             class="text-gray-500 hover:text-gray-700" title="Editar Nota">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                            ✏️
                         </button>
                         <button type="button" id="btn-delete-notes"
                             class="text-red-500 hover:text-red-700" title="Excluir Nota">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-2 14a2 2 0 0 1-2 2H9a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6"/><path d="M14 11v6"/><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/></svg>
+                            🗑️
                         </button>
                     </div>
                 </div>
@@ -164,8 +162,7 @@ $interactionTypes = [
                 <div class="px-5 py-4">
                     <button type="button" id="btn-open-new-task"
                         class="w-full inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 rounded-lg transition-colors">
-                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                        Nova Tarefa
+                        ➕ Nova Tarefa
                     </button>
                 </div>
             </div>

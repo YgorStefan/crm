@@ -24,8 +24,7 @@ $roleBadges = [
     <?php if ($activeTab === 'users'): ?>
     <a href="<?= APP_URL ?>/admin/users/create"
        class="inline-flex items-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-2 rounded-lg text-sm transition-colors">
-        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-        Novo Usuário
+        ➕ Novo Usuário
     </a>
     <?php endif; ?>
 </div>
@@ -86,7 +85,7 @@ $roleBadges = [
                             <a href="<?= APP_URL ?>/admin/users/<?= $user['id'] ?>/edit"
                                data-tooltip="Editar"
                                class="has-tooltip inline-flex items-center justify-center w-7 h-7 rounded-md text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/40 transition-colors">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+                                ✏️
                             </a>
                         </td>
                     </tr>
