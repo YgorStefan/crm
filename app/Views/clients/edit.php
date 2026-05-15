@@ -30,33 +30,40 @@ function val(array $client, string $key): string
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                 <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Nome <span class="text-red-500">*</span></label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">
+                        Nome <span class="text-red-500">*</span>
+                    </label>
                     <input type="text" name="name" required value="<?= val($client, 'name') ?>"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400"
+                        placeholder="Nome completo ou razão social">
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">E-mail</label>
                     <input type="email" name="email" value="<?= val($client, 'email') ?>"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400"
+                        placeholder="contato@empresa.com">
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Telefone</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Telefone / WhatsApp</label>
                     <input type="text" name="phone" value="<?= val($client, 'phone') ?>"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400"
+                        placeholder="(11) 99999-9999">
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Empresa</label>
                     <input type="text" name="company" value="<?= val($client, 'company') ?>"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400"
+                        placeholder="Nome da empresa">
                 </div>
 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">CPF / CNPJ</label>
                     <input type="text" name="cnpj_cpf" value="<?= val($client, 'cnpj_cpf') ?>"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400"
+                        placeholder="000.000.000-00 ou 00.000.000/0001-00">
                 </div>
 
                 <div>
@@ -78,21 +85,23 @@ function val(array $client, string $key): string
         <div class="px-6 py-5 border-b border-gray-100 dark:border-slate-700">
             <h4 class="text-sm font-semibold text-gray-500 dark:text-slate-400 uppercase tracking-wide mb-4">Endereço</h4>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">CEP <span id="cep_status" class="text-xs text-indigo-500 font-normal"></span></label>
+                    <input type="text" name="zip_code" value="<?= val($client, 'zip_code') ?>" maxlength="10"
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400"
+                        placeholder="00000-000">
+                </div>
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Logradouro</label>
                     <input type="text" name="address" value="<?= val($client, 'address') ?>"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400"
+                        placeholder="Rua, Av., Travessa...">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Número</label>
                     <input type="text" name="address_number" maxlength="20" value="<?= val($client, 'address_number') ?>"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400"
                         placeholder="123">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">CEP <span id="cep_status" class="text-xs text-indigo-500 font-normal"></span></label>
-                    <input type="text" name="zip_code" value="<?= val($client, 'zip_code') ?>" maxlength="10"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
                 </div>
                 <div class="md:col-span-4">
                     <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Bairro</label>
@@ -109,7 +118,8 @@ function val(array $client, string $key): string
                 <div class="md:col-span-3">
                     <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Cidade</label>
                     <input type="text" name="city" value="<?= val($client, 'city') ?>"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400"
+                        placeholder="São Paulo">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">UF</label>
@@ -183,7 +193,7 @@ function val(array $client, string $key): string
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Origem</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Origem do Lead</label>
                     <select name="source" id="source_select"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
                         <option value="">Desconhecida</option>
@@ -205,7 +215,8 @@ function val(array $client, string $key): string
                 <div class="md:col-span-2">
                     <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Nota</label>
                     <textarea name="notes" rows="3"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400"><?= val($client, 'notes') ?></textarea>
+                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400"
+                        placeholder="Observações gerais sobre este cliente..."><?= val($client, 'notes') ?></textarea>
                 </div>
             </div>
         </div>
