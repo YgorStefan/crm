@@ -1,5 +1,24 @@
 <?php
 ?>
+<style nonce="<?= CSP_NONCE ?>">
+    /* Arredonda o swatch interno do <input type="color"> em todos os browsers */
+    input[type="color"] {
+        padding: 2px;
+        background-color: transparent;
+    }
+    input[type="color"]::-webkit-color-swatch-wrapper {
+        padding: 0;
+        border-radius: 0.5rem;
+    }
+    input[type="color"]::-webkit-color-swatch {
+        border: none;
+        border-radius: 0.5rem;
+    }
+    input[type="color"]::-moz-color-swatch {
+        border: none;
+        border-radius: 0.5rem;
+    }
+</style>
 <div class="max-w-2xl mx-auto">
     <div class="flex items-center gap-3 mb-6">
         <a href="<?= APP_URL ?>/pipeline" class="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 bg-gray-100 hover:bg-indigo-50 dark:bg-slate-700 dark:hover:bg-indigo-900/30 px-3 py-1.5 rounded-lg transition-all">

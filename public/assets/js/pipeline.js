@@ -99,11 +99,16 @@
             this.appendChild(draggedCard);
             draggedCard.dataset.currentStage = newStageId;
 
-            // Atualiza os contadores e totais das colunas
-            updateColumnCounters();
-
-            // 2. Persiste a mudança via AJAX
+            // 2. Persiste a mudança via AJAX (chamada ANTES da atualização visual
+            // para garantir que erros de DOM não impeçam a persistência)
             moveClient(clientId, newStageId);
+
+            // 3. Atualiza contadores e totais (não-crítico — se falhar, persistência já ocorreu)
+            try {
+                updateColumnCounters();
+            } catch (counterErr) {
+                console.warn('[Kanban] Falha ao atualizar contadores:', counterErr);
+            }
         });
     });
 
@@ -177,10 +182,13 @@
                 if (valueEl) {
                     valueEl.textContent = formatted;
                 } else if (header) {
-                    const div = document.createElement('div');
-                    div.className = 'kanban-value-total text-xs opacity-80 mt-0.5';
-                    div.textContent = formatted;
-                    header.querySelector('.text-right').appendChild(div);
+                    // Estrutura do header: <div.rounded-t-xl> > <div.flex.items-baseline> (título + valor)
+                    // O placeholder anterior tentava append em .text-right, que não existe — quebrava o handler.
+                    const titleWrap = header.querySelector('.flex.items-baseline') || header;
+                    const span = document.createElement('span');
+                    span.className = 'kanban-value-total text-xs opacity-80 font-normal whitespace-nowrap';
+                    span.textContent = formatted;
+                    titleWrap.appendChild(span);
                 }
             } else if (valueEl) {
                 valueEl.remove();

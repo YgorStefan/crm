@@ -92,8 +92,8 @@ class Task extends Model
         }
 
         $stmt = $this->db->prepare("
-            INSERT INTO tasks (client_id, assigned_to, title, description, due_date, priority, status, created_by)
-            VALUES (:client_id, :assigned_to, :title, :description, :due_date, :priority, 'pending', :created_by)
+            INSERT INTO tasks (client_id, assigned_to, title, description, due_date, priority, status, created_by, tenant_id)
+            VALUES (:client_id, :assigned_to, :title, :description, :due_date, :priority, 'pending', :created_by, :tenant_id)
         ");
         $stmt->execute([
             ':client_id'   => !empty($data['client_id']) ? (int) $data['client_id'] : null,
@@ -103,6 +103,7 @@ class Task extends Model
             ':due_date'    => $data['due_date'],
             ':priority'    => $data['priority'] ?? 'medium',
             ':created_by'  => (int) $data['created_by'],
+            ':tenant_id'   => $tenantId,
         ]);
         return (int) $this->db->lastInsertId();
     }

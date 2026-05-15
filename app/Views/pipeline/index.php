@@ -56,13 +56,13 @@
         </div>
 
         <!-- Área de drop dos cartões -->
-        <div class="kanban-drop-zone flex-1 min-h-24 bg-gray-100 dark:bg-slate-700/50 rounded-b-xl p-2 space-y-2"
+        <div class="kanban-drop-zone flex-1 min-h-24 bg-gray-200 dark:bg-slate-700/50 rounded-b-xl p-2 space-y-2"
              data-stage-id="<?= $stage['id'] ?>">
 
             <?php foreach ($stageClients as $client): ?>
             <?php $hasValue = ($client['deal_value'] ?? 0) > 0; ?>
             <!-- Cartão do cliente (draggable) -->
-            <div class="kanban-card bg-white dark:bg-slate-800 rounded-lg shadow-sm border border-gray-200 dark:border-slate-600 p-3 cursor-grab hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-400 dark:hover:bg-slate-700 transition-all"
+            <div class="kanban-card bg-white dark:bg-slate-800 rounded-lg shadow border border-gray-300 dark:border-slate-600 p-3 cursor-grab hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-400 dark:hover:bg-slate-700 transition-all"
                  draggable="true"
                  data-client-id="<?= $client['id'] ?>"
                  data-current-stage="<?= $client['pipeline_stage_id'] ?>"

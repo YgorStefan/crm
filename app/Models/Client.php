@@ -112,7 +112,7 @@ class Client extends Model
         }
 
         $sql .= " GROUP BY c.id";
-        $sql .= " ORDER BY c.updated_at DESC";
+        $sql .= " ORDER BY c.name ASC";
 
         if ($limit !== null) {
             $sql .= " LIMIT :limit OFFSET :offset";

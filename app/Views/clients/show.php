@@ -52,10 +52,34 @@ $interactionTypes = [
                 </div>
                 <div class="px-5 py-4 space-y-3 text-sm">
                     <?php
+                    // Máscaras: CPF/CNPJ e telefone armazenados sem máscara no banco
+                    $formatPhone = static function (?string $raw): ?string {
+                        $digits = preg_replace('/\D/', '', (string) $raw);
+                        $len = strlen($digits);
+                        if ($len === 11) {
+                            return sprintf('(%s) %s-%s', substr($digits, 0, 2), substr($digits, 2, 5), substr($digits, 7));
+                        }
+                        if ($len === 10) {
+                            return sprintf('(%s) %s-%s', substr($digits, 0, 2), substr($digits, 2, 6), substr($digits, 6));
+                        }
+                        return $raw;
+                    };
+                    $formatDoc = static function (?string $raw): ?string {
+                        $digits = preg_replace('/\D/', '', (string) $raw);
+                        $len = strlen($digits);
+                        if ($len === 11) {
+                            return sprintf('%s.%s.%s-%s', substr($digits, 0, 3), substr($digits, 3, 3), substr($digits, 6, 3), substr($digits, 9));
+                        }
+                        if ($len === 14) {
+                            return sprintf('%s.%s.%s/%s-%s', substr($digits, 0, 2), substr($digits, 2, 3), substr($digits, 5, 3), substr($digits, 8, 4), substr($digits, 12));
+                        }
+                        return $raw;
+                    };
+
                     $infos = [
                         '📧 E-mail' => $client['email'],
-                        '📱 Telefone' => $client['phone'],
-                        '🆔 CPF/CNPJ' => $client['cnpj_cpf'],
+                        '📱 Telefone' => $formatPhone($client['phone'] ?? null),
+                        '🆔 CPF/CNPJ' => $formatDoc($client['cnpj_cpf'] ?? null),
                         '🎂 Nascimento' => !empty($client['birth_date'])
                             ? date('d/m/Y', strtotime($client['birth_date']))
                             : null,
@@ -137,25 +161,13 @@ $interactionTypes = [
                 <div class="px-5 py-4 border-b border-gray-100 dark:border-slate-700">
                     <h4 class="font-semibold text-gray-700 dark:text-slate-200">✅ Nova Tarefa</h4>
                 </div>
-                <form method="POST" action="<?= APP_URL ?>/tasks/store" class="px-5 py-4 space-y-3">
-                    <input type="hidden" name="_csrf_token"
-                        value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
-                    <input type="hidden" name="client_id" value="<?= $client['id'] ?>">
-                    <input type="text" name="title" required placeholder="Título da tarefa"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
-                    <input type="datetime-local" name="due_date" required
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400">
-                    <select name="priority"
-                        class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-slate-600 dark:bg-slate-700 dark:text-white">
-                        <option value="low">🟢 Baixa prioridade</option>
-                        <option value="medium" selected>🟡 Média prioridade</option>
-                        <option value="high">🔴 Alta prioridade</option>
-                    </select>
-                    <button type="submit"
-                        class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 rounded-lg transition-colors">
-                        Criar Tarefa
+                <div class="px-5 py-4">
+                    <button type="button" id="btn-open-new-task"
+                        class="w-full inline-flex items-center justify-center gap-2 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-medium py-2 rounded-lg transition-colors">
+                        <svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                        Nova Tarefa
                     </button>
-                </form>
+                </div>
             </div>
         </div>
 
@@ -264,17 +276,19 @@ $interactionTypes = [
             </div>
 
             <!-- Tarefas vinculadas -->
-            <?php if (!empty($tasks)): ?>
-                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
-                    <div class="px-5 py-4 border-b border-gray-100 dark:border-slate-700">
-                        <h4 class="font-semibold text-gray-700 dark:text-slate-200">✅ Tarefas</h4>
-                    </div>
-                    <div class="divide-y divide-gray-50 dark:divide-slate-700">
-                        <?php
-                        $priorityColors = ['low' => 'text-green-600', 'medium' => 'text-yellow-600', 'high' => 'text-red-600'];
-                        $statusLabels = ['pending' => 'Pendente', 'in_progress' => 'Em andamento', 'done' => 'Concluída', 'cancelled' => 'Cancelada'];
-                        foreach ($tasks as $task):
-                            ?>
+            <div id="tasks-card" class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+                <div class="px-5 py-4 border-b border-gray-100 dark:border-slate-700">
+                    <h4 class="font-semibold text-gray-700 dark:text-slate-200">✅ Tarefas</h4>
+                </div>
+                <div id="tasks-list" class="divide-y divide-gray-50 dark:divide-slate-700">
+                    <?php
+                    $priorityColors = ['low' => 'text-green-600', 'medium' => 'text-yellow-600', 'high' => 'text-red-600'];
+                    $statusLabels = ['pending' => 'Pendente', 'in_progress' => 'Em andamento', 'done' => 'Concluída', 'cancelled' => 'Cancelada'];
+                    ?>
+                    <?php if (empty($tasks)): ?>
+                        <p id="tasks-empty" class="px-5 py-6 text-sm text-gray-400 dark:text-slate-500 text-center">Nenhuma tarefa cadastrada ainda.</p>
+                    <?php else: ?>
+                        <?php foreach ($tasks as $task): ?>
                             <div class="px-5 py-3 flex items-center justify-between gap-3">
                                 <div>
                                     <p
@@ -292,9 +306,9 @@ $interactionTypes = [
                                 </span>
                             </div>
                         <?php endforeach; ?>
-                    </div>
+                    <?php endif; ?>
                 </div>
-            <?php endif; ?>
+            </div>
 
             <?php
             // FRAG-03: identificação por coluna estruturada, não por nome de string
@@ -826,4 +840,229 @@ $interactionTypes = [
             })();
         </script>
     <?php endif; ?>
+
+    <!-- Modal: Nova Tarefa (mesmo padrão de /tasks) -->
+    <div id="newTaskModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4" style="display:none">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+            <div class="px-6 py-5 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between">
+                <h4 class="text-lg font-bold text-gray-800 dark:text-white">Nova Tarefa</h4>
+                <button type="button" id="newTaskClose"
+                    class="text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300 text-2xl">&times;</button>
+            </div>
+            <div class="px-6 py-5 space-y-4">
+                <div class="bg-indigo-50 dark:bg-indigo-900/30 rounded-lg px-3 py-2">
+                    <span class="text-sm text-indigo-700 dark:text-indigo-300">👥 Cliente: <span class="font-medium"><?= htmlspecialchars($client['name'], ENT_QUOTES, 'UTF-8') ?></span></span>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Título <span class="text-red-500">*</span></label>
+                    <input type="text" id="newTask_title" required placeholder="O que precisa ser feito?"
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+
+                <div class="grid grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Prazo <span class="text-red-500">*</span></label>
+                        <input type="datetime-local" id="newTask_due_date" required
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Prioridade</label>
+                        <select id="newTask_priority"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <option value="low">Baixa</option>
+                            <option value="medium" selected>Média</option>
+                            <option value="high">Alta</option>
+                        </select>
+                    </div>
+                </div>
+
+                <?php if (($_SESSION['user']['role'] ?? '') === 'admin'): ?>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Responsável</label>
+                        <select id="newTask_assigned_to"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                            <?php foreach ($users as $user): ?>
+                                <option value="<?= $user['id'] ?>" <?= $user['id'] == ($_SESSION['user']['id'] ?? 0) ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($user['name'], ENT_QUOTES, 'UTF-8') ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                <?php endif; ?>
+
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Descrição</label>
+                    <textarea id="newTask_description" rows="2"
+                        placeholder="Detalhes da tarefa (opcional)..."
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" id="newTaskCancel"
+                        class="px-4 py-2 border border-gray-300 text-gray-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-200 dark:border-slate-600 rounded-lg text-sm hover:bg-gray-100 transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="button" id="newTaskSave"
+                        class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg text-sm transition-colors">
+                        Salvar
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script nonce="<?= CSP_NONCE ?>">
+    (function () {
+        const appUrl = '<?= rtrim(APP_URL, '/') ?>';
+        const clientId = <?= (int) $client['id'] ?>;
+
+        const modal      = document.getElementById('newTaskModal');
+        const btnOpen    = document.getElementById('btn-open-new-task');
+        const btnClose   = document.getElementById('newTaskClose');
+        const btnCancel  = document.getElementById('newTaskCancel');
+        const btnSave    = document.getElementById('newTaskSave');
+        const inpTitle   = document.getElementById('newTask_title');
+        const inpDue     = document.getElementById('newTask_due_date');
+        const selPrio    = document.getElementById('newTask_priority');
+        const selAssign  = document.getElementById('newTask_assigned_to');
+        const inpDesc    = document.getElementById('newTask_description');
+        const tasksList  = document.getElementById('tasks-list');
+
+        if (!btnOpen) return;
+
+        const PRIO_LABEL  = { low: 'Low', medium: 'Medium', high: 'High' };
+        const PRIO_CLASS  = { low: 'text-green-600', medium: 'text-yellow-600', high: 'text-red-600' };
+
+        function pad(n) { return n < 10 ? '0' + n : '' + n; }
+        function todayAt8() {
+            const d = new Date();
+            return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T08:00';
+        }
+
+        function openModal() {
+            inpTitle.value = '';
+            inpDue.value   = todayAt8();
+            selPrio.value  = 'medium';
+            inpDesc.value  = '';
+            modal.style.display = 'flex';
+            setTimeout(function () { inpTitle.focus(); }, 50);
+        }
+        function closeModal() {
+            modal.style.display = 'none';
+        }
+
+        btnOpen.addEventListener('click', openModal);
+        btnClose.addEventListener('click', closeModal);
+        btnCancel.addEventListener('click', closeModal);
+        modal.addEventListener('click', function (e) {
+            if (e.target === modal) closeModal();
+        });
+
+        function formatDueDateLabel(dt) {
+            // dt = "YYYY-MM-DDTHH:MM" -> "DD/MM/YYYY HH:MM"
+            if (!dt || dt.length < 16) return dt;
+            const [datePart, timePart] = dt.split('T');
+            const [y, m, d] = datePart.split('-');
+            return d + '/' + m + '/' + y + ' ' + timePart;
+        }
+
+        function appendTaskRow(task) {
+            // Remove placeholder vazio se existir
+            const empty = document.getElementById('tasks-empty');
+            if (empty) empty.remove();
+
+            const row = document.createElement('div');
+            row.className = 'px-5 py-3 flex items-center justify-between gap-3';
+
+            const left = document.createElement('div');
+            const titleP = document.createElement('p');
+            titleP.className = 'text-sm font-medium text-gray-700 dark:text-slate-200';
+            titleP.textContent = task.title;
+            const meta = document.createElement('p');
+            meta.className = 'text-xs text-gray-400 dark:text-slate-500 mt-0.5';
+            const prioSpan = document.createElement('span');
+            prioSpan.className = PRIO_CLASS[task.priority] || '';
+            prioSpan.textContent = PRIO_LABEL[task.priority] || task.priority;
+            meta.appendChild(document.createTextNode('Vence: ' + formatDueDateLabel(task.due_date) + ' · '));
+            meta.appendChild(prioSpan);
+            left.appendChild(titleP);
+            left.appendChild(meta);
+
+            const status = document.createElement('span');
+            status.className = 'text-xs bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-slate-300 px-2 py-1 rounded-full flex-shrink-0';
+            status.textContent = 'Pendente';
+
+            row.appendChild(left);
+            row.appendChild(status);
+            tasksList.appendChild(row);
+        }
+
+        function notify(message, type) {
+            if (typeof window.crmToast === 'function') {
+                window.crmToast(message, type);
+            } else {
+                alert(message);
+            }
+        }
+
+        btnSave.addEventListener('click', async function () {
+            const title = inpTitle.value.trim();
+            const due   = inpDue.value;
+            if (!title || !due) {
+                notify('Título e prazo são obrigatórios.', 'error');
+                return;
+            }
+
+            btnSave.disabled = true;
+            const originalLabel = btnSave.textContent;
+            btnSave.textContent = 'Salvando...';
+
+            const body = new URLSearchParams({
+                _csrf_token: window.crmCsrfToken,
+                client_id: String(clientId),
+                title: title,
+                due_date: due,
+                priority: selPrio.value,
+                description: inpDesc.value,
+            });
+            if (selAssign) body.append('assigned_to', selAssign.value);
+
+            try {
+                const resp = await fetch(appUrl + '/tasks/store', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: body.toString(),
+                });
+
+                if (!resp.ok) {
+                    notify('Erro ao salvar tarefa. Verifique os campos e tente novamente.', 'error');
+                    return;
+                }
+                const data = await resp.json();
+                if (data && data.csrf_token) window.syncCsrfForms(data.csrf_token);
+                if (!data || !data.success) {
+                    notify('Erro ao salvar tarefa.', 'error');
+                    return;
+                }
+
+                appendTaskRow({
+                    title: title,
+                    due_date: due,
+                    priority: selPrio.value,
+                });
+                closeModal();
+                notify('Tarefa criada com sucesso!', 'success');
+            } catch (e) {
+                notify('Erro de rede ao salvar tarefa.', 'error');
+            } finally {
+                btnSave.disabled = false;
+                btnSave.textContent = originalLabel;
+            }
+        });
+    })();
+    </script>
 </div>

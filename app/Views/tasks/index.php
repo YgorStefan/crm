@@ -118,7 +118,7 @@
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Titulo <span
+                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Título <span
                         class="text-red-500">*</span></label>
                 <input type="text" id="task_title" name="title" required placeholder="O que precisa ser feito?"
                     class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
@@ -136,7 +136,7 @@
                     <select id="task_priority" name="priority"
                         class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                         <option value="low">Baixa</option>
-                        <option value="medium" selected>Media</option>
+                        <option value="medium" selected>Média</option>
                         <option value="high">Alta</option>
                     </select>
                 </div>
@@ -144,7 +144,7 @@
 
             <?php if (($_SESSION['user']['role'] ?? '') === 'admin'): ?>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Responsavel</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Responsável</label>
                     <select id="task_assigned_to" name="assigned_to"
                         class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                         <?php foreach ($users as $user): ?>
@@ -157,7 +157,7 @@
             <?php endif; ?>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Descricao</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Descrição</label>
                 <textarea id="task_description" name="description" rows="2"
                     placeholder="Detalhes da tarefa (opcional)..."
                     class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
@@ -194,7 +194,7 @@
     class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4" style="display:none">
     <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
         <div class="px-6 py-5 border-b border-gray-100 dark:border-slate-700">
-            <h4 class="text-lg font-bold text-gray-800 dark:text-white">Ja existem eventos neste dia:</h4>
+            <h4 class="text-lg font-bold text-gray-800 dark:text-white">Já existem eventos neste dia:</h4>
         </div>
         <div class="px-6 py-4">
             <div id="conflictEventsList" class="space-y-1 mb-4 max-h-40 overflow-y-auto"></div>
@@ -276,7 +276,7 @@
             },
             buttonText: {
                 today: 'Hoje',
-                month: 'Mes',
+                month: 'Mês',
                 week: 'Semana'
             },
             // Eventos carregados do feed JSON backend

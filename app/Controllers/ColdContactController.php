@@ -41,7 +41,14 @@ class ColdContactController extends Controller
         ];
 
         $summaries = array_map(function (array $row) use ($meses): array {
-            $parts = explode('-', $row['mes_ano']); // ['YYYY', 'MM']
+            $mesAno = $row['mes_ano'] ?? '';
+            // Linhas órfãs (imported_year_month NULL em registros antigos) caíam no
+            // explode() recebendo null; degrada com label genérico em vez de quebrar.
+            if (!preg_match('/^\d{4}-\d{2}$/', (string) $mesAno)) {
+                $row['month_label'] = 'Sem data';
+                return $row;
+            }
+            $parts = explode('-', $mesAno); // ['YYYY', 'MM']
             $nomeMes = $meses[$parts[1]] ?? $parts[1];
             $row['month_label'] = $nomeMes . ' ' . $parts[0]; // ex: "Março 2026"
             return $row;

@@ -625,6 +625,7 @@
 
     importForm.addEventListener('submit', function (e) {
         var file = fileInput.files[0];
+
         if (!file) return; // deixa o browser validar 'required'
 
         var ext = file.name.split('.').pop().toLowerCase();
@@ -658,9 +659,19 @@
                 fd.append('data_mensagem', (importForm.querySelector('[name="data_mensagem"]') || {value: ''}).value);
                 fd.append('csv_file', csvFile);
 
-                fetch(importForm.action, { method: 'POST', body: fd, redirect: 'follow' })
-                    .then(function () {
-                        window.location.href = (window.APP_URL || '') + '/cold-contacts';
+                // redirect: 'manual' — o servidor responde com 302 após sucesso e
+                // o PHP CLI dev server quebra ao tentar reaproveitar a conexão keep-alive
+                // para seguir o redirect. Pulamos o follow e navegamos via JS.
+                fetch(importForm.action, { method: 'POST', body: fd, redirect: 'manual' })
+                    .then(function (resp) {
+                        // 'opaqueredirect' (status 0) indica que o servidor enviou Location:
+                        // ou seja, o import foi aceito. Navega para /cold-contacts.
+                        if (resp.type === 'opaqueredirect' || resp.ok) {
+                            window.location.href = (window.APP_URL || '') + '/cold-contacts';
+                            return;
+                        }
+                        // Resposta não-ok e não-redirect: erro no servidor
+                        alert('Erro ao enviar o arquivo (HTTP ' + resp.status + ').');
                     })
                     .catch(function () {
                         alert('Erro ao enviar o arquivo. Tente novamente.');

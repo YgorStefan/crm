@@ -124,7 +124,7 @@ $assetV = static function (string $rel): string {
                 <p class="sidebar-section-label text-xs uppercase font-semibold text-gray-400 dark:text-slate-600 px-2 mb-1">Administração</p>
                 <div class="space-y-0.5">
                     <?= navLink('/admin',
-                        '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/><path d="M3 21h.01"/></svg>',
+                        '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
                         'Admin', $currentPath) ?>
                 </div>
             </div>
@@ -153,7 +153,7 @@ $assetV = static function (string $rel): string {
                 <a href="<?= $safeAppUrl ?>/logout" title="Sair"
                     class="sidebar-logout flex-shrink-0 text-gray-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 transition-colors">
                     <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
-                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/>
+                        <path d="M15 21h4a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-4"/><polyline points="8 17 3 12 8 7"/><line x1="3" y1="12" x2="15" y2="12"/>
                     </svg>
                 </a>
             </div>
@@ -195,7 +195,7 @@ $assetV = static function (string $rel): string {
                         class="hidden absolute right-0 top-full mt-2 w-80
                                bg-white dark:bg-slate-800 rounded-xl shadow-xl
                                border border-gray-200 dark:border-slate-700
-                               z-50 max-h-64 overflow-y-auto">
+                               z-50 max-h-64 overflow-y-auto overflow-x-hidden">
                         <div class="px-4 py-3 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between">
                             <span class="text-sm font-semibold text-gray-700 dark:text-slate-200">Notificações</span>
                             <button id="btnClearNotifs" data-tooltip="Limpar todas"
@@ -436,14 +436,77 @@ $assetV = static function (string $rel): string {
             }
         }
 
-        function showToast(message, type) {
-            const colors = { task: 'bg-indigo-700', birthday: 'bg-pink-600' };
-            const toast = document.createElement('div');
-            toast.className = 'fixed bottom-4 right-4 z-50 ' + (colors[type] || 'bg-gray-700') + ' text-white px-4 py-3 rounded-xl shadow-lg text-sm max-w-xs';
-            toast.textContent = message;
-            document.body.appendChild(toast);
-            setTimeout(() => toast.remove(), 8000);
+        function ensureToastContainer() {
+            let c = document.getElementById('crm-toast-container');
+            if (!c) {
+                c = document.createElement('div');
+                c.id = 'crm-toast-container';
+                // Inline styles: independem do build do Tailwind. flex-col-reverse empilha
+                // novos toasts ACIMA dos antigos. pointer-events:auto garante clique no X.
+                c.style.cssText =
+                    'position:fixed;bottom:1rem;right:1rem;z-index:9999;' +
+                    'display:flex;flex-direction:column-reverse;gap:0.5rem;' +
+                    'pointer-events:auto;max-width:calc(100vw - 2rem);';
+                document.body.appendChild(c);
+            }
+            return c;
         }
+
+        function showToast(message, type, opts) {
+            opts = opts || {};
+            const bgColors = {
+                task:     '#4338ca',
+                birthday: '#db2777',
+                success:  '#16a34a',
+                error:    '#dc2626',
+                info:     '#374151',
+            };
+            const container = ensureToastContainer();
+            const toast = document.createElement('div');
+            toast.style.cssText =
+                'background-color:' + (bgColors[type] || '#374151') + ';' +
+                'color:#fff;padding:0.75rem 1rem;border-radius:0.75rem;' +
+                'box-shadow:0 10px 15px -3px rgba(0,0,0,0.1),0 4px 6px -2px rgba(0,0,0,0.05);' +
+                'font-size:0.875rem;line-height:1.25rem;max-width:20rem;' +
+                'display:flex;align-items:flex-start;gap:0.5rem;pointer-events:auto;';
+
+            const msg = document.createElement('span');
+            msg.style.cssText = 'flex:1 1 0%;min-width:0;word-break:break-word;';
+            msg.textContent = message;
+
+            const btnX = document.createElement('button');
+            btnX.type = 'button';
+            btnX.setAttribute('aria-label', 'Dispensar');
+            btnX.style.cssText =
+                'flex-shrink:0;background:transparent;border:0;cursor:pointer;' +
+                'color:rgba(255,255,255,0.75);font-size:1.125rem;line-height:1;' +
+                'font-weight:700;padding:0 0.25rem;margin:-0.125rem -0.25rem 0 0;';
+            btnX.textContent = '\u00D7';
+            btnX.addEventListener('mouseenter', function () { btnX.style.color = '#fff'; });
+            btnX.addEventListener('mouseleave', function () { btnX.style.color = 'rgba(255,255,255,0.75)'; });
+
+            let removed = false;
+            function removeToast() {
+                if (removed) return;
+                removed = true;
+                toast.remove();
+            }
+            btnX.addEventListener('click', function (e) {
+                e.stopPropagation();
+                removeToast();
+            });
+
+            toast.appendChild(msg);
+            toast.appendChild(btnX);
+            container.appendChild(toast);
+
+            const ttl = typeof opts.duration === 'number' ? opts.duration : 8000;
+            if (ttl > 0) setTimeout(removeToast, ttl);
+            return removeToast;
+        }
+
+        // Exp\u00f5e helper global para outras telas (ex.: clients/show.php)
+        window.crmToast = showToast;
 
         function render() {
             list.innerHTML = '';
@@ -457,7 +520,7 @@ $assetV = static function (string $rel): string {
                 row.className = 'px-4 py-3 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700/50 flex items-start gap-2';
                 const icon = item.type === 'birthday' ? '🎂' : '⏰';
                 const msgSpan = document.createElement('span');
-                msgSpan.className = 'flex-1 min-w-0';
+                msgSpan.className = 'flex-1 min-w-0 break-words';
                 msgSpan.textContent = icon + ' ' + item.message;
                 const btnX = document.createElement('button');
                 btnX.type = 'button';

@@ -77,8 +77,8 @@ class Interaction extends Model
         }
 
         $stmt = $this->db->prepare("
-            INSERT INTO interactions (client_id, user_id, type, description, occurred_at)
-            VALUES (:client_id, :user_id, :type, :description, :occurred_at)
+            INSERT INTO interactions (client_id, user_id, type, description, occurred_at, tenant_id)
+            VALUES (:client_id, :user_id, :type, :description, :occurred_at, :tenant_id)
         ");
         $stmt->execute([
             ':client_id'   => $clientId,
@@ -86,6 +86,7 @@ class Interaction extends Model
             ':type'        => $data['type'] ?? 'note',
             ':description' => $data['description'],
             ':occurred_at' => $data['occurred_at'],
+            ':tenant_id'   => $tenantId,
         ]);
         return (int) $this->db->lastInsertId();
     }
