@@ -114,7 +114,7 @@
 
             <div id="taskClientLink" style="display:none" class="bg-indigo-50 dark:bg-indigo-900/30 rounded-lg px-3 py-2 flex items-center justify-between">
                 <span class="text-sm text-indigo-700 dark:text-indigo-300">👥 Cliente: <span id="taskClientName" class="font-medium"></span></span>
-                <a id="taskClientUrl" href="#" class="text-xs text-indigo-600 hover:underline font-medium">Ver cadastro →</a>
+                <a id="taskClientUrl" href="#" class="text-xs text-indigo-600 hover:underline font-medium">Ver cadastro ➜</a>
             </div>
 
             <div>

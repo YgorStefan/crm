@@ -1379,6 +1379,11 @@ video {
   background-color: rgb(254 243 199 / var(--tw-bg-opacity, 1));
 }
 
+.bg-amber-200 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(253 230 138 / var(--tw-bg-opacity, 1));
+}
+
 .bg-black {
   --tw-bg-opacity: 1;
   background-color: rgb(0 0 0 / var(--tw-bg-opacity, 1));
@@ -1433,6 +1438,11 @@ video {
   background-color: rgb(220 252 231 / var(--tw-bg-opacity, 1));
 }
 
+.bg-green-200 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(187 247 208 / var(--tw-bg-opacity, 1));
+}
+
 .bg-green-400 {
   --tw-bg-opacity: 1;
   background-color: rgb(74 222 128 / var(--tw-bg-opacity, 1));
@@ -1451,6 +1461,11 @@ video {
 .bg-indigo-100 {
   --tw-bg-opacity: 1;
   background-color: rgb(224 231 255 / var(--tw-bg-opacity, 1));
+}
+
+.bg-indigo-200 {
+  --tw-bg-opacity: 1;
+  background-color: rgb(199 210 254 / var(--tw-bg-opacity, 1));
 }
 
 .bg-indigo-50 {
@@ -2472,10 +2487,20 @@ video {
   background-color: rgba(9, 9, 11, 0.5);
 }
 
+.dark .fc-theme-standard td.fc-day-sat,
+.dark .fc-theme-standard th.fc-day-sat {
+  border-right-color: transparent !important;
+}
+
 /* ── FullCalendar dark mode overrides ───────────────────── */
 
 .dark .fc {
   color: #d4d4d8;
+  --fc-page-bg-color: #18181b;
+}
+
+.dark .fc-scrollgrid-section-header > th {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.45) !important;
 }
 
 .dark .fc-theme-standard .fc-scrollgrid,
@@ -2623,6 +2648,11 @@ video {
 .hover\:border-indigo-300:hover {
   --tw-border-opacity: 1;
   border-color: rgb(165 180 252 / var(--tw-border-opacity, 1));
+}
+
+.hover\:border-red-200:hover {
+  --tw-border-opacity: 1;
+  border-color: rgb(254 202 202 / var(--tw-border-opacity, 1));
 }
 
 .hover\:bg-amber-200:hover {
@@ -3145,6 +3175,11 @@ video {
 .dark\:hover\:border-indigo-700:hover:is(.dark *) {
   --tw-border-opacity: 1;
   border-color: rgb(67 56 202 / var(--tw-border-opacity, 1));
+}
+
+.dark\:hover\:border-red-700:hover:is(.dark *) {
+  --tw-border-opacity: 1;
+  border-color: rgb(185 28 28 / var(--tw-border-opacity, 1));
 }
 
 .dark\:hover\:border-zinc-700:hover:is(.dark *) {

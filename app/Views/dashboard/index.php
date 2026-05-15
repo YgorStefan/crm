@@ -9,7 +9,7 @@ $wonRevenue = array_sum(array_column($wonStage, 'total_value'));
 
     <a href="<?= APP_URL ?>/clients"
        class="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 p-4 flex items-center gap-3 hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-700 transition-all">
-        <div class="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400 flex-shrink-0 text-xl">
+        <div class="w-10 h-10 rounded-xl bg-indigo-200 dark:bg-indigo-900/40 flex items-center justify-center text-indigo-600 dark:text-indigo-400 flex-shrink-0 text-xl">
             👥
         </div>
         <div>
@@ -20,7 +20,7 @@ $wonRevenue = array_sum(array_column($wonStage, 'total_value'));
 
     <a href="<?= APP_URL ?>/tasks"
        class="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 p-4 flex items-center gap-3 hover:shadow-md hover:border-amber-200 dark:hover:border-amber-700 transition-all">
-        <div class="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/40 flex items-center justify-center text-amber-600 dark:text-amber-400 flex-shrink-0 text-xl">
+        <div class="w-10 h-10 rounded-xl bg-amber-200 dark:bg-amber-900/40 flex items-center justify-center text-amber-600 dark:text-amber-400 flex-shrink-0 text-xl">
             ✅
         </div>
         <div>
@@ -30,7 +30,7 @@ $wonRevenue = array_sum(array_column($wonStage, 'total_value'));
     </a>
 
     <a href="<?= APP_URL ?>/tasks"
-       class="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border <?= count($overdueTasks) > 0 ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20' : 'border-gray-100 dark:border-zinc-800' ?> p-4 flex items-center gap-3 hover:shadow-md transition-all">
+       class="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border <?= count($overdueTasks) > 0 ? 'border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20' : 'border-gray-100 dark:border-zinc-800 hover:border-red-200 dark:hover:border-red-700' ?> p-4 flex items-center gap-3 hover:shadow-md transition-all">
         <div class="w-10 h-10 rounded-xl <?= count($overdueTasks) > 0 ? 'bg-red-100 dark:bg-red-900/40' : 'bg-gray-100 dark:bg-zinc-800' ?> flex items-center justify-center flex-shrink-0 text-xl">
             ⚠️
         </div>
@@ -42,7 +42,7 @@ $wonRevenue = array_sum(array_column($wonStage, 'total_value'));
 
     <a href="<?= APP_URL ?>/pipeline"
        class="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 p-4 flex items-center gap-3 hover:shadow-md hover:border-green-200 dark:hover:border-green-700 transition-all">
-        <div class="w-10 h-10 rounded-xl bg-green-100 dark:bg-green-900/40 flex items-center justify-center flex-shrink-0 text-xl">
+        <div class="w-10 h-10 rounded-xl bg-green-200 dark:bg-green-900/40 flex items-center justify-center flex-shrink-0 text-xl">
             💰
         </div>
         <div>
