@@ -28,7 +28,8 @@
 [CmdletBinding()]
 param(
     [switch]$SkipBuild,
-    [switch]$DryRun
+    [switch]$DryRun,
+    [switch]$ForceReset
 )
 
 $ErrorActionPreference = 'Stop'
@@ -99,7 +100,11 @@ if ($DryRun) {
 
 # 5. SSH na prod: pull + migrate
 $sshTarget = "${RemoteUser}@${RemoteHost}"
-$remoteCmd = "cd $RemotePath && git pull --ff-only && php bin/migrate.php"
+$remoteCmd = if ($ForceReset) {
+    "cd $RemotePath && git fetch origin && git reset --hard origin/main && php bin/migrate.php"
+} else {
+    "cd $RemotePath && git pull --ff-only && php bin/migrate.php"
+}
 Step "SSH em prod: git pull + migrate"
 Write-Host "    $sshTarget : $remoteCmd" -ForegroundColor DarkGray
 if ($DryRun) {
