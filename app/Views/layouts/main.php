@@ -59,13 +59,13 @@ $assetV = static function (string $rel): string {
                        text-gray-400 hover:text-gray-600 hover:bg-gray-100
                        dark:text-slate-500 dark:hover:text-slate-300 dark:hover:bg-slate-700 transition-colors"
                 title="Colapsar menu">
-                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                ☰
             </button>
             <!-- Mobile: fecha overlay -->
             <button id="closeSidebarBtn"
                 class="lg:hidden flex items-center justify-center w-8 h-8 rounded-lg
                        text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors">
-                <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+                ✕
             </button>
         </div>
 
@@ -77,62 +77,61 @@ $assetV = static function (string $rel): string {
             $currentPath = strtok($currentPath, '?') ?: '/';
             ?>
             <div class="space-y-0.5 px-3">
-                <?= navLink('/dashboard',
-                    '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>',
-                    'Dashboard', $currentPath) ?>
-                <?= navLink('/clients',
-                    '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>',
-                    'Clientes', $currentPath) ?>
-                <?= navLink('/pipeline',
-                    '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>',
-                    'Pipeline', $currentPath) ?>
-                <?= navLink('/tasks',
-                    '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>',
-                    'Calendário', $currentPath) ?>
-                <?= navLink('/cold-contacts',
-                    '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07A19.5 19.5 0 0 1 4.93 12 19.79 19.79 0 0 1 1.86 3.38 2 2 0 0 1 3.84 1h3a2 2 0 0 1 2 1.72c.127.96.361 1.903.7 2.81a2 2 0 0 1-.45 2.11L8.09 8.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45c.907.339 1.85.573 2.81.7A2 2 0 0 1 22 16.92z"/></svg>',
-                    'Contatos frios', $currentPath) ?>
-                <?= navLink('/acompanhamento',
-                    '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>',
-                    'Acompanhamento', $currentPath) ?>
+                <?= navLink('/dashboard', '📊', 'Dashboard', $currentPath) ?>
+                <?= navLink('/clients', '👥', 'Clientes', $currentPath) ?>
+                <?= navLink('/pipeline', '📈', 'Pipeline', $currentPath) ?>
+                <?= navLink('/tasks', '📅', 'Calendário', $currentPath) ?>
+                <?= navLink('/cold-contacts', '🧊', 'Contatos frios', $currentPath) ?>
+                <?= navLink('/acompanhamento', '📉', 'Acompanhamento', $currentPath) ?>
             </div>
 
             <!-- Acesso Rápido -->
-            <div class="mt-4 px-3">
-                <p class="sidebar-section-label text-xs uppercase font-semibold text-gray-400 dark:text-slate-600 px-2 mb-1">Acesso Rápido</p>
+            <div class="px-3">
+                <div class="sidebar-section-divider">
+                    <div class="section-line section-line-left"></div>
+                    <span class="section-title">Acesso Rápido</span>
+                    <div class="section-line section-line-right"></div>
+                </div>
                 <div class="space-y-0.5">
                     <a href="https://avapro.ademicon.com.br/" target="_blank" rel="noopener noreferrer"
                         class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200 transition-colors">
-                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+                        🔗
                         <span class="nav-label">AVA Pro</span>
                     </a>
                     <a href="https://webmail.autorizadoademicon.com.br/?_task=mail&_mbox=INBOX" target="_blank" rel="noopener noreferrer"
                         class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200 transition-colors">
-                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+                        📧
                         <span class="nav-label">Webmail</span>
                     </a>
                     <a href="https://crmapollo.com.br/app/views/index.php" target="_blank" rel="noopener noreferrer"
                         class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200 transition-colors">
-                        <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+                        🏠
                         <span class="nav-label">CRM Apollo</span>
                     </a>
                 </div>
             </div>
 
             <?php if (($_SESSION['user']['role'] ?? '') === 'admin'): ?>
-            <div class="mt-3 pt-3 border-t border-gray-100 dark:border-slate-700 px-3">
-                <p class="sidebar-section-label text-xs uppercase font-semibold text-gray-400 dark:text-slate-600 px-2 mb-1">Administração</p>
+            <div class="px-3">
+                <div class="sidebar-section-divider">
+                    <div class="section-line section-line-left"></div>
+                    <span class="section-title">Administração</span>
+                    <div class="section-line section-line-right"></div>
+                </div>
                 <div class="space-y-0.5">
-                    <?= navLink('/admin',
-                        '<svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>',
-                        'Admin', $currentPath) ?>
+                    <?= navLink('/admin', '⚙️', 'Configurações', $currentPath) ?>
                 </div>
             </div>
             <?php endif; ?>
         </nav>
 
         <!-- Perfil do usuário -->
-        <div class="px-3 py-3 border-t border-gray-200 dark:border-slate-700 flex-shrink-0">
+        <div class="px-3 pb-3 flex-shrink-0">
+            <div class="sidebar-section-divider">
+                <div class="section-line section-line-left"></div>
+                <span class="section-title">Conta</span>
+                <div class="section-line section-line-right"></div>
+            </div>
             <div class="sidebar-user-footer flex items-center gap-3 px-2 py-2 rounded-lg">
                 <a href="<?= $safeAppUrl ?>/logout" title="Sair"
                     class="sidebar-avatar-logout w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-sm font-bold text-white flex-shrink-0 hover:ring-2 hover:ring-red-400 transition-all"
@@ -152,9 +151,7 @@ $assetV = static function (string $rel): string {
                 </div>
                 <a href="<?= $safeAppUrl ?>/logout" title="Sair"
                     class="sidebar-logout flex-shrink-0 text-gray-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 transition-colors">
-                    <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
-                        <path d="M15 21h4a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2h-4"/><polyline points="8 17 3 12 8 7"/><line x1="3" y1="12" x2="15" y2="12"/>
-                    </svg>
+                    🏃
                 </a>
             </div>
         </div>
@@ -170,7 +167,7 @@ $assetV = static function (string $rel): string {
             <!-- Hambúrguer (mobile apenas) -->
             <button id="sidebarToggle"
                 class="lg:hidden text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
-                <svg width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+                ☰
             </button>
 
             <h2 class="text-base font-semibold text-gray-700 dark:text-slate-200 truncate flex-1">
@@ -185,9 +182,7 @@ $assetV = static function (string $rel): string {
                     <button id="btnNotifications"
                         class="relative text-gray-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-colors p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700"
                         title="Notificações">
-                        <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" class="w-5 h-5">
-                            <path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/>
-                        </svg>
+                        🔔
                         <span id="notifBadge"
                             class="hidden absolute -top-1 -right-1 bg-red-500 text-white text-xs font-bold rounded-full w-5 h-5 flex items-center justify-center">0</span>
                     </button>
@@ -200,7 +195,7 @@ $assetV = static function (string $rel): string {
                             <span class="text-sm font-semibold text-gray-700 dark:text-slate-200">Notificações</span>
                             <button id="btnClearNotifs" data-tooltip="Limpar todas"
                                 class="has-tooltip text-gray-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-colors p-1 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700">
-                                <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><path d="M20 20H7L3 16a2 2 0 0 1 0-2.83l9.17-9.17a2 2 0 0 1 2.83 0l6 6a2 2 0 0 1 0 2.83L12 20"/><line x1="18" y1="13" x2="9" y2="4"/></svg>
+                                🗑️
                             </button>
                         </div>
                         <div id="notifList" class="divide-y divide-gray-50 dark:divide-slate-700">
@@ -216,10 +211,10 @@ $assetV = static function (string $rel): string {
                            transition-colors duration-300
                            focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 dark:focus:ring-offset-slate-800"
                     title="Alternar tema (Ctrl+Shift+L)">
-                    <!-- Lua: lado esquerdo, visível no dark mode (círculo move p/ direita) -->
-                    <svg class="absolute left-1 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-300 opacity-0 transition-opacity duration-300 dark:opacity-100" fill="currentColor" viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
-                    <!-- Sol: lado direito, visível no light mode (círculo fica na esquerda) -->
-                    <svg class="absolute right-1 top-1/2 -translate-y-1/2 w-3 h-3 text-amber-500 transition-opacity duration-300 dark:opacity-0" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="4"/><line x1="12" y1="20" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="6.34" y2="6.34"/><line x1="17.66" y1="17.66" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="4" y2="12"/><line x1="20" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="6.34" y2="17.66"/><line x1="17.66" y1="6.34" x2="19.07" y2="4.93"/></svg>
+                    <!-- Lua: lado esquerdo, visível no dark mode -->
+                    <span class="absolute left-1 top-1/2 -translate-y-1/2 text-xs leading-none opacity-0 transition-opacity duration-300 dark:opacity-100">🌙</span>
+                    <!-- Sol: lado direito, visível no light mode -->
+                    <span class="absolute right-1 top-1/2 -translate-y-1/2 text-xs leading-none transition-opacity duration-300 dark:opacity-0">☀️</span>
                     <!-- Círculo deslizante -->
                     <span class="absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-300 dark:translate-x-5"></span>
                 </button>
@@ -527,7 +522,7 @@ $assetV = static function (string $rel): string {
                 btnX.className = 'flex-shrink-0 text-gray-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 transition-colors p-0.5 rounded';
                 btnX.setAttribute('aria-label', 'Dispensar');
                 btnX.dataset.key = item.key;
-                btnX.innerHTML = '<svg width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" viewBox="0 0 24 24"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>';
+                btnX.textContent = '✕';
                 btnX.addEventListener('click', function () {
                     dismissKey(item.key);
                     notifAlerts = notifAlerts.filter(function (a) { return a.key !== item.key; });

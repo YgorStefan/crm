@@ -2082,6 +2082,59 @@ video {
   display: flex !important;
 }
 
+/* ── Sidebar section dividers ────────────────────────────── */
+.sidebar-section-divider {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0 0.25rem;
+  margin-top: 0.625rem;
+  margin-bottom: 0.375rem;
+}
+
+.sidebar-section-divider .section-line {
+  height: 1px;
+  flex: 1 1 0%;
+}
+
+.sidebar-section-divider .section-line-left {
+  background: linear-gradient(to right, transparent, #e2e8f0);
+}
+
+.sidebar-section-divider .section-line-right {
+  background: linear-gradient(to left, transparent, #e2e8f0);
+}
+
+.dark .sidebar-section-divider .section-line-left {
+  background: linear-gradient(to right, transparent, #334155);
+}
+
+.dark .sidebar-section-divider .section-line-right {
+  background: linear-gradient(to left, transparent, #334155);
+}
+
+.sidebar-section-divider .section-title {
+  font-size: 9px;
+  letter-spacing: 0.13em;
+  font-weight: 700;
+  text-transform: uppercase;
+  white-space: nowrap;
+  flex-shrink: 0;
+  color: rgb(156 163 175 / 0.65);
+  overflow: hidden;
+  transition: opacity 0.15s ease-in-out, max-width 0.3s ease-in-out;
+  max-width: 200px;
+  opacity: 1;
+}
+
+.dark .sidebar-section-divider .section-title {
+  color: #475569;
+}
+
+#sidebar.sidebar-mini .sidebar-section-divider {
+  display: none;
+}
+
 /* ── Scrollbar unificado 4px (light + dark, mesmo visual) ─ */
 
 * {
