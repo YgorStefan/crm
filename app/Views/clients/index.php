@@ -1,21 +1,21 @@
-<?php
+﻿<?php
 ?>
 <!-- Toolbar unificada: titulo + filtros + acoes em uma linha -->
-<div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-3 mb-4">
+<div class="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 p-3 mb-4">
     <form id="filterForm" method="GET" action="<?= APP_URL ?>/clients"
           class="flex flex-col lg:flex-row lg:items-center gap-2">
 
         <div class="flex items-baseline gap-3 lg:mr-2 flex-shrink-0">
             <h3 class="text-xl font-bold text-gray-800 dark:text-white">Clientes</h3>
-            <span class="text-xs text-gray-500 dark:text-slate-400 whitespace-nowrap"><?= isset($pagination) ? (int) $pagination['total_items'] : count($clients) ?> encontrado(s)</span>
+            <span class="text-xs text-gray-500 dark:text-zinc-400 whitespace-nowrap"><?= isset($pagination) ? (int) $pagination['total_items'] : count($clients) ?> encontrado(s)</span>
         </div>
 
         <div class="grid grid-cols-2 lg:flex lg:items-center gap-2 flex-1">
             <input type="text" name="search" value="<?= htmlspecialchars($filters['search'], ENT_QUOTES, 'UTF-8') ?>"
                    placeholder="Buscar por nome, empresa..."
-                   class="col-span-2 lg:flex-none lg:w-64 lg:min-w-0 px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                   class="col-span-2 lg:flex-none lg:w-64 lg:min-w-0 px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
 
-            <select name="stage_id" class="lg:w-36 px-2 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            <select name="stage_id" class="lg:w-36 px-2 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 <option value="">Etapa</option>
                 <?php foreach ($stages as $stage): ?>
                 <option value="<?= $stage['id'] ?>" <?= $filters['stage_id'] == $stage['id'] ? 'selected' : '' ?>>
@@ -24,7 +24,7 @@
                 <?php endforeach; ?>
             </select>
 
-            <select name="assigned_to" class="lg:w-36 px-2 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            <select name="assigned_to" class="lg:w-36 px-2 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 <option value="">Responsável</option>
                 <?php foreach ($users as $user): ?>
                 <option value="<?= $user['id'] ?>" <?= $filters['assigned_to'] == $user['id'] ? 'selected' : '' ?>>
@@ -33,7 +33,7 @@
                 <?php endforeach; ?>
             </select>
 
-            <select name="tipo_venda" class="lg:w-32 px-2 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            <select name="tipo_venda" class="lg:w-32 px-2 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 <option value="">Tipo</option>
                 <option value="Imóvel"  <?= ($filters['tipo_venda'] ?? '') === 'Imóvel'  ? 'selected' : '' ?>>Imóvel</option>
                 <option value="Veículo" <?= ($filters['tipo_venda'] ?? '') === 'Veículo' ? 'selected' : '' ?>>Veículo</option>
@@ -45,7 +45,7 @@
                 Filtrar
             </button>
             <a href="<?= APP_URL ?>/clients"
-               class="inline-flex items-center justify-center px-4 h-9 bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-200 font-medium rounded-lg text-sm transition-colors whitespace-nowrap">
+               class="inline-flex items-center justify-center px-4 h-9 bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 font-medium rounded-lg text-sm transition-colors whitespace-nowrap">
                 Limpar
             </a>
         </div>
@@ -76,9 +76,9 @@
 </script>
 
 <!-- Tabela de clientes -->
-<div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+<div class="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden">
     <?php if (empty($clients)): ?>
-    <div class="text-center py-16 text-gray-400 dark:text-slate-500">
+    <div class="text-center py-16 text-gray-400 dark:text-zinc-500">
         <div class="text-5xl mb-4">👥</div>
         <p class="text-lg font-medium">Nenhum cliente encontrado</p>
         <p class="text-sm mt-1">
@@ -104,21 +104,21 @@
     ?>
     <div class="overflow-x-auto">
         <table class="w-full text-sm">
-            <thead class="bg-gray-50 dark:bg-slate-700/50 border-b border-gray-200 dark:border-slate-600">
+            <thead class="bg-gray-50 dark:bg-zinc-800/50 border-b border-gray-200 dark:border-zinc-700">
                 <tr>
-                    <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-slate-400"><?= $sortLink('name', 'Nome') ?></th>
-                    <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-slate-400 hidden md:table-cell">Empresa</th>
-                    <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-slate-400 hidden lg:table-cell">Contato</th>
-                    <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-slate-400"><?= $sortLink('stage', 'Etapa') ?></th>
-                    <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-slate-400 hidden lg:table-cell">Tipo</th>
-                    <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-slate-400 hidden lg:table-cell"><?= $sortLink('value', 'Valor') ?></th>
-                    <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-slate-400 hidden xl:table-cell">Responsável</th>
-                    <th class="text-center px-4 py-3 font-semibold text-gray-600 dark:text-slate-400">Ações</th>
+                    <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-zinc-400"><?= $sortLink('name', 'Nome') ?></th>
+                    <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-zinc-400 hidden md:table-cell">Empresa</th>
+                    <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-zinc-400 hidden lg:table-cell">Contato</th>
+                    <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-zinc-400"><?= $sortLink('stage', 'Etapa') ?></th>
+                    <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-zinc-400 hidden lg:table-cell">Tipo</th>
+                    <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-zinc-400 hidden lg:table-cell"><?= $sortLink('value', 'Valor') ?></th>
+                    <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-zinc-400 hidden xl:table-cell">Responsável</th>
+                    <th class="text-center px-4 py-3 font-semibold text-gray-600 dark:text-zinc-400">Ações</th>
                 </tr>
             </thead>
-            <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
+            <tbody class="divide-y divide-gray-100 dark:divide-zinc-800">
                 <?php foreach ($clients as $client): ?>
-                <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors">
+                <tr class="hover:bg-gray-50 dark:hover:bg-zinc-800/30 transition-colors">
                     <!-- Nome + Empresa (mobile) -->
                     <td class="px-4 py-3">
                         <a href="<?= APP_URL ?>/clients/<?= $client['id'] ?>"
@@ -130,16 +130,16 @@
                             ⚠ Em atraso
                         </span>
                         <?php endif; ?>
-                        <p class="text-xs text-gray-400 dark:text-slate-500 md:hidden">
+                        <p class="text-xs text-gray-400 dark:text-zinc-500 md:hidden">
                             <?= htmlspecialchars($client['company'] ?? '', ENT_QUOTES, 'UTF-8') ?>
                         </p>
                     </td>
                     <!-- Empresa -->
-                    <td class="px-4 py-3 text-gray-600 dark:text-slate-400 hidden md:table-cell">
+                    <td class="px-4 py-3 text-gray-600 dark:text-zinc-400 hidden md:table-cell">
                         <?= htmlspecialchars($client['company'] ?? '—', ENT_QUOTES, 'UTF-8') ?>
                     </td>
                     <!-- Contato -->
-                    <td class="px-4 py-3 text-gray-500 dark:text-slate-400 hidden lg:table-cell">
+                    <td class="px-4 py-3 text-gray-500 dark:text-zinc-400 hidden lg:table-cell">
                         <?php if ($client['email']): ?>
                         <div><?= htmlspecialchars($client['email'], ENT_QUOTES, 'UTF-8') ?></div>
                         <?php endif; ?>
@@ -155,26 +155,26 @@
                         </span>
                     </td>
                     <!-- Tipo de venda -->
-                    <td class="px-4 py-3 text-gray-600 dark:text-slate-400 hidden lg:table-cell">
+                    <td class="px-4 py-3 text-gray-600 dark:text-zinc-400 hidden lg:table-cell">
                         <?= !empty($client['tipo_venda'])
                             ? htmlspecialchars($client['tipo_venda'], ENT_QUOTES, 'UTF-8')
-                            : '<span class="text-gray-400 dark:text-slate-500">—</span>' ?>
+                            : '<span class="text-gray-400 dark:text-zinc-500">—</span>' ?>
                     </td>
                     <!-- Valor do negócio -->
-                    <td class="px-4 py-3 text-gray-600 dark:text-slate-400 hidden lg:table-cell">
+                    <td class="px-4 py-3 text-gray-600 dark:text-zinc-400 hidden lg:table-cell">
                         <?php if ($client['deal_value'] > 0): ?>
                         R$ <?= number_format($client['deal_value'], 2, ',', '.') ?>
                         <?php else: ?>
-                        <span class="text-gray-400 dark:text-slate-500">—</span>
+                        <span class="text-gray-400 dark:text-zinc-500">—</span>
                         <?php endif; ?>
                     </td>
                     <!-- Responsável -->
-                    <td class="px-4 py-3 text-gray-500 dark:text-slate-400 hidden xl:table-cell">
+                    <td class="px-4 py-3 text-gray-500 dark:text-zinc-400 hidden xl:table-cell">
                         <?= htmlspecialchars($client['assigned_name'] ?? '—', ENT_QUOTES, 'UTF-8') ?>
                     </td>
                     <!-- Ações -->
                     <td class="px-4 py-3 text-center">
-                        <div class="actions-group inline-flex items-center gap-0.5 bg-gray-50 dark:bg-slate-700 border border-gray-200 dark:border-slate-600 rounded-lg p-1">
+                        <div class="actions-group inline-flex items-center gap-0.5 bg-gray-50 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg p-1">
                             <!-- Ver -->
                             <a href="<?= APP_URL ?>/clients/<?= $client['id'] ?>"
                                data-tooltip="Ver detalhes"
@@ -217,17 +217,17 @@
 
 <!-- Modal: Nova Interação Rápida -->
 <div id="modalQuickInteraction" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
-    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between">
+    <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between">
             <h4 class="font-bold text-gray-800 dark:text-white">💬 Nova Interação — <span id="qiClientName"></span></h4>
-            <button onclick="document.getElementById('modalQuickInteraction').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300 text-xl">&times;</button>
+            <button onclick="document.getElementById('modalQuickInteraction').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-slate-300 text-xl">&times;</button>
         </div>
         <form method="POST" action="<?= APP_URL ?>/interactions/store" class="px-6 py-5 space-y-4">
             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
             <input type="hidden" name="client_id" id="qiClientId">
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Tipo</label>
-                <select name="type" class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Tipo</label>
+                <select name="type" class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                     <option value="call">📞 Ligação</option>
                     <option value="whatsapp">💬 WhatsApp</option>
                     <option value="email">📧 E-mail</option>
@@ -236,19 +236,19 @@
                 </select>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Descrição <span class="text-red-500">*</span></label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Descrição <span class="text-red-500">*</span></label>
                 <textarea name="description" rows="3" required placeholder="O que aconteceu?"
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none resize-none"></textarea>
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none resize-none"></textarea>
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Data e hora</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Data e hora</label>
                 <input type="datetime-local" name="occurred_at" id="qiOccurredAt"
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
             <div class="flex gap-3 pt-2">
                 <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-lg text-sm transition-colors">Salvar</button>
                 <button type="button" onclick="document.getElementById('modalQuickInteraction').classList.add('hidden')"
-                    class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-200 font-medium py-2 rounded-lg text-sm transition-colors">Cancelar</button>
+                    class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 font-medium py-2 rounded-lg text-sm transition-colors">Cancelar</button>
             </div>
         </form>
     </div>
@@ -256,28 +256,28 @@
 
 <!-- Modal: Nova Tarefa Rápida -->
 <div id="modalQuickTask" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4">
-    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-        <div class="px-6 py-4 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between">
+    <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between">
             <h4 class="font-bold text-gray-800 dark:text-white">📅 Nova Tarefa — <span id="qtClientName"></span></h4>
-            <button onclick="document.getElementById('modalQuickTask').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300 text-xl">&times;</button>
+            <button onclick="document.getElementById('modalQuickTask').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-slate-300 text-xl">&times;</button>
         </div>
         <form method="POST" action="<?= APP_URL ?>/tasks/store" class="px-6 py-5 space-y-4">
             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
             <input type="hidden" name="client_id" id="qtClientId">
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Título <span class="text-red-500">*</span></label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Título <span class="text-red-500">*</span></label>
                 <input type="text" name="title" required placeholder="O que precisa ser feito?"
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Prazo <span class="text-red-500">*</span></label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Prazo <span class="text-red-500">*</span></label>
                     <input type="datetime-local" name="due_date" id="qtDueDate" required
-                        class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Prioridade</label>
-                    <select name="priority" class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Prioridade</label>
+                    <select name="priority" class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                         <option value="low">Baixa</option>
                         <option value="medium" selected>Média</option>
                         <option value="high">Alta</option>
@@ -287,7 +287,7 @@
             <div class="flex gap-3 pt-2">
                 <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-lg text-sm transition-colors">Salvar</button>
                 <button type="button" onclick="document.getElementById('modalQuickTask').classList.add('hidden')"
-                    class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-200 font-medium py-2 rounded-lg text-sm transition-colors">Cancelar</button>
+                    class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 font-medium py-2 rounded-lg text-sm transition-colors">Cancelar</button>
             </div>
         </form>
     </div>

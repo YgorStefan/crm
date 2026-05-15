@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 
 <head>
@@ -21,7 +21,7 @@
     <link rel="stylesheet" href="<?= $safeAppUrl ?>/assets/css/tailwind.css?v=<?= file_exists(__DIR__ . '/../../../public/assets/css/tailwind.css') ? filemtime(__DIR__ . '/../../../public/assets/css/tailwind.css') : '0' ?>">
 </head>
 
-<body class="bg-gradient-to-br from-indigo-50 to-slate-100 dark:from-slate-900 dark:to-indigo-950 min-h-screen flex items-center justify-center transition-colors duration-300">
+<body class="bg-gradient-to-br from-indigo-50 to-slate-100 dark:from-zinc-950 dark:to-indigo-950 min-h-screen flex items-center justify-center transition-colors duration-300">
     <?= $content ?>
 </body>
 

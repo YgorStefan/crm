@@ -1,19 +1,19 @@
-<?php
+﻿<?php
 ?>
 
 <!-- Cabeçalho da página -->
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
     <div>
         <h3 class="text-2xl font-bold text-gray-800 dark:text-white">Contatos Frios</h3>
-        <p class="text-sm text-gray-500 dark:text-slate-400 mt-1">Importação e gestão de listas de prospecção</p>
+        <p class="text-sm text-gray-500 dark:text-zinc-400 mt-1">Importação e gestão de listas de prospecção</p>
     </div>
 </div>
 
 <!-- Formulário de importação -->
-<div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 mb-8">
+<div class="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 p-4 mb-8">
     <div class="flex items-center gap-2 mb-3">
-        <h4 class="font-semibold text-gray-700 dark:text-slate-200">Importar lista</h4>
-        <span class="has-tooltip text-gray-400 dark:text-slate-500 cursor-help"
+        <h4 class="font-semibold text-gray-700 dark:text-zinc-200">Importar lista</h4>
+        <span class="has-tooltip text-gray-400 dark:text-zinc-500 cursor-help"
               data-tooltip="Coluna A = Nome, Coluna B = Celular. Header opcional. Formatos: .csv, .xls, .xlsx">
             ❓
         </span>
@@ -24,39 +24,39 @@
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 items-end">
             <!-- Tipo de lista -->
             <div>
-                <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
+                <label class="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">
                     Tipo de lista <span class="text-red-500">*</span>
                 </label>
                 <input type="text" name="tipo_lista" required maxlength="100"
                     placeholder="Ex: Lista Webinar Jan"
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
 
             <!-- Upload do arquivo -->
             <div>
-                <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
+                <label class="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">
                     Arquivo CSV/XLSX
                 </label>
                 <input type="file" name="csv_file" accept=".csv,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required
-                    class="w-full text-sm text-gray-600 dark:text-slate-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/30 dark:file:text-indigo-300">
+                    class="w-full text-sm text-gray-600 dark:text-zinc-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/30 dark:file:text-indigo-300">
             </div>
 
             <!-- Telefone enviado -->
             <div>
-                <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
+                <label class="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">
                     Final Tel. Enviado
                 </label>
                 <input type="text" name="telefone_enviado" maxlength="4" placeholder="Ex: 1234"
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
 
             <!-- Data Mensagem -->
             <div>
-                <label class="block text-xs font-medium text-gray-700 dark:text-slate-300 mb-1">
+                <label class="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">
                     Data do Envio
                 </label>
                 <input type="date" name="data_mensagem" max="9999-12-31"
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
 
             <!-- Botão -->
@@ -72,18 +72,18 @@
 
 <!-- Cards Mensais -->
 <div>
-    <h4 class="font-semibold text-gray-700 dark:text-slate-200 mb-4">Importações por mês</h4>
+    <h4 class="font-semibold text-gray-700 dark:text-zinc-200 mb-4">Importações por mês</h4>
 
     <?php if (empty($summaries)): ?>
-        <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-10 text-center">
-            <p class="text-gray-400 dark:text-slate-500 text-sm">Nenhuma lista importada ainda. Use o formulário acima para importar seu
+        <div class="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 p-10 text-center">
+            <p class="text-gray-400 dark:text-zinc-500 text-sm">Nenhuma lista importada ainda. Use o formulário acima para importar seu
                 primeiro CSV.</p>
         </div>
     <?php else: ?>
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             <?php foreach ($summaries as $s): ?>
-                <div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-500 transition-all">
-                    <div class="px-5 py-4 border-b border-gray-100 dark:border-slate-700">
+                <div class="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 hover:shadow-md hover:border-indigo-200 dark:hover:border-indigo-500 transition-all">
+                    <div class="px-5 py-4 border-b border-gray-100 dark:border-zinc-800">
                         <h5 class="font-semibold text-gray-800 dark:text-white capitalize">
                             <?= htmlspecialchars($s['month_label'], ENT_QUOTES, 'UTF-8') ?>
                         </h5>
@@ -91,7 +91,7 @@
                     <div class="px-5 py-4 flex items-center justify-between gap-2">
                         <div>
                             <p class="text-3xl font-bold text-indigo-600 dark:text-indigo-400"><?= (int) $s['total'] ?></p>
-                            <p class="text-xs text-gray-500 dark:text-slate-400 mt-0.5">contato(s)</p>
+                            <p class="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">contato(s)</p>
                         </div>
                         <div class="flex flex-col gap-2">
                             <!-- Botão abre modal -->
@@ -124,33 +124,33 @@
 <!-- Modal de listagem de contatos -->
 <div id="modalColdContacts"
     class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
+    <div class="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
 
         <!-- Header da modal -->
-        <div class="px-6 py-4 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between flex-shrink-0">
+        <div class="px-6 py-4 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between flex-shrink-0">
             <h4 id="modalTitle" class="font-semibold text-gray-800 dark:text-white text-lg">Contatos do mês</h4>
             <button id="btnCloseModal"
-                class="text-gray-400 dark:text-slate-500 hover:text-gray-600 dark:hover:text-slate-300 text-2xl font-bold leading-none">&times;</button>
+                class="text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-slate-300 text-2xl font-bold leading-none">&times;</button>
         </div>
 
         <!-- Filtros e exportação -->
-        <div class="px-6 py-3 border-b border-gray-100 dark:border-slate-700 flex flex-col sm:flex-row gap-3 items-end flex-shrink-0">
+        <div class="px-6 py-3 border-b border-gray-100 dark:border-zinc-800 flex flex-col sm:flex-row gap-3 items-end flex-shrink-0">
             <div>
-                <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Filtrar por dia (1-31)</label>
+                <label class="block text-xs font-medium text-gray-600 dark:text-zinc-400 mb-1">Filtrar por dia (1-31)</label>
                 <input type="number" id="filterDia" min="1" max="31" placeholder="Dia"
-                    class="w-24 px-3 py-1.5 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    class="w-24 px-3 py-1.5 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
             <div>
-                <label class="block text-xs font-medium text-gray-600 dark:text-slate-400 mb-1">Filtrar por tel. enviado</label>
+                <label class="block text-xs font-medium text-gray-600 dark:text-zinc-400 mb-1">Filtrar por tel. enviado</label>
                 <input type="text" id="filterTelEnviado" placeholder="Ex: 1234"
-                    class="w-32 px-3 py-1.5 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    class="w-32 px-3 py-1.5 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
             <button id="btnApplyFilter"
                 class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-1.5 rounded-lg text-sm transition-colors">
                 Filtrar
             </button>
             <button id="btnClearFilter"
-                class="bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-200 font-medium px-4 py-1.5 rounded-lg text-sm transition-colors">
+                class="bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 font-medium px-4 py-1.5 rounded-lg text-sm transition-colors">
                 Limpar
             </button>
             <div class="flex-1"></div>
@@ -165,33 +165,33 @@
             class="hidden px-6 py-2 bg-indigo-50 dark:bg-indigo-900/20 border-b border-indigo-100 dark:border-indigo-800/40 flex flex-wrap items-center gap-3 flex-shrink-0">
             <span id="bulkCount" class="text-sm font-medium text-indigo-700 dark:text-indigo-300"></span>
 
-            <label class="text-sm text-gray-600 dark:text-slate-300 font-medium">Tel:</label>
+            <label class="text-sm text-gray-600 dark:text-zinc-300 font-medium">Tel:</label>
             <input type="text" id="bulkTelEnviado" maxlength="4" placeholder="Ex: 1234"
                 title="Deixe em branco para manter, ou preencha para alterar em todos"
-                class="w-20 px-2 py-1 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                class="w-20 px-2 py-1 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
 
-            <label class="text-sm text-gray-600 dark:text-slate-300 font-medium ml-2">Data:</label>
+            <label class="text-sm text-gray-600 dark:text-zinc-300 font-medium ml-2">Data:</label>
             <input type="date" id="bulkDataMensagem" max="9999-12-31"
                 title="Deixe em branco para manter, ou preencha para alterar em todos"
-                class="w-32 px-2 py-1 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                class="w-32 px-2 py-1 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
 
             <button id="btnBulkSave"
                 class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-1 rounded-lg text-sm transition-colors ml-auto">
                 Atualizar Marcados
             </button>
-            <button id="btnBulkCancel" class="text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200 text-sm font-medium">
+            <button id="btnBulkCancel" class="text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-slate-200 text-sm font-medium">
                 Cancelar
             </button>
         </div>
 
         <!-- Corpo da modal: tabela de contatos -->
         <div id="modalBody" class="flex-1 overflow-y-auto overflow-x-auto px-6 py-4">
-            <p class="text-gray-400 dark:text-slate-500 text-sm text-center">Carregando...</p>
+            <p class="text-gray-400 dark:text-zinc-500 text-sm text-center">Carregando...</p>
         </div>
 
         <!-- Footer da modal: total visível -->
-        <div class="px-6 py-3 border-t border-gray-100 dark:border-slate-700 flex-shrink-0">
-            <p id="modalTotal" class="text-xs text-gray-500 dark:text-slate-400"></p>
+        <div class="px-6 py-3 border-t border-gray-100 dark:border-zinc-800 flex-shrink-0">
+            <p id="modalTotal" class="text-xs text-gray-500 dark:text-zinc-400"></p>
         </div>
     </div>
 </div>
@@ -403,13 +403,13 @@
             }
 
             let html = '<table class="w-full text-sm">';
-            html += '<thead><tr class="border-b border-gray-200 dark:border-slate-600">';
+            html += '<thead><tr class="border-b border-gray-200 dark:border-zinc-700">';
             html += '<th class="py-2 px-2"><input type="checkbox" id="checkAll" class="rounded"></th>';
-            html += '<th class="text-left py-2 px-2 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">Celular</th>';
-            html += '<th class="text-left py-2 px-2 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">Nome</th>';
-            html += '<th class="text-left py-2 px-2 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">Tipo de lista</th>';
-            html += '<th class="text-left py-2 px-2 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">Tel. enviado</th>';
-            html += '<th class="text-left py-2 px-2 text-xs font-semibold text-gray-500 dark:text-slate-400 uppercase">Data mensagem</th>';
+            html += '<th class="text-left py-2 px-2 text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase">Celular</th>';
+            html += '<th class="text-left py-2 px-2 text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase">Nome</th>';
+            html += '<th class="text-left py-2 px-2 text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase">Tipo de lista</th>';
+            html += '<th class="text-left py-2 px-2 text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase">Tel. enviado</th>';
+            html += '<th class="text-left py-2 px-2 text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase">Data mensagem</th>';
             html += '<th class="py-2 px-2"></th>';
             html += '</tr></thead>';
             html += '<tbody id="contactsTableBody">';
@@ -500,28 +500,28 @@
 
         function renderRow(c, editMode) {
             const id = c.id;
-            const inputCls = 'w-full border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded px-2 py-1 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none';
+            const inputCls = 'w-full border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded px-2 py-1 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none';
             if (editMode) {
-                return '<tr data-id="' + id + '" class="border-b border-gray-100 dark:border-slate-700 bg-indigo-50 dark:bg-indigo-900/20">' +
+                return '<tr data-id="' + id + '" class="border-b border-gray-100 dark:border-zinc-800 bg-indigo-50 dark:bg-indigo-900/20">' +
                     '<td class="py-2 px-2"></td>' +
                     '<td class="py-2 px-2"><input class="' + inputCls + '" name="phone" value="' + esc(c.phone) + '"></td>' +
                     '<td class="py-2 px-2"><input class="' + inputCls + '" name="name" value="' + esc(c.name) + '"></td>' +
-                    '<td class="py-2 px-2 text-gray-500 dark:text-slate-400 text-xs">' + esc(c.tipo_lista) + '</td>' +
-                    '<td class="py-2 px-2"><input class="w-16 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded px-2 py-1 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" name="telefone_enviado" maxlength="4" value="' + esc(c.telefone_enviado || '') + '"></td>' +
-                    '<td class="py-2 px-2"><input type="date" max="9999-12-31" class="border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded px-2 py-1 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" name="data_mensagem" value="' + esc(c.data_mensagem || '') + '"></td>' +
+                    '<td class="py-2 px-2 text-gray-500 dark:text-zinc-400 text-xs">' + esc(c.tipo_lista) + '</td>' +
+                    '<td class="py-2 px-2"><input class="w-16 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded px-2 py-1 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" name="telefone_enviado" maxlength="4" value="' + esc(c.telefone_enviado || '') + '"></td>' +
+                    '<td class="py-2 px-2"><input type="date" max="9999-12-31" class="border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded px-2 py-1 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" name="data_mensagem" value="' + esc(c.data_mensagem || '') + '"></td>' +
                     '<td class="py-2 px-2 whitespace-nowrap">' +
                     '<button class="btn-save text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 font-medium text-xs mr-2" data-id="' + id + '">Salvar</button>' +
-                    '<button class="btn-cancel text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200 font-medium text-xs" data-id="' + id + '">Cancelar</button>' +
+                    '<button class="btn-cancel text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-slate-200 font-medium text-xs" data-id="' + id + '">Cancelar</button>' +
                     '</td>' +
                     '</tr>';
             }
-            return '<tr data-id="' + id + '" class="border-b border-gray-100 dark:border-slate-700 hover:bg-gray-50 dark:hover:bg-slate-700/30">' +
+            return '<tr data-id="' + id + '" class="border-b border-gray-100 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800/30">' +
                 '<td class="py-2 px-2"><input type="checkbox" class="row-check rounded" data-id="' + id + '"></td>' +
-                '<td class="py-2 px-2 text-gray-800 dark:text-slate-200">' + esc(c.phone) + '</td>' +
-                '<td class="py-2 px-2 text-gray-800 dark:text-slate-200">' + esc(c.name) + '</td>' +
-                '<td class="py-2 px-2 text-gray-500 dark:text-slate-400 text-xs">' + esc(c.tipo_lista) + '</td>' +
-                '<td class="py-2 px-2 text-gray-500 dark:text-slate-400 text-xs">' + esc(c.telefone_enviado || '\u2014') + '</td>' +
-                '<td class="py-2 px-2 text-gray-500 dark:text-slate-400 text-xs">' + (c.data_mensagem ? formatDate(c.data_mensagem) : '\u2014') + '</td>' +
+                '<td class="py-2 px-2 text-gray-800 dark:text-zinc-200">' + esc(c.phone) + '</td>' +
+                '<td class="py-2 px-2 text-gray-800 dark:text-zinc-200">' + esc(c.name) + '</td>' +
+                '<td class="py-2 px-2 text-gray-500 dark:text-zinc-400 text-xs">' + esc(c.tipo_lista) + '</td>' +
+                '<td class="py-2 px-2 text-gray-500 dark:text-zinc-400 text-xs">' + esc(c.telefone_enviado || '\u2014') + '</td>' +
+                '<td class="py-2 px-2 text-gray-500 dark:text-zinc-400 text-xs">' + (c.data_mensagem ? formatDate(c.data_mensagem) : '\u2014') + '</td>' +
                 '<td class="py-2 px-2 whitespace-nowrap">' +
                 '<button class="btn-edit text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300" title="Editar" data-id="' + id + '" data-contact=\'' + JSON.stringify(c).replace(/'/g, '&#39;') + '\'>✏️</button>' +
                 '<button class="btn-delete text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 ml-2" title="Excluir" data-id="' + id + '">🗑️</button>' +

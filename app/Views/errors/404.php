@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
@@ -18,13 +18,13 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<?= $safeAppUrl ?>/assets/css/tailwind.css">
 </head>
-<body class="bg-gray-50 dark:bg-slate-900 min-h-screen flex items-center justify-center font-sans transition-colors">
+<body class="bg-gray-50 dark:bg-zinc-950 min-h-screen flex items-center justify-center font-sans transition-colors">
     <div class="text-center">
         <div class="flex justify-center mb-6 text-7xl">
             🔍
         </div>
         <h1 class="text-6xl font-bold text-gray-800 dark:text-white mb-2">404</h1>
-        <p class="text-xl text-gray-500 dark:text-slate-400 mb-6">Página não encontrada</p>
+        <p class="text-xl text-gray-500 dark:text-zinc-400 mb-6">Página não encontrada</p>
         <a href="<?= defined('APP_URL') ? APP_URL : '' ?>/dashboard"
            class="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-6 py-3 rounded-lg transition-colors">
             ↩ Voltar ao Dashboard

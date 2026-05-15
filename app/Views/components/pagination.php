@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 /**
  * Componente de paginação reutilizável.
  *
@@ -93,19 +93,19 @@ $pages = paginationRange($currentPage, $totalPages);
 <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between flex-wrap gap-3 mt-4 px-1 min-w-0">
 
     <!-- Informações de resultado e seletor de itens por página -->
-    <div class="flex items-center flex-wrap gap-x-3 gap-y-2 text-sm text-gray-500 dark:text-slate-400 min-w-0">
+    <div class="flex items-center flex-wrap gap-x-3 gap-y-2 text-sm text-gray-500 dark:text-zinc-400 min-w-0">
         <span>
             Mostrando
-            <strong class="text-gray-700 dark:text-slate-200"><?= $rangeStart ?></strong>–<strong class="text-gray-700 dark:text-slate-200"><?= $rangeEnd ?></strong>
+            <strong class="text-gray-700 dark:text-zinc-200"><?= $rangeStart ?></strong>–<strong class="text-gray-700 dark:text-zinc-200"><?= $rangeEnd ?></strong>
             de
-            <strong class="text-gray-700 dark:text-slate-200"><?= $totalItems ?></strong>
+            <strong class="text-gray-700 dark:text-zinc-200"><?= $totalItems ?></strong>
             resultado(s)
         </span>
 
-        <label class="flex items-center gap-1 text-sm text-gray-500 dark:text-slate-400">
+        <label class="flex items-center gap-1 text-sm text-gray-500 dark:text-zinc-400">
             Itens por página:
             <select id="perPageSelect"
-                    class="per-page-select ml-1 px-2 py-1 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                    class="per-page-select ml-1 px-2 py-1 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"
                     data-base-url="<?= htmlspecialchars(rtrim(APP_URL, '/') . '/' . ltrim($baseUrl, '/'), ENT_QUOTES, 'UTF-8') ?>"
                     data-query-params="<?= htmlspecialchars(http_build_query(array_filter($queryParams, fn($v) => $v !== '' && $v !== null)), ENT_QUOTES, 'UTF-8') ?>">
                 <?php foreach ([15, 25, 50, 100] as $opt): ?>
@@ -122,11 +122,11 @@ $pages = paginationRange($currentPage, $totalPages);
         <!-- Anterior -->
         <?php if ($currentPage > 1): ?>
             <a href="<?= paginationUrl($baseUrl, $queryParams, $currentPage - 1, $perPage) ?>"
-               class="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
+               class="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm text-gray-600 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
                 Anterior
             </a>
         <?php else: ?>
-            <span class="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 text-sm text-gray-400 dark:text-slate-600 cursor-not-allowed">
+            <span class="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900/50 text-sm text-gray-400 dark:text-zinc-600 cursor-not-allowed">
                 Anterior
             </span>
         <?php endif; ?>
@@ -141,7 +141,7 @@ $pages = paginationRange($currentPage, $totalPages);
                 </span>
             <?php else: ?>
                 <a href="<?= paginationUrl($baseUrl, $queryParams, $p, $perPage) ?>"
-                   class="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
+                   class="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm text-gray-600 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
                     <?= $p ?>
                 </a>
             <?php endif; ?>
@@ -150,11 +150,11 @@ $pages = paginationRange($currentPage, $totalPages);
         <!-- Próximo -->
         <?php if ($currentPage < $totalPages): ?>
             <a href="<?= paginationUrl($baseUrl, $queryParams, $currentPage + 1, $perPage) ?>"
-               class="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm text-gray-600 dark:text-slate-400 hover:bg-gray-50 dark:hover:bg-slate-700 transition-colors">
+               class="px-3 py-1.5 rounded-lg border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-sm text-gray-600 dark:text-zinc-400 hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">
                 Próximo
             </a>
         <?php else: ?>
-            <span class="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/50 text-sm text-gray-400 dark:text-slate-600 cursor-not-allowed">
+            <span class="px-3 py-1.5 rounded-lg border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900/50 text-sm text-gray-400 dark:text-zinc-600 cursor-not-allowed">
                 Próximo
             </span>
         <?php endif; ?>

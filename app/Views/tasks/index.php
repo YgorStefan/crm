@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 ?>
 
 <!-- Alerta compacto: Tarefas Atrasadas (colapsavel + dispensavel por sessao) -->
@@ -24,7 +24,7 @@
         </div>
         <div id="overdueList" class="hidden border-t border-red-200 dark:border-red-800/50 px-3 py-2 space-y-1.5 max-h-60 overflow-y-auto">
             <?php foreach ($overdue as $t): ?>
-                <div class="flex items-center justify-between bg-white dark:bg-slate-800 rounded-md px-3 py-1.5 border border-red-100 dark:border-red-800/50">
+                <div class="flex items-center justify-between bg-white dark:bg-zinc-900 rounded-md px-3 py-1.5 border border-red-100 dark:border-red-800/50">
                     <span class="text-sm font-medium text-red-800 dark:text-red-300 truncate flex-1 min-w-0">
                         <?= htmlspecialchars($t['title'], ENT_QUOTES, 'UTF-8') ?>
                         <?php if (!empty($t['client_name'])): ?>
@@ -61,18 +61,18 @@
 <?php endif; ?>
 
 <!-- Calendario FullCalendar -->
-<div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4">
+<div class="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 p-4">
     <!-- Filtros rapidos -->
-    <div class="flex flex-wrap items-center gap-2 mb-3 pb-3 border-b border-gray-100 dark:border-slate-700">
-        <span class="text-xs font-medium text-gray-500 dark:text-slate-400 mr-1">Filtrar:</span>
-        <div class="inline-flex rounded-lg bg-gray-100 dark:bg-slate-700 p-0.5" role="tablist">
+    <div class="flex flex-wrap items-center gap-2 mb-3 pb-3 border-b border-gray-100 dark:border-zinc-800">
+        <span class="text-xs font-medium text-gray-500 dark:text-zinc-400 mr-1">Filtrar:</span>
+        <div class="inline-flex rounded-lg bg-gray-100 dark:bg-zinc-800 p-0.5" role="tablist">
             <button type="button" class="fc-filter-btn px-3 py-1 text-xs font-medium rounded-md transition-colors active" data-filter="all">Todas</button>
             <button type="button" class="fc-filter-btn px-3 py-1 text-xs font-medium rounded-md transition-colors" data-filter="pending">Pendentes</button>
             <button type="button" class="fc-filter-btn px-3 py-1 text-xs font-medium rounded-md transition-colors" data-filter="done">Concluídas</button>
             <button type="button" class="fc-filter-btn px-3 py-1 text-xs font-medium rounded-md transition-colors" data-filter="overdue">Atrasadas</button>
         </div>
         <select id="fcPriorityFilter" data-no-custom
-            class="px-2 py-1 text-xs border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md focus:ring-2 focus:ring-indigo-500 focus:outline-none ml-2">
+            class="px-2 py-1 text-xs border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-md focus:ring-2 focus:ring-indigo-500 focus:outline-none ml-2">
             <option value="all">Qualquer prioridade</option>
             <option value="high">Alta</option>
             <option value="medium">Média</option>
@@ -102,11 +102,11 @@
 
 <!-- Modal: Criacao e Edicao de Tarefa -->
 <div id="modalTask" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4" style="display:none">
-    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-        <div class="px-6 py-5 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between">
+    <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="px-6 py-5 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between">
             <h4 id="modalTaskTitle" class="text-lg font-bold text-gray-800 dark:text-white">Nova Tarefa</h4>
             <button onclick="document.getElementById('modalTask').style.display='none'"
-                class="text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300 text-2xl">&times;</button>
+                class="text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-slate-300 text-2xl">&times;</button>
         </div>
         <div class="px-6 py-5 space-y-4">
             <input type="hidden" id="task_id" value="">
@@ -118,23 +118,23 @@
             </div>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Título <span
+                <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Título <span
                         class="text-red-500">*</span></label>
                 <input type="text" id="task_title" name="title" required placeholder="O que precisa ser feito?"
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
 
             <div class="grid grid-cols-2 gap-3">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Prazo <span
+                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Prazo <span
                             class="text-red-500">*</span></label>
                     <input type="datetime-local" id="task_due_date" name="due_date" required
-                        class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Prioridade</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Prioridade</label>
                     <select id="task_priority" name="priority"
-                        class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                         <option value="low">Baixa</option>
                         <option value="medium" selected>Média</option>
                         <option value="high">Alta</option>
@@ -144,9 +144,9 @@
 
             <?php if (($_SESSION['user']['role'] ?? '') === 'admin'): ?>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Responsável</label>
+                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Responsável</label>
                     <select id="task_assigned_to" name="assigned_to"
-                        class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                         <?php foreach ($users as $user): ?>
                             <option value="<?= $user['id'] ?>" <?= $user['id'] == ($_SESSION['user']['id'] ?? 0) ? 'selected' : '' ?>>
                                 <?= htmlspecialchars($user['name'], ENT_QUOTES, 'UTF-8') ?>
@@ -157,10 +157,10 @@
             <?php endif; ?>
 
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Descrição</label>
+                <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Descrição</label>
                 <textarea id="task_description" name="description" rows="2"
                     placeholder="Detalhes da tarefa (opcional)..."
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+                    class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
             </div>
 
             <div class="flex justify-between gap-3 pt-2">
@@ -176,7 +176,7 @@
                 </div>
                 <div class="flex gap-3 ml-auto">
                     <button type="button" onclick="document.getElementById('modalTask').style.display='none'"
-                        class="px-4 py-2 border border-gray-300 text-gray-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-200 rounded-lg text-sm hover:bg-gray-100 transition-colors">
+                        class="px-4 py-2 border border-gray-300 text-gray-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 rounded-lg text-sm hover:bg-gray-100 transition-colors">
                         Cancelar
                     </button>
                     <button id="btnSaveTask"
@@ -192,8 +192,8 @@
 <!-- Modal: Conflito de dia -->
 <div id="modalDayConflict"
     class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4" style="display:none">
-    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
-        <div class="px-6 py-5 border-b border-gray-100 dark:border-slate-700">
+    <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden">
+        <div class="px-6 py-5 border-b border-gray-100 dark:border-zinc-800">
             <h4 class="text-lg font-bold text-gray-800 dark:text-white">Já existem eventos neste dia:</h4>
         </div>
         <div class="px-6 py-4">
@@ -332,7 +332,7 @@
                 list.innerHTML = '';
                 eventsOnDate.forEach(function (ev) {
                     const div = document.createElement('div');
-                    div.className = 'text-sm text-gray-700 dark:text-slate-200 py-1 border-b border-gray-100 dark:border-slate-700 last:border-0';
+                    div.className = 'text-sm text-gray-700 dark:text-zinc-200 py-1 border-b border-gray-100 dark:border-zinc-800 last:border-0';
                     div.textContent = ev.title;
                     list.appendChild(div);
                 });

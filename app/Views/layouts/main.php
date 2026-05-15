@@ -1,4 +1,4 @@
-<?php
+﻿<?php
 $safeAppUrl = htmlspecialchars(APP_URL, ENT_QUOTES, 'UTF-8');
 $assetV = static function (string $rel): string {
     $abs = __DIR__ . '/../../../public/' . ltrim($rel, '/');
@@ -31,7 +31,7 @@ $assetV = static function (string $rel): string {
     <script nonce="<?= CSP_NONCE ?>" src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.20/locales-all.global.min.js"></script>
 </head>
 
-<body class="bg-gray-100 dark:bg-slate-900 font-sans text-gray-800 dark:text-slate-200 transition-colors duration-300">
+<body class="bg-gray-100 dark:bg-zinc-950 font-sans text-gray-800 dark:text-zinc-200 transition-colors duration-300">
 
 <div class="flex h-screen overflow-hidden">
 
@@ -42,12 +42,12 @@ $assetV = static function (string $rel): string {
     <!-- ── SIDEBAR ─────────────────────────────────────────────── -->
     <aside id="sidebar"
         class="fixed inset-y-0 left-0 z-50 flex flex-col
-               bg-white dark:bg-slate-800
-               border-r border-gray-200 dark:border-slate-700
+               bg-white dark:bg-zinc-900
+               border-r border-gray-200 dark:border-zinc-800
                w-56 -translate-x-full lg:translate-x-0">
 
         <!-- Header: brand + hambúrguer (mesma altura do topbar) -->
-        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-slate-700 flex-shrink-0">
+        <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-zinc-800 flex-shrink-0">
             <div class="sidebar-brand">
                 <p class="text-sm font-bold text-gray-800 dark:text-white leading-tight">
                     <?= htmlspecialchars(APP_NAME, ENT_QUOTES, 'UTF-8') ?>
@@ -57,14 +57,14 @@ $assetV = static function (string $rel): string {
             <button id="sidebarCollapseBtn"
                 class="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg flex-shrink-0
                        text-gray-400 hover:text-gray-600 hover:bg-gray-100
-                       dark:text-slate-500 dark:hover:text-slate-300 dark:hover:bg-slate-700 transition-colors"
+                       dark:text-zinc-500 dark:hover:text-slate-300 dark:hover:bg-zinc-800 transition-colors"
                 title="Colapsar menu">
                 ☰
             </button>
             <!-- Mobile: fecha overlay -->
             <button id="closeSidebarBtn"
                 class="lg:hidden flex items-center justify-center w-8 h-8 rounded-lg
-                       text-gray-400 hover:text-gray-600 dark:text-slate-500 dark:hover:text-slate-300 transition-colors">
+                       text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-slate-300 transition-colors">
                 ✕
             </button>
         </div>
@@ -94,17 +94,17 @@ $assetV = static function (string $rel): string {
                 </div>
                 <div class="space-y-0.5">
                     <a href="https://avapro.ademicon.com.br/" target="_blank" rel="noopener noreferrer"
-                        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200 transition-colors">
+                        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-slate-200 transition-colors">
                         🔗
                         <span class="nav-label">AVA Pro</span>
                     </a>
                     <a href="https://webmail.autorizadoademicon.com.br/?_task=mail&_mbox=INBOX" target="_blank" rel="noopener noreferrer"
-                        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200 transition-colors">
+                        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-slate-200 transition-colors">
                         📧
                         <span class="nav-label">Webmail</span>
                     </a>
                     <a href="https://crmapollo.com.br/app/views/index.php" target="_blank" rel="noopener noreferrer"
-                        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-slate-400 dark:hover:bg-slate-700 dark:hover:text-slate-200 transition-colors">
+                        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-slate-200 transition-colors">
                         🏠
                         <span class="nav-label">CRM Apollo</span>
                     </a>
@@ -142,15 +142,15 @@ $assetV = static function (string $rel): string {
                     <?= strtoupper(substr($_SESSION['user']['name'] ?? 'U', 0, 1)) ?>
                 </div>
                 <div class="user-info flex-1 min-w-0">
-                    <p class="text-sm font-medium text-gray-700 dark:text-slate-200 truncate">
+                    <p class="text-sm font-medium text-gray-700 dark:text-zinc-200 truncate">
                         <?= htmlspecialchars($_SESSION['user']['name'] ?? '', ENT_QUOTES, 'UTF-8') ?>
                     </p>
-                    <p class="text-xs text-gray-400 dark:text-slate-500 capitalize">
+                    <p class="text-xs text-gray-400 dark:text-zinc-500 capitalize">
                         <?= htmlspecialchars($_SESSION['user']['role'] ?? '', ENT_QUOTES, 'UTF-8') ?>
                     </p>
                 </div>
                 <a href="<?= $safeAppUrl ?>/logout" title="Sair"
-                    class="sidebar-logout flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 dark:text-slate-500 dark:hover:text-red-400 dark:hover:bg-red-900/40 transition-colors">
+                    class="sidebar-logout flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 dark:text-zinc-500 dark:hover:text-red-400 dark:hover:bg-red-900/40 transition-colors">
                     🏃
                 </a>
             </div>
@@ -162,15 +162,15 @@ $assetV = static function (string $rel): string {
     <div id="mainContent" class="flex-1 flex flex-col w-full overflow-hidden">
 
         <!-- Topbar -->
-        <header class="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-4 sm:px-6 py-3 flex items-center gap-3 flex-shrink-0 z-10 relative">
+        <header class="bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 px-4 sm:px-6 py-3 flex items-center gap-3 flex-shrink-0 z-10 relative">
 
             <!-- Hambúrguer (mobile apenas) -->
             <button id="sidebarToggle"
-                class="lg:hidden text-gray-500 hover:text-gray-700 dark:text-slate-400 dark:hover:text-slate-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700 transition-colors">
+                class="lg:hidden text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-slate-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors">
                 ☰
             </button>
 
-            <h2 class="text-base font-semibold text-gray-700 dark:text-slate-200 truncate flex-1">
+            <h2 class="text-base font-semibold text-gray-700 dark:text-zinc-200 truncate flex-1">
                 <?= htmlspecialchars($pageTitle ?? '', ENT_QUOTES, 'UTF-8') ?>
             </h2>
 
@@ -180,7 +180,7 @@ $assetV = static function (string $rel): string {
                 <!-- Notificações -->
                 <div class="relative" id="notification-bell">
                     <button id="btnNotifications"
-                        class="relative text-gray-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-colors p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-700"
+                        class="relative text-gray-500 hover:text-indigo-600 dark:text-zinc-400 dark:hover:text-indigo-400 transition-colors p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800"
                         title="Notificações">
                         🔔
                         <span id="notifBadge"
@@ -188,18 +188,18 @@ $assetV = static function (string $rel): string {
                     </button>
                     <div id="notifDropdown"
                         class="hidden absolute right-0 top-full mt-2 w-80
-                               bg-white dark:bg-slate-800 rounded-xl shadow-xl
-                               border border-gray-200 dark:border-slate-700
+                               bg-white dark:bg-zinc-900 rounded-xl shadow-xl
+                               border border-gray-200 dark:border-zinc-800
                                z-50 max-h-64 overflow-y-auto overflow-x-hidden">
-                        <div class="px-4 py-3 border-b border-gray-100 dark:border-slate-700 flex items-center justify-between">
-                            <span class="text-sm font-semibold text-gray-700 dark:text-slate-200">Notificações</span>
+                        <div class="px-4 py-3 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between">
+                            <span class="text-sm font-semibold text-gray-700 dark:text-zinc-200">Notificações</span>
                             <button id="btnClearNotifs" data-tooltip="Limpar todas"
-                                class="has-tooltip text-gray-500 hover:text-indigo-600 dark:text-slate-400 dark:hover:text-indigo-400 transition-colors p-1 rounded-md hover:bg-gray-100 dark:hover:bg-slate-700">
+                                class="has-tooltip text-gray-500 hover:text-indigo-600 dark:text-zinc-400 dark:hover:text-indigo-400 transition-colors p-1 rounded-md hover:bg-gray-100 dark:hover:bg-zinc-800">
                                 🗑️
                             </button>
                         </div>
-                        <div id="notifList" class="divide-y divide-gray-50 dark:divide-slate-700">
-                            <div class="px-4 py-3 text-sm text-gray-400 dark:text-slate-500 text-center">Nenhuma notificação</div>
+                        <div id="notifList" class="divide-y divide-gray-50 dark:divide-zinc-800">
+                            <div class="px-4 py-3 text-sm text-gray-400 dark:text-zinc-500 text-center">Nenhuma notificação</div>
                         </div>
                     </div>
                 </div>
@@ -220,7 +220,7 @@ $assetV = static function (string $rel): string {
                 </button>
 
                 <!-- Data/Relógio -->
-                <span class="text-sm text-gray-400 dark:text-slate-500 hidden sm:block" id="clock"></span>
+                <span class="text-sm text-gray-400 dark:text-zinc-500 hidden sm:block" id="clock"></span>
             </div>
         </header>
 
@@ -506,20 +506,20 @@ $assetV = static function (string $rel): string {
         function render() {
             list.innerHTML = '';
             if (notifAlerts.length === 0) {
-                list.innerHTML = '<div class="px-4 py-3 text-sm text-gray-400 dark:text-slate-500 text-center">Nenhuma notificação</div>';
+                list.innerHTML = '<div class="px-4 py-3 text-sm text-gray-400 dark:text-zinc-500 text-center">Nenhuma notificação</div>';
                 updateBadge();
                 return;
             }
             notifAlerts.forEach(function (item) {
                 const row = document.createElement('div');
-                row.className = 'px-4 py-3 text-sm text-gray-700 dark:text-slate-300 hover:bg-gray-50 dark:hover:bg-slate-700/50 flex items-start gap-2';
+                row.className = 'px-4 py-3 text-sm text-gray-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800/50 flex items-start gap-2';
                 const icon = item.type === 'birthday' ? '🎂' : '⏰';
                 const msgSpan = document.createElement('span');
                 msgSpan.className = 'flex-1 min-w-0 break-words';
                 msgSpan.textContent = icon + ' ' + item.message;
                 const btnX = document.createElement('button');
                 btnX.type = 'button';
-                btnX.className = 'flex-shrink-0 text-gray-400 hover:text-red-500 dark:text-slate-500 dark:hover:text-red-400 transition-colors p-0.5 rounded';
+                btnX.className = 'flex-shrink-0 text-gray-400 hover:text-red-500 dark:text-zinc-500 dark:hover:text-red-400 transition-colors p-0.5 rounded';
                 btnX.setAttribute('aria-label', 'Dispensar');
                 btnX.dataset.key = item.key;
                 btnX.textContent = '✕';

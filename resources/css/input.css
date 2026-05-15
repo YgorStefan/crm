@@ -68,7 +68,7 @@
     min-width: 0;
 }
 .dark .sidebar-section-divider .section-line {
-    background: linear-gradient(to right, transparent, rgba(71, 85, 105, 0.55), transparent);
+    background: linear-gradient(to right, transparent, rgba(63, 63, 70, 0.55), transparent);
 }
 .sidebar-section-divider .section-title {
     flex: 0 0 auto;
@@ -98,7 +98,7 @@
     background: rgba(148, 163, 184, 0.25);
 }
 .dark #sidebar.sidebar-mini .sidebar-section-divider .section-line {
-    background: rgba(71, 85, 105, 0.35);
+    background: rgba(63, 63, 70, 0.35);
 }
 
 /* ── Scrollbar unificado 4px (light + dark, mesmo visual) ─ */
@@ -107,7 +107,7 @@
     scrollbar-width: thin;
 }
 .dark * {
-    scrollbar-color: #475569 #1e293b;
+    scrollbar-color: #3f3f46 #18181b;
 }
 *::-webkit-scrollbar {
     width: 4px;
@@ -118,14 +118,14 @@
     border-radius: 2px;
 }
 .dark *::-webkit-scrollbar-track {
-    background: #1e293b;
+    background: #18181b;
 }
 *::-webkit-scrollbar-thumb {
     background: #94a3b8;
     border-radius: 2px;
 }
 .dark *::-webkit-scrollbar-thumb {
-    background: #475569;
+    background: #3f3f46;
 }
 *::-webkit-scrollbar-thumb:hover {
     background: #64748b;
@@ -176,7 +176,7 @@
     width: 100%;
 }
 .dark .cs-trigger {
-    background: #334155;
+    background: #27272a;
 }
 .cs-trigger:focus {
     outline: none;
@@ -221,8 +221,8 @@
     list-style: none;
 }
 .dark .cs-listbox {
-    background: #1e293b;
-    border-color: #334155;
+    background: #18181b;
+    border-color: #27272a;
     box-shadow: 0 8px 24px rgba(0,0,0,0.35);
 }
 .cs-option {
@@ -237,7 +237,7 @@
     text-overflow: ellipsis;
 }
 .dark .cs-option {
-    color: #e2e8f0;
+    color: #e4e4e7;
 }
 .cs-option.cs-active {
     background-color: #eef2ff;
@@ -304,11 +304,11 @@
     opacity: 1;
 }
 .dark .has-tooltip::after {
-    background: #e2e8f0;
-    color: #0f172a;
+    background: #e4e4e7;
+    color: #09090b;
 }
 .dark .has-tooltip::before {
-    border-top-color: #e2e8f0;
+    border-top-color: #e4e4e7;
 }
 
 /* Variante: tooltip ancorado à DIREITA do trigger (estende para a esquerda).
@@ -392,12 +392,12 @@
 }
 .dark .fc-day-sat,
 .dark .fc-day-sun {
-    background-color: rgba(15, 23, 42, 0.5);
+    background-color: rgba(9, 9, 11, 0.5);
 }
 
 /* ── FullCalendar dark mode overrides ───────────────────── */
 .dark .fc {
-    color: #cbd5e1;
+    color: #d4d4d8;
 }
 .dark .fc-theme-standard .fc-scrollgrid,
 .dark .fc-theme-standard td,
@@ -406,16 +406,16 @@
 }
 /* Header dos dias da semana (Dom/Seg/Ter) - antes brancos */
 .dark .fc-col-header-cell {
-    background-color: #1e293b;
+    background-color: #18181b;
 }
 .dark .fc-col-header-cell-cushion {
-    color: #94a3b8;
+    color: #a1a1aa;
     font-weight: 600;
 }
 .dark .fc-daygrid-day-number,
 .dark .fc-list-day-text,
 .dark .fc-list-day-side-text {
-    color: #cbd5e1;
+    color: #d4d4d8;
 }
 .dark .fc-daygrid-day.fc-day-today {
     background-color: rgba(99, 102, 241, 0.12) !important;
@@ -431,8 +431,8 @@
     background-color: #4338ca;
 }
 .dark .fc-button-primary:disabled {
-    background-color: #334155;
-    border-color: #334155;
+    background-color: #27272a;
+    border-color: #27272a;
 }
 .dark .fc-event {
     background-color: rgba(99, 102, 241, 0.75);
@@ -442,20 +442,20 @@
     background-color: rgba(255,255,255,0.05);
 }
 .dark .fc-popover {
-    background-color: #1e293b;
+    background-color: #18181b;
     border-color: rgba(255,255,255,0.08);
 }
 .dark .fc-popover-header {
-    background-color: #0f172a;
-    color: #cbd5e1;
+    background-color: #09090b;
+    color: #d4d4d8;
 }
 .dark .fc-list-empty {
     background-color: transparent;
-    color: #94a3b8;
+    color: #a1a1aa;
 }
 .dark .fc-day-other .fc-daygrid-day-number {
     opacity: 0.4;
 }
 .dark .fc-list-day-cushion {
-    background-color: #0f172a !important;
+    background-color: #09090b !important;
 }

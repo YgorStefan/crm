@@ -1,10 +1,10 @@
-<?php
+﻿<?php
 /**
  * View: admin/users/index.php — Lista de Usuários
  * Variáveis: $users
  */
 $roleLabels = ['admin' => 'Admin', 'seller' => 'Vendedor', 'viewer' => 'Leitor'];
-$roleBadges = ['admin' => 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300', 'seller' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300', 'viewer' => 'bg-gray-100 text-gray-600 dark:bg-slate-700 dark:text-slate-400'];
+$roleBadges = ['admin' => 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300', 'seller' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300', 'viewer' => 'bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400'];
 ?>
 <div class="flex items-center justify-between mb-6">
     <h3 class="text-2xl font-bold text-gray-800 dark:text-white">Usuários</h3>
@@ -14,30 +14,30 @@ $roleBadges = ['admin' => 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 d
     </a>
 </div>
 
-<div class="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden">
+<div class="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden">
     <div class="overflow-x-auto">
     <table class="w-full text-sm">
-        <thead class="bg-gray-50 dark:bg-slate-700/50 border-b border-gray-200 dark:border-slate-600">
+        <thead class="bg-gray-50 dark:bg-zinc-800/50 border-b border-gray-200 dark:border-zinc-700">
             <tr>
-                <th class="text-left px-5 py-3 font-semibold text-gray-600 dark:text-slate-400">Usuário</th>
-                <th class="text-left px-5 py-3 font-semibold text-gray-600 dark:text-slate-400">E-mail</th>
-                <th class="text-left px-5 py-3 font-semibold text-gray-600 dark:text-slate-400">Perfil</th>
-                <th class="text-left px-5 py-3 font-semibold text-gray-600 dark:text-slate-400">Status</th>
-                <th class="text-center px-5 py-3 font-semibold text-gray-600 dark:text-slate-400">Ações</th>
+                <th class="text-left px-5 py-3 font-semibold text-gray-600 dark:text-zinc-400">Usuário</th>
+                <th class="text-left px-5 py-3 font-semibold text-gray-600 dark:text-zinc-400">E-mail</th>
+                <th class="text-left px-5 py-3 font-semibold text-gray-600 dark:text-zinc-400">Perfil</th>
+                <th class="text-left px-5 py-3 font-semibold text-gray-600 dark:text-zinc-400">Status</th>
+                <th class="text-center px-5 py-3 font-semibold text-gray-600 dark:text-zinc-400">Ações</th>
             </tr>
         </thead>
-        <tbody class="divide-y divide-gray-100 dark:divide-slate-700">
+        <tbody class="divide-y divide-gray-100 dark:divide-zinc-800">
             <?php foreach ($users as $user): ?>
-            <tr class="hover:bg-gray-50 dark:hover:bg-slate-700/30 transition-colors">
+            <tr class="hover:bg-gray-50 dark:hover:bg-zinc-800/30 transition-colors">
                 <td class="px-5 py-3">
                     <div class="flex items-center gap-3">
                         <div class="w-8 h-8 rounded-full bg-indigo-100 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 flex items-center justify-center font-bold text-sm flex-shrink-0">
                             <?= strtoupper(substr($user['name'], 0, 1)) ?>
                         </div>
-                        <span class="font-medium text-gray-700 dark:text-slate-200"><?= htmlspecialchars($user['name'], ENT_QUOTES, 'UTF-8') ?></span>
+                        <span class="font-medium text-gray-700 dark:text-zinc-200"><?= htmlspecialchars($user['name'], ENT_QUOTES, 'UTF-8') ?></span>
                     </div>
                 </td>
-                <td class="px-5 py-3 text-gray-500 dark:text-slate-400"><?= htmlspecialchars($user['email'], ENT_QUOTES, 'UTF-8') ?></td>
+                <td class="px-5 py-3 text-gray-500 dark:text-zinc-400"><?= htmlspecialchars($user['email'], ENT_QUOTES, 'UTF-8') ?></td>
                 <td class="px-5 py-3">
                     <span class="px-2.5 py-1 rounded-full text-xs font-medium <?= $roleBadges[$user['role']] ?? $roleBadges['viewer'] ?>">
                         <?= $roleLabels[$user['role']] ?? $user['role'] ?>
