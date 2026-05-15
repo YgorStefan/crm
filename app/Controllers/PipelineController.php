@@ -62,7 +62,7 @@ class PipelineController extends Controller
         $this->render('pipeline/stages', [
             'pageTitle' => 'Gerenciar Etapas do Funil',
             'title' => 'Etapas — ' . APP_NAME,
-            'stages' => $stageModel->findAllOrdered(),
+            'stages' => $stageModel->findAllOrderedWithClientCount(),
             'csrf_token' => CsrfMiddleware::getToken(),
         ]);
     }

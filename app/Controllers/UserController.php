@@ -55,6 +55,7 @@ class UserController extends Controller
             return;
         }
 
+        $avatar = trim($_POST['avatar'] ?? '');
         $userModel = new User();
         $userModel->create([
             'name' => $name,
@@ -62,6 +63,7 @@ class UserController extends Controller
             // Aplica o hash bcrypt — nunca armazene senhas em texto puro
             'password_hash' => password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]),
             'role' => in_array($role, ['admin', 'seller', 'viewer']) ? $role : 'seller',
+            'avatar' => !empty($avatar) ? $avatar : null,
         ]);
 
         $this->flash('success', "Usuário \"{$name}\" criado com sucesso!");
@@ -102,11 +104,13 @@ class UserController extends Controller
         }
 
         $requestedRole = $this->inputRaw('role', 'seller');
+        $avatar = trim($_POST['avatar'] ?? '');
         $data = [
             'name' => $this->input('name'),
             'email' => $email,
             'role' => in_array($requestedRole, ['admin', 'seller', 'viewer'], true) ? $requestedRole : 'seller',
             'is_active' => isset($_POST['is_active']) ? 1 : 0,
+            'avatar' => !empty($avatar) ? $avatar : null,
         ];
 
         // Atualiza senha apenas se foi preenchida

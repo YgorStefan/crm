@@ -77,6 +77,7 @@ class ColdContactController extends Controller
      */
     public function import(array $params = []): void
     {
+        $this->requireRole(['admin', 'seller']);
         $tipoLista = trim($_POST['tipo_lista'] ?? '');
         $telefoneEnviado = trim($_POST['telefone_enviado'] ?? '');
         $dataMensagem = trim($_POST['data_mensagem'] ?? '');
@@ -182,6 +183,12 @@ class ColdContactController extends Controller
     public function update(array $params = []): void
     {
         header('Content-Type: application/json');
+        $role = $_SESSION['user']['role'] ?? '';
+        if (!in_array($role, ['admin', 'seller'], true)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Acesso negado.']);
+            exit;
+        }
         $id = (int) ($params['id'] ?? 0);
 
         if (!$id) {
@@ -235,6 +242,12 @@ class ColdContactController extends Controller
     public function destroy(array $params = []): void
     {
         header('Content-Type: application/json');
+        $role = $_SESSION['user']['role'] ?? '';
+        if (!in_array($role, ['admin', 'seller'], true)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Acesso negado.']);
+            exit;
+        }
         $id = (int) ($params['id'] ?? 0);
 
         if (!$id) {
@@ -258,6 +271,12 @@ class ColdContactController extends Controller
     public function deleteMonth(array $params = []): void
     {
         header('Content-Type: application/json');
+        $role = $_SESSION['user']['role'] ?? '';
+        if (!in_array($role, ['admin', 'seller'], true)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Acesso negado.']);
+            exit;
+        }
         $yearMonth = trim($params['year_month'] ?? '');
 
         if (empty($yearMonth) || !preg_match('/^\d{4}-\d{2}$/', $yearMonth)) {
@@ -342,6 +361,12 @@ class ColdContactController extends Controller
     public function bulkUpdate(array $params = []): void
     {
         header('Content-Type: application/json');
+        $role = $_SESSION['user']['role'] ?? '';
+        if (!in_array($role, ['admin', 'seller'], true)) {
+            http_response_code(403);
+            echo json_encode(['success' => false, 'error' => 'Acesso negado.']);
+            exit;
+        }
 
         $telefone = trim($_POST['telefone_enviado'] ?? '');
         $dataMsg = trim($_POST['data_mensagem'] ?? '');

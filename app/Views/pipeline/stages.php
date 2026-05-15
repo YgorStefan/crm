@@ -60,7 +60,8 @@
             <?php foreach ($stages as $stage): ?>
                 <div class="px-5 py-3 flex items-center gap-3" data-stage-id="<?= $stage['id'] ?>"
                     data-stage-name="<?= htmlspecialchars($stage['name'], ENT_QUOTES, 'UTF-8') ?>"
-                    data-stage-color="<?= htmlspecialchars($stage['color'], ENT_QUOTES, 'UTF-8') ?>">
+                    data-stage-color="<?= htmlspecialchars($stage['color'], ENT_QUOTES, 'UTF-8') ?>"
+                    data-client-count="<?= (int)($stage['client_count'] ?? 0) ?>">
 
                     <!-- MODO VISUALIZAÇÃO -->
                     <div class="view-mode flex items-center gap-3 flex-1">
@@ -72,7 +73,7 @@
                             <span class="text-sm font-medium text-gray-700 dark:text-zinc-200 stage-name-text">
                                 <?= htmlspecialchars($stage['name'], ENT_QUOTES, 'UTF-8') ?>
                             </span>
-                            <span class="ml-2 text-xs text-gray-400 dark:text-zinc-500">Posição <?= $stage['position'] ?></span>
+                            <span class="ml-2 text-xs text-gray-400 dark:text-zinc-500">Posição <?= $stage['position'] ?> · <?= (int)($stage['client_count'] ?? 0) ?> cliente(s)</span>
                         </div>
                     </div>
 
@@ -276,8 +277,11 @@
             form.addEventListener('submit', function (e) {
                 const row = this.closest('[data-stage-id]');
                 const name = row ? row.dataset.stageName : '';
-                if (!confirm('Remover a etapa "' + name + '"?\n' +
-                        'Todos os clientes nesta etapa ficarão sem etapa se não houver outra.')) {
+                const count = row ? parseInt(row.dataset.clientCount || '0', 10) : 0;
+                const countMsg = count > 0
+                    ? count + ' cliente(s) nesta etapa perderão a etapa.'
+                    : 'Esta etapa está vazia.';
+                if (!confirm('Remover a etapa "' + name + '"?\n' + countMsg)) {
                     e.preventDefault();
                 }
             });

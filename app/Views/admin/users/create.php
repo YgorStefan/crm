@@ -30,6 +30,11 @@
                     <option value="viewer">Leitor</option>
                 </select>
             </div>
+            <div>
+                <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">URL do Avatar <span class="text-xs text-gray-400">(opcional)</span></label>
+                <input type="url" name="avatar" placeholder="https://..."
+                       class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </div>
         </div>
         <div class="px-6 py-4 bg-gray-50 dark:bg-zinc-800/30 flex justify-end gap-3">
             <a href="<?= APP_URL ?>/admin/users" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 dark:border-zinc-700 transition-colors">Cancelar</a>

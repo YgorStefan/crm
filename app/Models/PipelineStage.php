@@ -73,6 +73,24 @@ class PipelineStage extends Model
     }
 
     /**
+     * Retorna etapas ordenadas com contagem de clientes ativos.
+     */
+    public function findAllOrderedWithClientCount(): array
+    {
+        $t = $this->currentTenantId();
+        $stmt = $this->db->prepare(
+            "SELECT ps.*, COUNT(c.id) AS client_count
+             FROM pipeline_stages ps
+             LEFT JOIN clients c ON c.pipeline_stage_id = ps.id AND c.tenant_id = :t2 AND c.is_active = 1
+             WHERE ps.tenant_id = :t
+             GROUP BY ps.id
+             ORDER BY ps.position ASC"
+        );
+        $stmt->execute([':t' => $t, ':t2' => $t]);
+        return $stmt->fetchAll();
+    }
+
+    /**
      * Verifica se a etapa possui clientes vinculados.
      */
     public function hasClients(int $stageId): bool

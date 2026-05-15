@@ -217,6 +217,8 @@
         const calendarEl = document.getElementById('fc-calendar');
         const appUrl = '<?= APP_URL ?>';
         let csrfToken = '<?= htmlspecialchars($csrf_token, ENT_QUOTES, "UTF-8") ?>';
+        const USER_ROLE = '<?= htmlspecialchars($_SESSION['user']['role'] ?? '', ENT_QUOTES, 'UTF-8') ?>';
+        const USER_ID = <?= (int)($_SESSION['user']['id'] ?? 0) ?>;
         let selectedDate = null;
 
         // Estado dos filtros rapidos
@@ -351,6 +353,7 @@
             document.getElementById('task_priority').value = 'medium';
             document.getElementById('task_description').value = '';
             document.getElementById('taskActionBtns').style.display = 'none';
+            document.getElementById('btnSaveTask').style.display = USER_ROLE === 'viewer' ? 'none' : '';
             document.getElementById('modalTask').style.display = 'flex';
         }
 
@@ -371,8 +374,11 @@
                 if (assignedEl && task.assigned_to) {
                     assignedEl.value = task.assigned_to;
                 }
-                // Mostra botoes de acao (Excluir / Concluida) apenas em modo edicao
-                document.getElementById('taskActionBtns').style.display = 'flex';
+                // Mostra botoes de acao apenas para quem pode editar a tarefa
+                const canEdit = USER_ROLE === 'admin' ||
+                    (USER_ROLE === 'seller' && (task.assigned_to == USER_ID || task.created_by == USER_ID));
+                document.getElementById('taskActionBtns').style.display = canEdit ? 'flex' : 'none';
+                document.getElementById('btnSaveTask').style.display = canEdit ? '' : 'none';
                 // Ajusta label do botao Concluida conforme status atual
                 const btnToggle = document.getElementById('btnToggleDone');
                 if (task.status === 'done') {

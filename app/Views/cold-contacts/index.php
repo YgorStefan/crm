@@ -10,6 +10,7 @@
 </div>
 
 <!-- Formulário de importação -->
+<?php if (in_array($_SESSION['user']['role'] ?? '', ['admin', 'seller'])): ?>
 <div class="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 p-4 mb-8">
     <div class="flex items-center gap-2 mb-3">
         <h4 class="font-semibold text-gray-700 dark:text-zinc-200">Importar lista</h4>
@@ -69,6 +70,7 @@
         </div>
     </form>
 </div>
+<?php endif; ?>
 
 <!-- Cards Mensais -->
 <div>
@@ -102,6 +104,7 @@
                                 Ver lista
                             </button>
                             <!-- Botão excluir mês -->
+                            <?php if (in_array($_SESSION['user']['role'] ?? '', ['admin', 'seller'])): ?>
                             <button type="button"
                                 class="btn-delete-month bg-red-50 hover:bg-red-100 text-red-600 dark:bg-red-900/20 dark:hover:bg-red-900/30 dark:text-red-400 px-2.5 py-2 rounded-lg transition-colors flex items-center justify-center"
                                 data-year-month="<?= htmlspecialchars($s['mes_ano'], ENT_QUOTES, 'UTF-8') ?>"
@@ -109,6 +112,7 @@
                                 title="Excluir">
                                 🗑️
                             </button>
+                            <?php endif; ?>
                         </div>
                     </div>
                 </div>
@@ -205,6 +209,7 @@
 <script nonce="<?= CSP_NONCE ?>">
     window.CSRF_TOKEN = '<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>';
     window.APP_URL = '<?= APP_URL ?>';
+    window.CAN_EDIT = <?= in_array($_SESSION['user']['role'] ?? '', ['admin', 'seller']) ? 'true' : 'false' ?>;
 </script>
 
 <!-- SheetJS para conversão client-side de XLS/XLSX para CSV -->
@@ -455,7 +460,7 @@
 
             let html = '<table class="w-full text-sm">';
             html += '<thead><tr class="border-b border-gray-200 dark:border-zinc-700">';
-            html += '<th class="py-2 px-2"><input type="checkbox" id="checkAll" class="rounded"></th>';
+            html += '<th class="py-2 px-2">' + (window.CAN_EDIT ? '<input type="checkbox" id="checkAll" class="rounded">' : '') + '</th>';
             html += '<th class="text-left py-2 px-2 text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase">Celular</th>';
             html += '<th class="text-left py-2 px-2 text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase">Nome</th>';
             html += '<th class="text-left py-2 px-2 text-xs font-semibold text-gray-500 dark:text-zinc-400 uppercase">Tipo de lista</th>';
@@ -567,15 +572,17 @@
                     '</tr>';
             }
             return '<tr data-id="' + id + '" class="border-b border-gray-100 dark:border-zinc-800 hover:bg-gray-50 dark:hover:bg-zinc-800/30">' +
-                '<td class="py-2 px-2"><input type="checkbox" class="row-check rounded" data-id="' + id + '"></td>' +
+                '<td class="py-2 px-2">' + (window.CAN_EDIT ? '<input type="checkbox" class="row-check rounded" data-id="' + id + '">' : '') + '</td>' +
                 '<td class="py-2 px-2 text-gray-800 dark:text-zinc-200">' + esc(c.phone) + '</td>' +
                 '<td class="py-2 px-2 text-gray-800 dark:text-zinc-200">' + esc(c.name) + '</td>' +
                 '<td class="py-2 px-2 text-gray-500 dark:text-zinc-400 text-xs">' + esc(c.tipo_lista) + '</td>' +
                 '<td class="py-2 px-2 text-gray-500 dark:text-zinc-400 text-xs">' + esc(c.telefone_enviado || '\u2014') + '</td>' +
                 '<td class="py-2 px-2 text-gray-500 dark:text-zinc-400 text-xs">' + (c.data_mensagem ? formatDate(c.data_mensagem) : '\u2014') + '</td>' +
                 '<td class="py-2 px-2 whitespace-nowrap">' +
-                '<button class="btn-edit text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300" title="Editar" data-id="' + id + '" data-contact=\'' + JSON.stringify(c).replace(/'/g, '&#39;') + '\'>✏️</button>' +
-                '<button class="btn-delete text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 ml-2" title="Excluir" data-id="' + id + '">🗑️</button>' +
+                (window.CAN_EDIT
+                    ? '<button class="btn-edit text-indigo-600 hover:text-indigo-800 dark:text-indigo-400 dark:hover:text-indigo-300" title="Editar" data-id="' + id + '" data-contact=\'' + JSON.stringify(c).replace(/'/g, '&#39;') + '\'>✏️</button>' +
+                      '<button class="btn-delete text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 ml-2" title="Excluir" data-id="' + id + '">🗑️</button>'
+                    : '') +
                 '</td>' +
                 '</tr>';
         }
