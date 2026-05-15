@@ -127,6 +127,14 @@ class UserController extends Controller
         $userModel = new User();
         $userModel->update($id, $data);
 
+        // Atualiza a sessão se o admin editou o próprio perfil
+        if ($id === (int) ($_SESSION['user']['id'] ?? 0)) {
+            $_SESSION['user']['name']   = $data['name'];
+            $_SESSION['user']['email']  = $data['email'];
+            $_SESSION['user']['role']   = $data['role'];
+            $_SESSION['user']['avatar'] = $data['avatar'];
+        }
+
         $this->flash('success', 'Usuário atualizado com sucesso!');
         $this->redirect('/admin/users');
     }

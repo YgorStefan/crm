@@ -133,13 +133,22 @@ $assetV = static function (string $rel): string {
                 <div class="section-line section-line-right"></div>
             </div>
             <div class="sidebar-user-footer flex items-center gap-3 px-2 py-2 rounded-lg">
+                <?php $__avatar = $_SESSION['user']['avatar'] ?? ''; ?>
                 <a href="<?= $safeAppUrl ?>/logout" title="Sair"
-                    class="sidebar-avatar-logout w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-sm font-bold text-white flex-shrink-0 hover:ring-2 hover:ring-red-400 transition-all"
+                    class="sidebar-avatar-logout w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-sm font-bold text-white flex-shrink-0 hover:ring-2 hover:ring-red-400 transition-all overflow-hidden"
                     style="display:none">
-                    <?= strtoupper(substr($_SESSION['user']['name'] ?? 'U', 0, 1)) ?>
+                    <?php if ($__avatar): ?>
+                        <img src="<?= htmlspecialchars($__avatar, ENT_QUOTES, 'UTF-8') ?>" alt="" class="w-full h-full object-cover">
+                    <?php else: ?>
+                        <?= strtoupper(substr($_SESSION['user']['name'] ?? 'U', 0, 1)) ?>
+                    <?php endif; ?>
                 </a>
-                <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-sm font-bold text-white flex-shrink-0 sidebar-avatar-normal">
-                    <?= strtoupper(substr($_SESSION['user']['name'] ?? 'U', 0, 1)) ?>
+                <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-sm font-bold text-white flex-shrink-0 sidebar-avatar-normal overflow-hidden">
+                    <?php if ($__avatar): ?>
+                        <img src="<?= htmlspecialchars($__avatar, ENT_QUOTES, 'UTF-8') ?>" alt="" class="w-full h-full object-cover">
+                    <?php else: ?>
+                        <?= strtoupper(substr($_SESSION['user']['name'] ?? 'U', 0, 1)) ?>
+                    <?php endif; ?>
                 </div>
                 <div class="user-info flex-1 min-w-0">
                     <p class="text-sm font-medium text-gray-700 dark:text-zinc-200 truncate">
