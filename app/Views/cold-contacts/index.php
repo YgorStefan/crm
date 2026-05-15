@@ -130,7 +130,7 @@
         <div class="px-6 py-4 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between flex-shrink-0">
             <h4 id="modalTitle" class="font-semibold text-gray-800 dark:text-white text-lg">Contatos do mês</h4>
             <button id="btnCloseModal"
-                class="text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-slate-300 text-2xl font-bold leading-none">&times;</button>
+                class="text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 text-2xl font-bold leading-none">&times;</button>
         </div>
 
         <!-- Filtros e exportação -->
@@ -179,7 +179,7 @@
                 class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-1 rounded-lg text-sm transition-colors ml-auto">
                 Atualizar Marcados
             </button>
-            <button id="btnBulkCancel" class="text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-slate-200 text-sm font-medium">
+            <button id="btnBulkCancel" class="text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200 text-sm font-medium">
                 Cancelar
             </button>
         </div>
@@ -511,7 +511,7 @@
                     '<td class="py-2 px-2"><input type="date" max="9999-12-31" class="border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded px-2 py-1 text-xs focus:ring-2 focus:ring-indigo-500 focus:outline-none" name="data_mensagem" value="' + esc(c.data_mensagem || '') + '"></td>' +
                     '<td class="py-2 px-2 whitespace-nowrap">' +
                     '<button class="btn-save text-green-600 hover:text-green-800 dark:text-green-400 dark:hover:text-green-300 font-medium text-xs mr-2" data-id="' + id + '">Salvar</button>' +
-                    '<button class="btn-cancel text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-slate-200 font-medium text-xs" data-id="' + id + '">Cancelar</button>' +
+                    '<button class="btn-cancel text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200 font-medium text-xs" data-id="' + id + '">Cancelar</button>' +
                     '</td>' +
                     '</tr>';
             }

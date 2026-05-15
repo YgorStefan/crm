@@ -37,7 +37,7 @@ $roleBadges = [
            aria-selected="<?= $activeTab === $key ? 'true' : 'false' ?>"
            class="px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors <?= $activeTab === $key
                 ? 'border-indigo-600 text-indigo-700 dark:text-indigo-400 dark:border-indigo-400'
-                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-slate-200 hover:border-gray-300 dark:hover:border-slate-600' ?>">
+                : 'border-transparent text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200 hover:border-gray-300 dark:hover:border-zinc-700' ?>">
             <?= htmlspecialchars($label, ENT_QUOTES, 'UTF-8') ?>
         </a>
     <?php endforeach; ?>

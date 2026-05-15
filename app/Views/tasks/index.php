@@ -106,7 +106,7 @@
         <div class="px-6 py-5 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between">
             <h4 id="modalTaskTitle" class="text-lg font-bold text-gray-800 dark:text-white">Nova Tarefa</h4>
             <button onclick="document.getElementById('modalTask').style.display='none'"
-                class="text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-slate-300 text-2xl">&times;</button>
+                class="text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300 text-2xl">&times;</button>
         </div>
         <div class="px-6 py-5 space-y-4">
             <input type="hidden" id="task_id" value="">

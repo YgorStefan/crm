@@ -220,7 +220,7 @@
     <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between">
             <h4 class="font-bold text-gray-800 dark:text-white">💬 Nova Interação — <span id="qiClientName"></span></h4>
-            <button onclick="document.getElementById('modalQuickInteraction').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-slate-300 text-xl">&times;</button>
+            <button onclick="document.getElementById('modalQuickInteraction').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300 text-xl">&times;</button>
         </div>
         <form method="POST" action="<?= APP_URL ?>/interactions/store" class="px-6 py-5 space-y-4">
             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
@@ -259,7 +259,7 @@
     <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between">
             <h4 class="font-bold text-gray-800 dark:text-white">📅 Nova Tarefa — <span id="qtClientName"></span></h4>
-            <button onclick="document.getElementById('modalQuickTask').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-slate-300 text-xl">&times;</button>
+            <button onclick="document.getElementById('modalQuickTask').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300 text-xl">&times;</button>
         </div>
         <form method="POST" action="<?= APP_URL ?>/tasks/store" class="px-6 py-5 space-y-4">
             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">

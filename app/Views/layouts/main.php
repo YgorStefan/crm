@@ -57,14 +57,14 @@ $assetV = static function (string $rel): string {
             <button id="sidebarCollapseBtn"
                 class="hidden lg:flex items-center justify-center w-8 h-8 rounded-lg flex-shrink-0
                        text-gray-400 hover:text-gray-600 hover:bg-gray-100
-                       dark:text-zinc-500 dark:hover:text-slate-300 dark:hover:bg-zinc-800 transition-colors"
+                       dark:text-zinc-500 dark:hover:text-zinc-300 dark:hover:bg-zinc-800 transition-colors"
                 title="Colapsar menu">
                 ☰
             </button>
             <!-- Mobile: fecha overlay -->
             <button id="closeSidebarBtn"
                 class="lg:hidden flex items-center justify-center w-8 h-8 rounded-lg
-                       text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-slate-300 transition-colors">
+                       text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300 transition-colors">
                 ✕
             </button>
         </div>
@@ -94,17 +94,17 @@ $assetV = static function (string $rel): string {
                 </div>
                 <div class="space-y-0.5">
                     <a href="https://avapro.ademicon.com.br/" target="_blank" rel="noopener noreferrer"
-                        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-slate-200 transition-colors">
+                        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors">
                         🔗
                         <span class="nav-label">AVA Pro</span>
                     </a>
                     <a href="https://webmail.autorizadoademicon.com.br/?_task=mail&_mbox=INBOX" target="_blank" rel="noopener noreferrer"
-                        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-slate-200 transition-colors">
+                        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors">
                         📧
                         <span class="nav-label">Webmail</span>
                     </a>
                     <a href="https://crmapollo.com.br/app/views/index.php" target="_blank" rel="noopener noreferrer"
-                        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-slate-200 transition-colors">
+                        class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 dark:text-zinc-400 dark:hover:bg-zinc-800 dark:hover:text-zinc-200 transition-colors">
                         🏠
                         <span class="nav-label">CRM Apollo</span>
                     </a>
@@ -166,7 +166,7 @@ $assetV = static function (string $rel): string {
 
             <!-- Hambúrguer (mobile apenas) -->
             <button id="sidebarToggle"
-                class="lg:hidden text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-slate-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors">
+                class="lg:hidden text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors">
                 ☰
             </button>
 
@@ -209,7 +209,7 @@ $assetV = static function (string $rel): string {
                     class="relative inline-flex w-11 h-6 rounded-full cursor-pointer
                            bg-gray-200 dark:bg-indigo-600
                            transition-colors duration-300
-                           focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 dark:focus:ring-offset-slate-800"
+                           focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-1 dark:focus:ring-offset-zinc-900"
                     title="Alternar tema (Ctrl+Shift+L)">
                     <!-- Lua: lado esquerdo, visível no dark mode -->
                     <span class="absolute left-1 top-1/2 -translate-y-1/2 text-xs leading-none opacity-0 transition-opacity duration-300 dark:opacity-100">🌙</span>

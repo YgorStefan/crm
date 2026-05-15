@@ -88,9 +88,9 @@
                     <!-- AÇÕES -->
                     <div class="flex items-center gap-2 flex-shrink-0">
                         <!-- Botões -->
-                        <button type="button" class="btn-move text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-slate-300 text-sm leading-none"
+                        <button type="button" class="btn-move text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300 text-sm leading-none"
                             data-direction="up" title="Mover para cima">↑</button>
-                        <button type="button" class="btn-move text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-slate-300 text-sm leading-none"
+                        <button type="button" class="btn-move text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300 text-sm leading-none"
                             data-direction="down" title="Mover para baixo">↓</button>
 
                         <!-- Botao Won Stage Toggle (FRAG-03) -->
@@ -116,7 +116,7 @@
 
                         <!-- Botão Cancelar -->
                         <button type="button"
-                            class="btn-cancel hidden text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-slate-300 text-sm">Cancelar</button>
+                            class="btn-cancel hidden text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300 text-sm">Cancelar</button>
 
                         <!-- Form de deleção -->
                         <form method="POST" action="<?= APP_URL ?>/pipeline/stages/<?= (int)$stage['id'] ?>/delete"
