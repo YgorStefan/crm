@@ -94,6 +94,7 @@
                     <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-slate-400 hidden md:table-cell">Empresa</th>
                     <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-slate-400 hidden lg:table-cell">Contato</th>
                     <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-slate-400">Etapa</th>
+                    <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-slate-400 hidden lg:table-cell">Tipo</th>
                     <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-slate-400 hidden lg:table-cell">Valor</th>
                     <th class="text-left px-4 py-3 font-semibold text-gray-600 dark:text-slate-400 hidden xl:table-cell">Responsável</th>
                     <th class="text-center px-4 py-3 font-semibold text-gray-600 dark:text-slate-400">Ações</th>
@@ -136,6 +137,12 @@
                               style="background-color: <?= htmlspecialchars($client['stage_color'] ?? '#6366f1', ENT_QUOTES, 'UTF-8') ?>">
                             <?= htmlspecialchars($client['stage_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>
                         </span>
+                    </td>
+                    <!-- Tipo de venda -->
+                    <td class="px-4 py-3 text-gray-600 dark:text-slate-400 hidden lg:table-cell">
+                        <?= !empty($client['tipo_venda'])
+                            ? htmlspecialchars($client['tipo_venda'], ENT_QUOTES, 'UTF-8')
+                            : '<span class="text-gray-400 dark:text-slate-500">—</span>' ?>
                     </td>
                     <!-- Valor do negócio -->
                     <td class="px-4 py-3 text-gray-600 dark:text-slate-400 hidden lg:table-cell">
