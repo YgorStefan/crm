@@ -93,7 +93,7 @@ Step "git push origin $branch"
 if ($DryRun) {
     Warn "DRY-RUN: git push origin $branch"
 } else {
-    git push origin $branch 2>&1 | Out-Host
+    git push origin $branch
     if ($LASTEXITCODE -ne 0) { Die 'git push falhou.' }
 }
 
