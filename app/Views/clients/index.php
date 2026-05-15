@@ -13,7 +13,7 @@
         <div class="grid grid-cols-2 lg:flex lg:items-center gap-2 flex-1">
             <input type="text" name="search" value="<?= htmlspecialchars($filters['search'], ENT_QUOTES, 'UTF-8') ?>"
                    placeholder="Buscar por nome, empresa..."
-                   class="col-span-2 lg:flex-none lg:w-44 lg:min-w-0 px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                   class="col-span-2 lg:flex-none lg:w-64 lg:min-w-0 px-3 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white dark:placeholder-slate-400 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
 
             <select name="stage_id" class="lg:w-36 px-2 py-2 border border-gray-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 <option value="">Etapa</option>
@@ -39,9 +39,7 @@
                 <option value="Veículo" <?= ($filters['tipo_venda'] ?? '') === 'Veículo' ? 'selected' : '' ?>>Veículo</option>
                 <option value="Serviço" <?= ($filters['tipo_venda'] ?? '') === 'Serviço' ? 'selected' : '' ?>>Serviço</option>
             </select>
-        </div>
 
-        <div class="flex items-center gap-1.5 flex-shrink-0">
             <button type="submit"
                     class="inline-flex items-center justify-center px-4 h-9 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg text-sm transition-colors whitespace-nowrap">
                 Filtrar
@@ -50,11 +48,12 @@
                class="inline-flex items-center justify-center px-4 h-9 bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-slate-700 dark:hover:bg-slate-600 dark:text-slate-200 font-medium rounded-lg text-sm transition-colors whitespace-nowrap">
                 Limpar
             </a>
-            <a href="<?= APP_URL ?>/clients/create"
-               class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-3 py-2 rounded-lg text-sm transition-colors ml-1 whitespace-nowrap">
-                ➕ Novo
-            </a>
         </div>
+
+        <a href="<?= APP_URL ?>/clients/create"
+           class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-3 py-2 rounded-lg text-sm transition-colors flex-shrink-0 whitespace-nowrap">
+            ➕ Novo
+        </a>
     </form>
 </div>
 <script nonce="<?= CSP_NONCE ?>">
