@@ -193,8 +193,8 @@ $assetV = static function (string $rel): string {
                                z-50 max-h-64 overflow-y-auto overflow-x-hidden">
                         <div class="px-4 py-3 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between">
                             <span class="text-sm font-semibold text-gray-700 dark:text-zinc-200">Notificações</span>
-                            <button id="btnClearNotifs" data-tooltip="Limpar todas"
-                                class="has-tooltip text-gray-500 hover:text-indigo-600 dark:text-zinc-400 dark:hover:text-indigo-400 transition-colors p-1 rounded-md hover:bg-gray-100 dark:hover:bg-zinc-800">
+                            <button id="btnClearNotifs"
+                                class="text-gray-500 hover:text-indigo-600 dark:text-zinc-400 dark:hover:text-indigo-400 transition-colors p-1 rounded-md hover:bg-gray-100 dark:hover:bg-zinc-800">
                                 🗑️
                             </button>
                         </div>
