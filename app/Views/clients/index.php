@@ -150,7 +150,7 @@
                         <?php endif; ?>
                     </td>
                     <!-- Etapa com badge colorido -->
-                    <td class="px-4 py-3">
+                    <td class="px-4 py-3 whitespace-nowrap">
                         <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium text-white"
                               style="background-color: <?= htmlspecialchars($client['stage_color'] ?? '#6366f1', ENT_QUOTES, 'UTF-8') ?>">
                             <?= htmlspecialchars($client['stage_name'] ?? '', ENT_QUOTES, 'UTF-8') ?>
