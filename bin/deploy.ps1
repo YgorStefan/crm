@@ -67,7 +67,8 @@ if ($SkipBuild) {
     if ($DryRun) {
         Warn 'DRY-RUN: npm run build'
     } else {
-        npm run build 2>&1 | Out-Host
+        $buildOutput = npm run build 2>&1
+        $buildOutput | ForEach-Object { Write-Host $_ }
         if ($LASTEXITCODE -ne 0) { Die 'npm run build falhou.' }
     }
 
@@ -79,7 +80,7 @@ if ($SkipBuild) {
             Warn 'DRY-RUN: git add + git commit "chore: rebuild css"'
         } else {
             git add public/assets/css/tailwind.css
-            git commit -m 'chore: rebuild css'
+            git commit -m 'rebuild css'
             if ($LASTEXITCODE -ne 0) { Die 'commit do CSS falhou.' }
         }
     } else {
