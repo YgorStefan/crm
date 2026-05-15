@@ -79,11 +79,12 @@ class PipelineStage extends Model
     {
         $t = $this->currentTenantId();
         $stmt = $this->db->prepare(
-            "SELECT ps.*, COUNT(c.id) AS client_count
+            "SELECT ps.id, ps.name, ps.color, ps.position, ps.is_won_stage, ps.tenant_id,
+                    COUNT(c.id) AS client_count
              FROM pipeline_stages ps
              LEFT JOIN clients c ON c.pipeline_stage_id = ps.id AND c.tenant_id = :t2 AND c.is_active = 1
              WHERE ps.tenant_id = :t
-             GROUP BY ps.id
+             GROUP BY ps.id, ps.name, ps.color, ps.position, ps.is_won_stage, ps.tenant_id
              ORDER BY ps.position ASC"
         );
         $stmt->execute([':t' => $t, ':t2' => $t]);
