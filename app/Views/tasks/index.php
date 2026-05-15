@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 ?>
 
 <!-- Alerta compacto: Tarefas Atrasadas (colapsavel + dispensavel por sessao) -->

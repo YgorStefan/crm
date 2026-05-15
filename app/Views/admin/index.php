@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * View: admin/index.php — Painel administrativo unificado com 3 abas.
  * Variaveis: $activeTab, $csrf_token, $users (na aba users), $tenant (nas abas org/payment)

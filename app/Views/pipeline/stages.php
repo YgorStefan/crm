@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 ?>
 <style nonce="<?= CSP_NONCE ?>">
     /* Arredonda o swatch interno do <input type="color"> em todos os browsers */

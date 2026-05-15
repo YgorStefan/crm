@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 ?>
 <!-- Toolbar unificada: titulo + filtros + acoes em uma linha -->
 <div class="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 p-3 mb-4">
@@ -50,6 +50,8 @@
             </a>
         </div>
 
+        <input type="hidden" name="sort" value="<?= htmlspecialchars($filters['sort'], ENT_QUOTES, 'UTF-8') ?>">
+        <input type="hidden" name="dir"  value="<?= htmlspecialchars($filters['dir'],  ENT_QUOTES, 'UTF-8') ?>">
         <a href="<?= APP_URL ?>/clients/create"
            class="inline-flex items-center gap-1.5 bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-3 py-2 rounded-lg text-sm transition-colors flex-shrink-0 whitespace-nowrap">
             ➕ Novo
@@ -99,7 +101,7 @@
         $cls = $active
             ? 'text-indigo-600 dark:text-indigo-400 font-semibold'
             : 'hover:text-indigo-600 dark:hover:text-indigo-400';
-        return "<a href=\"" . APP_URL . "/clients?{$qs}\" class=\"{$cls}\">{$label}{$icon}</a>";
+        return "<a href=\"" . APP_URL . "/clients?{$qs}\" class=\"{$cls}\">" . htmlspecialchars($label, ENT_QUOTES, 'UTF-8') . "{$icon}</a>";
     };
     ?>
     <div class="overflow-x-auto">

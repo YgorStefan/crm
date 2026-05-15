@@ -1,4 +1,4 @@
-﻿<?php /** View: admin/users/edit.php */ ?>
+<?php /** View: admin/users/edit.php */ ?>
 <div class="max-w-lg mx-auto">
     <div class="flex items-center gap-3 mb-6">
         <a href="<?= APP_URL ?>/admin/users" class="inline-flex items-center gap-1.5 text-sm font-medium text-gray-500 hover:text-indigo-600 dark:text-zinc-400 dark:hover:text-indigo-400 bg-gray-100 hover:bg-indigo-50 dark:bg-zinc-800 dark:hover:bg-indigo-900/30 px-3 py-1.5 rounded-lg transition-all">

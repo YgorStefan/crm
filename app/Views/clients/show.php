@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 $interactionTypes = [
     'call'     => ['label' => 'Ligação',  'icon' => '📞', 'color' => 'blue'],
     'email'    => ['label' => 'E-mail',   'icon' => '📧', 'color' => 'green'],

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 ?>
 <div class="max-w-4xl mx-auto">
     <div class="flex items-center gap-3 mb-6">

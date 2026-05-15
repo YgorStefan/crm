@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 $safeAppUrl = htmlspecialchars(APP_URL, ENT_QUOTES, 'UTF-8');
 $assetV = static function (string $rel): string {
     $abs = __DIR__ . '/../../../public/' . ltrim($rel, '/');

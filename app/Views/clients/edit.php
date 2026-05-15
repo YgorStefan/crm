@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 // Variáveis injetadas pelo Controller::render() via extract($data)
 $client     = $client ?? [];
 $stages     = $stages ?? [];

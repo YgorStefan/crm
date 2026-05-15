@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * View: admin/users/index.php — Lista de Usuários
  * Variáveis: $users

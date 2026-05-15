@@ -1,4 +1,4 @@
-﻿<?php ?>
+<?php ?>
 <div class="max-w-2xl mx-auto">
     <div class="flex items-center gap-3 mb-6">
         <h3 class="text-2xl font-bold text-gray-800 dark:text-white">Configurações da Organização</h3>

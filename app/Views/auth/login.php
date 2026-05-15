@@ -1,4 +1,4 @@
-﻿<?php ?>
+<?php ?>
 <div class="w-full max-w-xs bg-white dark:bg-zinc-900 rounded-2xl shadow-xl overflow-hidden">
 
     <!-- Cabeçalho colorido -->

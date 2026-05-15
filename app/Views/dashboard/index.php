@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 $totalValue = array_sum(array_column($stageData, 'total_value'));
 $wonStage = array_filter($stageData, fn($s) => !empty($s['is_won_stage']));
 $wonRevenue = array_sum(array_column($wonStage, 'total_value'));

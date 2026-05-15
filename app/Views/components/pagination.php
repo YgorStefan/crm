@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 /**
  * Componente de paginação reutilizável.
  *

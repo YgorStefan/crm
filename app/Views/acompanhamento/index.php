@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 $totalClientes = !empty($stages) ? array_sum(array_column($stages, 'total')) : 0;
 $temDados = $totalClientes > 0 || $abordados > 0;
 ?>
