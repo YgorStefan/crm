@@ -159,18 +159,21 @@ APP_ENV=development
 **3. Importe o schema do banco**
 ```bash
 # Crie o banco primeiro
-mysql -u root -p -e "CREATE DATABASE crm_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+mysql -u root -p -e "CREATE DATABASE crm CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
 
 # Importe o schema completo
-mysql -u root -p crm_db < database/schema.sql
+mysql -u root -p crm < database/schema.sql
 ```
 
-Para atualizações posteriores, rode as migrações em ordem:
+Para atualizações posteriores, use o **runner de migrações** (idempotente e rastreado em `_migrations`):
 ```bash
-php database/migrations/001_migrate_tenant_initial.php
-php database/migrations/002_migrate_cold_contacts_tenant.php
-# ... etc
+php bin/migrate.php             # aplica pendentes
+php bin/migrate.php --status    # mostra aplicadas vs pendentes
+php bin/migrate.php --baseline  # registra TODAS como aplicadas sem rodar (1ª vez por env)
 ```
+> **Em ambiente novo cujo schema já vem pronto** (clone + `mysql < schema.sql`),
+> rode `php bin/migrate.php --baseline` UMA vez para que o runner saiba que
+> tudo já está aplicado. Depois, qualquer migration nova é aplicada com `php bin/migrate.php`.
 
 **4. Compile o CSS do Tailwind**
 
@@ -235,14 +238,57 @@ npm run watch
 
 ## Deploy na Hostinger
 
-1. Faça upload de todos os arquivos via FTP para `public_html/crm/` (ou raiz).
+### Setup inicial (uma vez por ambiente)
+1. Faça upload de todos os arquivos via FTP/SSH para `public_html/crm/` (ou onde a hospedagem aponta).
 2. Importe `database/schema.sql` pelo phpMyAdmin / hPanel.
-3. Crie um `.env` na raiz com as credenciais reais (ou defina variáveis no hPanel).
-4. Ajuste `APP_URL=https://seudominio.com.br/crm/public` e `APP_ENV=production`.
-5. Garanta que `public/` (ou subdomínio) é o **DocumentRoot** — nunca exponha `/app`, `/core`, `/config`.
-6. Recompile o CSS localmente antes do deploy (ou rode `php scripts/build_css.php` no servidor).
+3. Crie um `.env` na raiz com as credenciais reais (use `.env.example` como base).
+4. Ajuste `APP_URL=https://seudominio.com.br/crm` e `APP_ENV=production`.
+5. Garanta que `public/` é o **DocumentRoot** — nunca exponha `/app`, `/core`, `/config`.
+6. Rode `php bin/migrate.php --baseline` UMA vez (registra que o schema atual já está aplicado).
+
+### Deploy contínuo (toda mudança)
+Use o pipeline automatizado, que evita os erros mais comuns (CSS desatualizado, migration esquecida, arquivo solto via SCP):
+```powershell
+# Local (Windows)
+powershell -ExecutionPolicy Bypass -File bin/deploy.ps1
+```
+O script executa em ordem: verifica git status limpo → `npm run build` → commit do CSS se mudou → `git push` → SSH em prod (`git pull` + `php bin/migrate.php`) → mostra status final das migrations.
+
+Flags úteis:
+```powershell
+powershell -File bin/deploy.ps1 -DryRun      # mostra o que faria, não executa
+powershell -File bin/deploy.ps1 -SkipBuild   # pula rebuild do Tailwind
+```
 
 > Em produção a CSP usa `script-src 'self' 'nonce-…' 'strict-dynamic'`, então qualquer script/style novo precisa do atributo `nonce="<?= CSP_NONCE ?>"`.
+
+---
+
+## Espelhamento local ↔ produção
+
+Para evitar bugs que só aparecem em produção, mantenha os ambientes o mais idênticos possível:
+
+| Item | Local (recomendado) | Produção |
+|---|---|---|
+| URL base | `http://localhost/crm` | `https://seudominio.com.br/crm` |
+| `APP_URL` no `.env` | `http://localhost/crm` (sem `/public` no fim) | `https://seudominio.com.br/crm` |
+| Servidor web | Apache (XAMPP/Laragon) com DocumentRoot em `crm/public` | Apache da Hostinger com DocumentRoot em `crm/public` |
+| `APP_ENV` | `development` (mostra erros na tela) | `production` (oculta erros) |
+| Migrations | `php bin/migrate.php` após cada pull | mesmo comando, automatizado pelo `bin/deploy.ps1` |
+| Tailwind CSS | `npm run watch` enquanto desenvolve | gerado pelo `bin/deploy.ps1`, versionado |
+
+### Por que isso importa
+Bugs que ocorreram na prática por divergência:
+- `APP_URL` local sem prefixo de subdir → links de paginação iam pra `/clients?page=2` (404 em prod, ok local).
+- Migration nova versionada mas nunca rodada em prod → coluna `interactions.tenant_id` faltando → HTTP 500 em qualquer interação nova.
+- CSS editado mas não rebuildado antes do commit → produção carregava versão velha.
+
+### Truque para testar localmente em modo "produção"
+Quando um bug só aparece em prod, edite seu `.env` local temporariamente:
+```ini
+APP_ENV=production
+```
+Isso desliga `display_errors`. Bugs de PHP que estavam aparecendo na tela passam a ser silenciosos (= erro 500), reproduzindo o comportamento de prod e te forçando a olhar o `error_log` em vez de adivinhar.
 
 ---
 
