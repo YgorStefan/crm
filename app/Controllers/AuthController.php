@@ -21,12 +21,18 @@ class AuthController extends Controller
             $this->redirect('/dashboard');
         }
 
+        $flashError = null;
+        if (!empty($_SESSION['flash']) && $_SESSION['flash']['type'] === 'error') {
+            $flashError = $_SESSION['flash']['message'];
+            unset($_SESSION['flash']);
+        }
+
         $this->render('auth/login', [
             'title' => 'Login — ' . APP_NAME,
             'csrf_token' => CsrfMiddleware::getToken(),
-            // Mensagem de timeout (sessão expirada)
             'timeout' => isset($_GET['timeout']),
-        ], 'blank'); // layout 'blank': sem sidebar/header (página pública)
+            'error' => $flashError,
+        ], 'blank');
     }
 
     /**

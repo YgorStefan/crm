@@ -394,6 +394,8 @@ class ColdContactController extends Controller
         }
 
         $filters = [];
+        if (!empty($_GET['nome']))
+            $filters['nome'] = trim($_GET['nome']);
         if (!empty($_GET['dia']))
             $filters['dia'] = (int) $_GET['dia'];
         if (!empty($_GET['telefone_enviado']))

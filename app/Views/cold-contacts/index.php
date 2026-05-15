@@ -136,6 +136,11 @@
         <!-- Filtros e exportação -->
         <div class="px-6 py-3 border-b border-gray-100 dark:border-zinc-800 flex flex-col sm:flex-row gap-3 items-end flex-shrink-0">
             <div>
+                <label class="block text-xs font-medium text-gray-600 dark:text-zinc-400 mb-1">Filtrar por nome</label>
+                <input type="text" id="filterNome" placeholder="Nome"
+                    class="w-36 px-3 py-1.5 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </div>
+            <div>
                 <label class="block text-xs font-medium text-gray-600 dark:text-zinc-400 mb-1">Filtrar por dia (1-31)</label>
                 <input type="number" id="filterDia" min="1" max="31" placeholder="Dia"
                     class="w-24 px-3 py-1.5 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
@@ -212,6 +217,7 @@
         const modalBody = document.getElementById('modalBody');
         const modalTitle = document.getElementById('modalTitle');
         const modalTotal = document.getElementById('modalTotal');
+        const filterNome = document.getElementById('filterNome');
         const filterDia = document.getElementById('filterDia');
         const filterTelEnv = document.getElementById('filterTelEnviado');
         const bulkBar = document.getElementById('bulkBar');
@@ -229,6 +235,7 @@
                 currentYearMonth = this.dataset.yearMonth;
                 currentMonthLabel = this.dataset.monthLabel;
                 modalTitle.textContent = currentMonthLabel.charAt(0).toUpperCase() + currentMonthLabel.slice(1);
+                filterNome.value = '';
                 filterDia.value = '';
                 filterTelEnv.value = '';
                 currentPage = 1;
@@ -283,6 +290,7 @@
         // ----- Fechar modal -----
         document.getElementById('btnCloseModal').addEventListener('click', closeModal);
         modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
+        document.addEventListener('keydown', function (e) { if (e.key === 'Escape' && !modal.classList.contains('hidden')) closeModal(); });
         function closeModal() { modal.classList.add('hidden'); hideBulkBar(); }
 
         // ----- Filtros (resetam para página 1) -----
@@ -291,22 +299,65 @@
             loadContacts(1);
         });
         document.getElementById('btnClearFilter').addEventListener('click', function () {
+            filterNome.value = '';
             filterDia.value = '';
             filterTelEnv.value = '';
             currentPage = 1;
             loadContacts(1);
         });
 
+        // Enter nos inputs de filtro dispara o filtro
+        [filterNome, filterDia, filterTelEnv].forEach(function (input) {
+            input.addEventListener('keydown', function (e) {
+                if (e.key === 'Enter') { currentPage = 1; loadContacts(1); }
+            });
+        });
+
         // ----- Exportar CSV -----
         document.getElementById('btnExportCsv').addEventListener('click', function () {
+            const checked = document.querySelectorAll('.row-check:checked');
+            if (checked.length > 0) {
+                exportSelectedCsv(checked);
+                return;
+            }
             const params = buildParams();
             window.location.href = window.APP_URL + '/cold-contacts/export?month=' + encodeURIComponent(currentYearMonth) + params;
         });
 
+        function exportSelectedCsv(checkedBoxes) {
+            var rows = [['Celular', 'Nome', 'Tipo de lista', 'Telefone enviado', 'Data da mensagem']];
+            checkedBoxes.forEach(function (cb) {
+                var tr = cb.closest('tr');
+                if (!tr) return;
+                var editBtn = tr.querySelector('.btn-edit');
+                if (!editBtn) return;
+                try {
+                    var c = JSON.parse(editBtn.dataset.contact);
+                    var dateFmt = c.data_mensagem ? c.data_mensagem.split('-').reverse().join('/') : '';
+                    rows.push([c.phone || '', c.name || '', c.tipo_lista || '', c.telefone_enviado || '', dateFmt]);
+                } catch (_) {}
+            });
+            var csv = rows.map(function (r) {
+                return r.map(function (f) { return '"' + String(f).replace(/"/g, '""') + '"'; }).join(';');
+            }).join('\r\n');
+            var bom = '﻿';
+            var blob = new Blob([bom + csv], { type: 'text/csv;charset=utf-8' });
+            var url = URL.createObjectURL(blob);
+            var a = document.createElement('a');
+            a.href = url;
+            a.download = 'contatos-selecionados.csv';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
         function buildParams() {
             let p = '';
+            const nome = filterNome.value.trim();
             const dia = filterDia.value.trim();
             const telEnv = filterTelEnv.value.trim();
+            if (nome) p += '&nome=' + encodeURIComponent(nome);
             if (dia) p += '&dia=' + encodeURIComponent(dia);
             if (telEnv) p += '&telefone_enviado=' + encodeURIComponent(telEnv);
             return p;

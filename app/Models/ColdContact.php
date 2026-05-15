@@ -61,6 +61,10 @@ class ColdContact extends Model
             ':tenant_id'  => $this->currentTenantId(),
         ];
 
+        if (!empty($filters['nome'])) {
+            $sql .= " AND name LIKE :nome";
+            $params[':nome'] = '%' . $filters['nome'] . '%';
+        }
         if (!empty($filters['dia'])) {
             $sql .= " AND DAY(data_mensagem) = :dia";
             $params[':dia'] = (int) $filters['dia'];
@@ -88,6 +92,10 @@ class ColdContact extends Model
             ':tenant_id'  => $this->currentTenantId(),
         ];
 
+        if (!empty($filters['nome'])) {
+            $sql .= " AND name LIKE :nome";
+            $params[':nome'] = '%' . $filters['nome'] . '%';
+        }
         if (!empty($filters['dia'])) {
             $sql .= " AND DAY(data_mensagem) = :dia";
             $params[':dia'] = (int) $filters['dia'];
