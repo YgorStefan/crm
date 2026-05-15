@@ -68,8 +68,7 @@ if ($SkipBuild) {
     if ($DryRun) {
         Warn 'DRY-RUN: npm run build'
     } else {
-        $buildOutput = npm run build 2>&1
-        $buildOutput | ForEach-Object { Write-Host $_ }
+        npm run build
         if ($LASTEXITCODE -ne 0) { Die 'npm run build falhou.' }
     }
 
