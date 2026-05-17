@@ -1,4 +1,8 @@
 <?php
+$_jsV = static fn(string $f): string => is_file(__DIR__ . '/../../../public/assets/js/' . $f)
+    ? (string) filemtime(__DIR__ . '/../../../public/assets/js/' . $f) : '0';
+$pageScripts = '<script nonce="' . CSP_NONCE . '" defer src="' . APP_URL . '/assets/js/client-form.js?v=' . $_jsV('client-form.js') . '"></script>';
+unset($_jsV);
 ?>
 <div class="max-w-4xl mx-auto">
     <div class="flex items-center gap-3 mb-6">
@@ -9,6 +13,7 @@
     </div>
 
     <form method="POST" action="<?= APP_URL ?>/clients/store"
+        data-crm-widget="client-form" data-mode="create"
         class="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden">
         <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
 
@@ -210,119 +215,3 @@
         </div>
     </form>
 </div>
-
-<script nonce="<?= CSP_NONCE ?>">
-    // Máscara: Telefone (11) 99999-9999
-    document.querySelector('[name="phone"]').addEventListener('input', function () {
-        let v = this.value.replace(/\D/g, '').substring(0, 11);
-        if (v.length > 6) v = '(' + v.substring(0, 2) + ') ' + v.substring(2, 7) + '-' + v.substring(7);
-        else if (v.length > 2) v = '(' + v.substring(0, 2) + ') ' + v.substring(2);
-        else if (v.length > 0) v = '(' + v;
-        this.value = v;
-    });
-
-    // Máscara: CPF/CNPJ dinâmico
-    document.querySelector('[name="cnpj_cpf"]').addEventListener('input', function () {
-        let v = this.value.replace(/\D/g, '').substring(0, 14);
-        if (v.length <= 11) {
-            v = v.replace(/(\d{3})(\d)/, '$1.$2')
-                .replace(/(\d{3})(\d)/, '$1.$2')
-                .replace(/(\d{3})(\d{1,2})$/, '$1-$2');
-        } else {
-            v = v.replace(/(\d{2})(\d)/, '$1.$2')
-                .replace(/(\d{3})(\d)/, '$1.$2')
-                .replace(/(\d{3})(\d)/, '$1/$2')
-                .replace(/(\d{4})(\d{1,2})$/, '$1-$2');
-        }
-        this.value = v;
-    });
-
-    // Máscara + ViaCEP: CEP 00000-000
-    (function () {
-        const zipInput = document.querySelector('[name="zip_code"]');
-        const statusEl = document.getElementById('cep_status');
-        let lastCep = '';
-        zipInput.addEventListener('input', function () {
-            let v = this.value.replace(/\D/g, '').substring(0, 8);
-            if (v.length > 5) v = v.substring(0, 5) + '-' + v.substring(5);
-            this.value = v;
-            const digits = v.replace(/\D/g, '');
-            if (digits.length === 8 && digits !== lastCep) {
-                lastCep = digits;
-                if (statusEl) statusEl.textContent = 'Buscando...';
-                fetch('https://viacep.com.br/ws/' + digits + '/json/')
-                    .then(function (r) { return r.json(); })
-                    .then(function (data) {
-                        if (statusEl) statusEl.textContent = '';
-                        if (data.erro) return;
-                        const addr = document.querySelector('[name="address"]');
-                        const nbhd = document.querySelector('[name="neighborhood"]');
-                        const city = document.querySelector('[name="city"]');
-                        const state = document.querySelector('[name="state"]');
-                        if (addr) addr.value = data.logradouro || '';
-                        if (nbhd) nbhd.value = data.bairro || '';
-                        if (city) city.value = data.localidade || '';
-                        if (state) state.value = (data.uf || '').toUpperCase();
-                    })
-                    .catch(function () { if (statusEl) statusEl.textContent = ''; });
-            }
-        });
-    })();
-
-    // Máscara: Data de nascimento DD/MM/AAAA
-    document.querySelector('[name="birth_date"]').addEventListener('input', function () {
-        let v = this.value.replace(/\D/g, '').substring(0, 8);
-        if (v.length > 4) v = v.substring(0, 2) + '/' + v.substring(2, 4) + '/' + v.substring(4);
-        else if (v.length > 2) v = v.substring(0, 2) + '/' + v.substring(2);
-        this.value = v;
-    });
-
-    // Campo condicional: Indicação
-    const sourceSelect = document.getElementById('source_select');
-    const indicacaoWrapper = document.getElementById('indicacao_wrapper');
-    sourceSelect.addEventListener('change', function () {
-        indicacaoWrapper.style.display = this.value === 'Indicação' ? 'block' : 'none';
-    });
-
-    // Campo condicional: Data de Fechamento (só para etapa "Venda Fechada")
-    const stageSelect = document.getElementById('pipeline_stage_select');
-    const closedAtWrapper = document.getElementById('closed_at_wrapper');
-    stageSelect.addEventListener('change', function () {
-        const opt = this.options[this.selectedIndex];
-        const isVF = opt && opt.dataset.vendaFechada === '1';
-        closedAtWrapper.style.display = isVF ? 'block' : 'none';
-        if (!isVF) document.getElementById('closed_at').value = '';
-    });
-
-    // Máscara: Data de fechamento DD/MM/AAAA
-    document.getElementById('closed_at').addEventListener('input', function () {
-        let v = this.value.replace(/\D/g, '').substring(0, 8);
-        if (v.length > 4) v = v.substring(0, 2) + '/' + v.substring(2, 4) + '/' + v.substring(4);
-        else if (v.length > 2) v = v.substring(0, 2) + '/' + v.substring(2);
-        this.value = v;
-    });
-
-    // Remove máscaras antes do submit: envia apenas dígitos ao servidor
-    document.querySelector('form').addEventListener('submit', function () {
-        ['phone', 'cnpj_cpf', 'zip_code'].forEach(function (name) {
-            const el = document.querySelector('[name="' + name + '"]');
-            if (el) el.value = el.value.replace(/\D/g, '');
-        });
-        // birth_date: converter DD/MM/AAAA para YYYY-MM-DD para o banco
-        const bd = document.querySelector('[name="birth_date"]');
-        if (bd && bd.value.length === 10) {
-            const parts = bd.value.split('/');
-            bd.value = parts[2] + '-' + parts[1] + '-' + parts[0];
-        } else if (bd) {
-            bd.value = '';
-        }
-        // closed_at: converter DD/MM/AAAA para YYYY-MM-DD
-        const ca = document.getElementById('closed_at');
-        if (ca && ca.value.includes('/') && ca.value.length === 10) {
-            const parts = ca.value.split('/');
-            ca.value = parts[2] + '-' + parts[1] + '-' + parts[0];
-        } else if (ca && ca.value && !ca.value.includes('-')) {
-            ca.value = '';
-        }
-    });
-</script>
