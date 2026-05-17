@@ -37,7 +37,7 @@ class ClientSale extends Model
         return (int) $this->db->lastInsertId();
     }
 
-    public function delete(int $saleId, int $clientId): bool
+    public function deleteBySaleAndClient(int $saleId, int $clientId): bool
     {
         $stmt = $this->db->prepare(
             "DELETE cs FROM client_sales cs

@@ -300,7 +300,7 @@ class ClientController extends Controller
             return;
         }
 
-        $deleted = $this->sales->delete($saleId, $clientId);
+        $deleted = $this->sales->deleteBySaleAndClient($saleId, $clientId);
 
         if (!$deleted) {
             $this->json(ApiResponse::error('Cota não encontrada.'), 404);
