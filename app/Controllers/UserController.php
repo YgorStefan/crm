@@ -41,7 +41,7 @@ class UserController extends Controller
         $raw   = trim($_POST['email'] ?? '');
         $email = filter_var($raw, FILTER_VALIDATE_EMAIL) ? $raw : '';
         $password = $_POST['password'] ?? '';
-        $role = $this->inputRaw('role', 'seller');
+        $role = $this->inputPost('role', 'seller');
 
         if (!$email) {
             $this->flash('error', 'E-mail inválido.');
@@ -103,7 +103,7 @@ class UserController extends Controller
             return;
         }
 
-        $requestedRole = $this->inputRaw('role', 'seller');
+        $requestedRole = $this->inputPost('role', 'seller');
         $avatar = trim($_POST['avatar'] ?? '');
         $data = [
             'name' => $this->input('name'),

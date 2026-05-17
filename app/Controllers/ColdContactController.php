@@ -198,8 +198,8 @@ class ColdContactController extends Controller
 
         $phone = $this->input('phone');
         $name = $this->input('name');
-        $telefoneEnviado = $this->inputRaw('telefone_enviado');
-        $dataMensagem = $this->inputRaw('data_mensagem');
+        $telefoneEnviado = $this->inputPost('telefone_enviado');
+        $dataMensagem = $this->inputPost('data_mensagem');
 
         if (empty($phone) || empty($name)) {
             echo json_encode(['success' => false, 'error' => 'Celular e Nome são obrigatórios.']);

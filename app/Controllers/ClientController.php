@@ -100,7 +100,7 @@ class ClientController extends Controller
     {
         // nome e etapa do funil são obrigatórios
         $name = $this->input('name');
-        $stageId = $this->inputRaw('pipeline_stage_id');
+        $stageId = $this->inputPost('pipeline_stage_id');
 
         if (empty($name) || empty($stageId)) {
             $this->flash('error', 'Nome e Etapa do Funil são obrigatórios.');
@@ -126,13 +126,13 @@ class ClientController extends Controller
             'state' => $this->input('state'),
             'zip_code' => $this->input('zip_code'),
             'pipeline_stage_id' => $stageId,
-            'assigned_to' => $this->inputRaw('assigned_to'),
-            'deal_value' => $this->inputRaw('deal_value', '0'),
+            'assigned_to' => $this->inputPost('assigned_to'),
+            'deal_value' => $this->inputPost('deal_value', '0'),
             'source' => $this->input('source'),
             'notes' => $this->input('notes'),
-            'birth_date' => $this->inputRaw('birth_date'),
+            'birth_date' => $this->inputPost('birth_date'),
             'referido_por' => $this->input('referido_por'),
-            'closed_at' => $isVendaFechada ? ($this->inputRaw('closed_at') ?: null) : null,
+            'closed_at' => $isVendaFechada ? ($this->inputPost('closed_at') ?: null) : null,
         ];
 
         $clientModel = new Client();
@@ -226,7 +226,7 @@ class ClientController extends Controller
             return;
         }
 
-        $stageId = (int) $this->inputRaw('pipeline_stage_id');
+        $stageId = (int) $this->inputPost('pipeline_stage_id');
         $stageModel = new PipelineStage();
         $stage = $stageModel->findById($stageId);
         $isVendaFechada = $stage && !empty($stage['is_won_stage']);
@@ -245,13 +245,13 @@ class ClientController extends Controller
             'state' => $this->input('state'),
             'zip_code' => $this->input('zip_code'),
             'pipeline_stage_id' => $stageId,
-            'assigned_to' => $this->inputRaw('assigned_to'),
-            'deal_value' => $this->inputRaw('deal_value', '0'),
+            'assigned_to' => $this->inputPost('assigned_to'),
+            'deal_value' => $this->inputPost('deal_value', '0'),
             'source' => $this->input('source'),
             'notes' => $this->input('notes'),
-            'birth_date' => $this->inputRaw('birth_date'),
+            'birth_date' => $this->inputPost('birth_date'),
             'referido_por' => $this->input('referido_por'),
-            'closed_at' => $isVendaFechada ? ($this->inputRaw('closed_at') ?: null) : null,
+            'closed_at' => $isVendaFechada ? ($this->inputPost('closed_at') ?: null) : null,
         ];
 
         $clientModel = new Client();
@@ -297,7 +297,7 @@ class ClientController extends Controller
             exit;
         }
 
-        $tipo = $this->inputRaw('tipo');
+        $tipo = $this->inputPost('tipo');
         $tiposValidos = ['Imóvel', 'Veículo', 'Serviço'];
         if (!in_array($tipo, $tiposValidos, true)) {
             echo json_encode(['success' => false, 'error' => 'Tipo de consórcio inválido.']);
@@ -308,7 +308,7 @@ class ClientController extends Controller
             'grupo' => $this->input('grupo'),
             'cota' => $this->input('cota'),
             'tipo' => $tipo,
-            'credito_contratado' => $this->inputRaw('credito_contratado', '0'),
+            'credito_contratado' => $this->inputPost('credito_contratado', '0'),
         ];
 
         $clientModel = new Client();

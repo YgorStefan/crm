@@ -168,13 +168,13 @@ class TaskController extends Controller
     public function store(array $params = []): void
     {
         $title = $this->input('title');
-        $dueDate = $this->inputRaw('due_date');
-        $clientId = $this->inputRaw('client_id');
+        $dueDate = $this->inputPost('due_date');
+        $clientId = $this->inputPost('client_id');
 
         if (empty($title) || empty($dueDate)) {
             $this->flash('error', 'Título e prazo são obrigatórios.');
             // Redireciona para a tela de tarefas (Referer header é forjável)
-            $clientId = $this->inputRaw('client_id');
+            $clientId = $this->inputPost('client_id');
             if ($clientId) {
                 $this->redirect('/clients/' . (int) $clientId);
             } else {
@@ -186,7 +186,7 @@ class TaskController extends Controller
         // Converte datetime-local para MySQL
         $dueDate = str_replace('T', ' ', $dueDate) . ':00';
 
-        $assignedTo = $this->inputRaw('assigned_to') ?: $_SESSION['user']['id'];
+        $assignedTo = $this->inputPost('assigned_to') ?: $_SESSION['user']['id'];
 
         $taskModel = new Task();
         $taskModel->create([
@@ -195,7 +195,7 @@ class TaskController extends Controller
             'title' => $title,
             'description' => $this->input('description'),
             'due_date' => $dueDate,
-            'priority' => $this->inputRaw('priority', 'medium'),
+            'priority' => $this->inputPost('priority', 'medium'),
             'created_by' => $_SESSION['user']['id'],
         ]);
 
@@ -228,13 +228,13 @@ class TaskController extends Controller
 
         $data = [];
         if (isset($_POST['status']))
-            $data['status'] = $this->inputRaw('status');
+            $data['status'] = $this->inputPost('status');
         if (isset($_POST['priority']))
-            $data['priority'] = $this->inputRaw('priority');
+            $data['priority'] = $this->inputPost('priority');
         if (isset($_POST['title']))
             $data['title'] = $this->input('title');
         if (isset($_POST['due_date']))
-            $data['due_date'] = str_replace('T', ' ', $this->inputRaw('due_date')) . ':00';
+            $data['due_date'] = str_replace('T', ' ', $this->inputPost('due_date')) . ':00';
 
         $taskModel = new Task();
         $task = $taskModel->findById($id);

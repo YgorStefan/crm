@@ -24,7 +24,7 @@ abstract class Controller
         $viewFile = VIEW_PATH . DS . str_replace('/', DS, $view) . '.php';
 
         if (!file_exists($viewFile)) {
-            die("View não encontrada: {$viewFile}");
+            throw new \RuntimeException("View não encontrada: {$viewFile}");
         }
 
         // Closure segura que injeta variáveis do array $data no escopo da view
@@ -74,7 +74,7 @@ abstract class Controller
     {
         http_response_code($status);
         header('Content-Type: application/json; charset=utf-8');
-        echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES);
+        echo json_encode($data, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE);
         exit;
     }
 
@@ -140,7 +140,7 @@ abstract class Controller
      * @param  mixed   $default
      * @return mixed
      */
-    protected function inputRaw(string $key, mixed $default = null): mixed
+    protected function inputPost(string $key, mixed $default = null): mixed
     {
         return isset($_POST[$key]) ? trim((string) $_POST[$key]) : $default;
     }

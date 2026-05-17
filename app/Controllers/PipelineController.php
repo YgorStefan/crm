@@ -74,7 +74,7 @@ class PipelineController extends Controller
     {
         $this->requireRole('admin');
         $name = $this->input('name');
-        $color = $this->inputRaw('color', '#6366f1');
+        $color = $this->inputPost('color', '#6366f1');
 
         if (empty($name)) {
             $this->flash('error', 'O nome da etapa é obrigatório.');
@@ -117,7 +117,7 @@ class PipelineController extends Controller
         $this->requireRole('admin');
         $id = (int) ($params['id'] ?? 0);
         $name = $this->input('name');
-        $color = $this->inputRaw('color', '');
+        $color = $this->inputPost('color', '');
 
         if (!$id || empty($name)) {
             $this->json(['success' => false, 'message' => 'Parâmetros inválidos.'], 422);

@@ -11,9 +11,9 @@ class InteractionController extends Controller
 {
     public function store(array $params = []): void
     {
-        $clientId    = (int) ($this->inputRaw('client_id') ?? 0);
+        $clientId    = (int) ($this->inputPost('client_id') ?? 0);
         $description = trim($_POST['description'] ?? '');
-        $occurredAt  = $this->inputRaw('occurred_at');
+        $occurredAt  = $this->inputPost('occurred_at');
 
         if (!$clientId || empty($description) || empty($occurredAt)) {
             $this->flash('error', 'Preencha todos os campos da interação.');
@@ -37,7 +37,7 @@ class InteractionController extends Controller
             $interactionModel->create([
                 'client_id'   => $clientId,
                 'user_id'     => $_SESSION['user']['id'],
-                'type'        => $this->inputRaw('type', 'note'),
+                'type'        => $this->inputPost('type', 'note'),
                 'description' => $description,
                 'occurred_at' => $occurredAt,
             ]);
@@ -94,7 +94,7 @@ class InteractionController extends Controller
     public function destroy(array $params = []): void
     {
         $id       = (int) ($params['id'] ?? 0);
-        $clientId = (int) ($this->inputRaw('client_id') ?? 0);
+        $clientId = (int) ($this->inputPost('client_id') ?? 0);
 
         $interactionModel = new Interaction();
 

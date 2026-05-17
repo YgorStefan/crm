@@ -52,13 +52,13 @@ class SettingsController extends Controller
         $tenantId = (int) ($_SESSION['tenant_id'] ?? 0);
 
         // Determina destino do redirect: prioridade para hidden _redirect_to (valida prefixo)
-        $redirectTo = $this->inputRaw('_redirect_to', '');
+        $redirectTo = $this->inputPost('_redirect_to', '');
         if ($redirectTo === '' || !preg_match('#^/(settings|admin)(\?[A-Za-z0-9_=&-]+)?$#', $redirectTo)) {
             $redirectTo = '/settings';
         }
 
         // Validação: payment_cutoff_day 1–28
-        $cutoffDay = (int) $this->inputRaw('payment_cutoff_day', '20');
+        $cutoffDay = (int) $this->inputPost('payment_cutoff_day', '20');
         if ($cutoffDay < 1 || $cutoffDay > 28) {
             $this->flash('error', 'Dia de corte inválido. Informe um valor entre 1 e 28.');
             $this->redirect($redirectTo);
