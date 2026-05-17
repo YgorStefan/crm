@@ -7,6 +7,11 @@ use App\Models\ColdContact;
 
 class AcompanhamentoController extends Controller
 {
+    public function __construct(
+        private Client      $clients      = new Client(),
+        private ColdContact $coldContacts = new ColdContact(),
+    ) {}
+
     public function index(array $params = []): void
     {
         // Mes selecionado (padrão = mês atual); não permite meses futuros
@@ -23,11 +28,8 @@ class AcompanhamentoController extends Controller
                       'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro'];
         $mesLabel = $nomeMeses[(int)$dt->format('n') - 1] . ' ' . $dt->format('Y');
 
-        $clientModel = new Client();
-        $coldModel   = new ColdContact();
-
-        $stages    = $clientModel->countByStageAndMonth($mes);
-        $abordados = $coldModel->countByMonth($mes);
+        $stages    = $this->clients->countByStageAndMonth($mes);
+        $abordados = $this->coldContacts->countByMonth($mes);
 
         $this->render('acompanhamento/index', [
             'pageTitle' => 'Acompanhamento',

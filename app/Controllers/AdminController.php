@@ -16,6 +16,10 @@ use App\Models\User;
  */
 class AdminController extends Controller
 {
+    public function __construct(
+        private User $users = new User(),
+    ) {}
+
     /**
      * Render do painel admin com abas.
      * Query param: ?tab=users|org|payment (default: users)
@@ -38,8 +42,7 @@ class AdminController extends Controller
 
         // Dados dependendo da aba ativa
         if ($tab === 'users') {
-            $userModel = new User();
-            $data['users'] = $userModel->findAll();
+            $data['users'] = $this->users->findAll();
         } else {
             $tenantId = (int) ($_SESSION['tenant_id'] ?? 0);
             $db = Database::getInstance();

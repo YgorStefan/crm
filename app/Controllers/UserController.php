@@ -8,18 +8,21 @@ use App\Models\User;
 
 class UserController extends Controller
 {
+    public function __construct(
+        private User $users = new User(),
+    ) {}
+
     /**
      * Lista todos os usuários (somente admin).
      */
     public function index(array $params = []): void
     {
         $this->requireRole('admin');
-        $userModel = new User();
 
         $this->render('admin/users/index', [
             'pageTitle' => 'Usuários',
             'title' => 'Usuários — ' . APP_NAME,
-            'users' => $userModel->findAll(),
+            'users' => $this->users->findAll(),
         ]);
     }
 
@@ -56,8 +59,7 @@ class UserController extends Controller
         }
 
         $avatar = trim($_POST['avatar'] ?? '');
-        $userModel = new User();
-        $userModel->create([
+        $this->users->create([
             'name' => $name,
             'email' => $email,
             // Aplica o hash bcrypt — nunca armazene senhas em texto puro
@@ -74,8 +76,7 @@ class UserController extends Controller
     {
         $this->requireRole('admin');
         $id = (int) ($params['id'] ?? 0);
-        $userModel = new User();
-        $user = $userModel->findById($id);
+        $user = $this->users->findById($id);
 
         if (!$user) {
             $this->flash('error', 'Usuário não encontrado.');
@@ -124,8 +125,7 @@ class UserController extends Controller
             $data['password_hash'] = password_hash($newPassword, PASSWORD_BCRYPT, ['cost' => 12]);
         }
 
-        $userModel = new User();
-        $userModel->update($id, $data);
+        $this->users->update($id, $data);
 
         // Atualiza a sessão se o admin editou o próprio perfil
         if ($id === (int) ($_SESSION['user']['id'] ?? 0)) {
@@ -154,8 +154,7 @@ class UserController extends Controller
             return;
         }
 
-        $userModel = new User();
-        $userModel->update($id, ['is_active' => 0]);
+        $this->users->update($id, ['is_active' => 0]);
 
         $this->flash('success', 'Usuário desativado com sucesso.');
         $this->redirect('/admin/users');

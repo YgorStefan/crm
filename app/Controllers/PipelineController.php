@@ -9,16 +9,18 @@ use App\Models\PipelineStage;
 
 class PipelineController extends Controller
 {
+    public function __construct(
+        private Client        $clients = new Client(),
+        private PipelineStage $stages  = new PipelineStage(),
+    ) {}
+
     /**
      * Exibe o board Kanban com todos os clientes agrupados por etapa.
      */
     public function index(array $params = []): void
     {
-        $stageModel = new PipelineStage();
-        $clientModel = new Client();
-
-        $stages = $stageModel->findAllOrdered();
-        $grouped = $clientModel->findGroupedByStage(); // ['stage_id' => [clientes...]]
+        $stages = $this->stages->findAllOrdered();
+        $grouped = $this->clients->findGroupedByStage(); // ['stage_id' => [clientes...]]
 
         $this->render('pipeline/index', [
             'pageTitle' => 'Pipeline de Vendas',
@@ -45,8 +47,7 @@ class PipelineController extends Controller
             return;
         }
 
-        $clientModel = new Client();
-        $ok = $clientModel->updateStage($clientId, $stageId);
+        $ok = $this->clients->updateStage($clientId, $stageId);
 
         $this->json(['success' => $ok, 'csrf_token' => CsrfMiddleware::getToken()]);
     }
@@ -57,12 +58,11 @@ class PipelineController extends Controller
     public function stages(array $params = []): void
     {
         $this->requireRole('admin');
-        $stageModel = new PipelineStage();
 
         $this->render('pipeline/stages', [
             'pageTitle' => 'Gerenciar Etapas do Funil',
             'title' => 'Etapas — ' . APP_NAME,
-            'stages' => $stageModel->findAllOrderedWithClientCount(),
+            'stages' => $this->stages->findAllOrderedWithClientCount(),
             'csrf_token' => CsrfMiddleware::getToken(),
         ]);
     }
@@ -82,8 +82,7 @@ class PipelineController extends Controller
             return;
         }
 
-        $stageModel = new PipelineStage();
-        $stageModel->create(['name' => $name, 'color' => $color]);
+        $this->stages->create(['name' => $name, 'color' => $color]);
 
         $this->flash('success', "Etapa \"{$name}\" criada com sucesso!");
         $this->redirect('/pipeline/stages');
@@ -96,15 +95,14 @@ class PipelineController extends Controller
     {
         $this->requireRole('admin');
         $id = (int) ($params['id'] ?? 0);
-        $stageModel = new PipelineStage();
 
-        if ($stageModel->hasClients($id)) {
+        if ($this->stages->hasClients($id)) {
             $this->flash('error', 'Não é possível excluir uma etapa que possui clientes. Mova-os primeiro.');
             $this->redirect('/pipeline/stages');
             return;
         }
 
-        $stageModel->delete($id);
+        $this->stages->delete($id);
         $this->flash('success', 'Etapa removida com sucesso.');
         $this->redirect('/pipeline/stages');
     }
@@ -124,8 +122,7 @@ class PipelineController extends Controller
             return;
         }
 
-        $stageModel = new PipelineStage();
-        $ok = $stageModel->update($id, ['name' => $name, 'color' => $color]);
+        $ok = $this->stages->update($id, ['name' => $name, 'color' => $color]);
 
         $this->json([
             'success' => $ok,
@@ -147,8 +144,7 @@ class PipelineController extends Controller
             return;
         }
 
-        $stageModel = new PipelineStage();
-        $ok = $stageModel->movePosition($id, $direction);
+        $ok = $this->stages->movePosition($id, $direction);
 
         $this->json([
             'success' => $ok,
@@ -169,17 +165,15 @@ class PipelineController extends Controller
             return;
         }
 
-        $stageModel = new PipelineStage();
-
         // Lê o estado atual do DB e inverte (UI-SPEC: body contém apenas _csrf_token)
-        $stage = $stageModel->findById($id);
+        $stage = $this->stages->findById($id);
         if (!$stage) {
             $this->json(['success' => false, 'message' => 'Etapa não encontrada.'], 404);
             return;
         }
 
         $newIsWon = !(bool) $stage['is_won_stage'];
-        $ok = $stageModel->setWonStage($id, $newIsWon);
+        $ok = $this->stages->setWonStage($id, $newIsWon);
 
         $this->json([
             'success' => $ok,

@@ -10,15 +10,20 @@ use App\Models\Client;
 
 class TaskController extends Controller
 {
+    public function __construct(
+        private Task   $tasks   = new Task(),
+        private Client $clients = new Client(),
+        private User   $users   = new User(),
+    ) {}
+
     /**
      * Retorna tarefas em formato JSON para o FullCalendar.
      */
     public function calendarFeed(array $params = []): void
     {
-        $taskModel = new Task();
         $userId = (int) ($_SESSION['user']['id'] ?? 0);
         $isAdmin = ($_SESSION['user']['role'] ?? '') === 'admin';
-        $tasks = $taskModel->findForCalendar($userId, $isAdmin);
+        $tasks = $this->tasks->findForCalendar($userId, $isAdmin);
 
         $events = array_map(fn($t) => [
             'id'    => $t['id'],
@@ -46,8 +51,7 @@ class TaskController extends Controller
     public function getTask(array $params = []): void
     {
         $id = (int) ($params['id'] ?? 0);
-        $taskModel = new Task();
-        $task = $taskModel->findById($id);
+        $task = $this->tasks->findById($id);
 
         if (!$task) {
             $this->json(['error' => 'Tarefa nao encontrada'], 404);
@@ -63,7 +67,6 @@ class TaskController extends Controller
      */
     public function upcoming(array $params = []): void
     {
-        $taskModel = new Task();
         $userId = (int) ($_SESSION['user']['id'] ?? 0);
         $isAdmin = ($_SESSION['user']['role'] ?? '') === 'admin';
 
@@ -74,7 +77,7 @@ class TaskController extends Controller
         $alerts = [];
 
         // Tarefas atrasadas (status pending/in_progress, due_date no passado, limite 7 dias)
-        $overdue = $taskModel->findOverdue($isAdmin ? null : $userId);
+        $overdue = $this->tasks->findOverdue($isAdmin ? null : $userId);
         $cutoff  = (clone $now)->modify('-7 days');
         foreach ($overdue as $t) {
             $due = new \DateTime($t['due_date'], $tz);
@@ -88,7 +91,7 @@ class TaskController extends Controller
         }
 
         // Tarefas com vencimento nas proximas 24h
-        $upcoming = $taskModel->findUpcoming(
+        $upcoming = $this->tasks->findUpcoming(
             $userId,
             $now->format('Y-m-d H:i:s'),
             $in24->format('Y-m-d H:i:s'),
@@ -115,8 +118,7 @@ class TaskController extends Controller
         }
 
         // Busca clientes com aniversário hoje (mesmo dia e mês, qualquer ano)
-        $clientModel = new Client();
-        $birthdays = $clientModel->findBirthdaysToday();
+        $birthdays = $this->clients->findBirthdaysToday();
         foreach ($birthdays as $c) {
             $alerts[] = [
                 'key'     => 'birthday_' . $c['id'],
@@ -133,9 +135,6 @@ class TaskController extends Controller
      */
     public function index(array $params = []): void
     {
-        $taskModel = new Task();
-        $userModel = new User();
-
         $filters = [
             'status' => $_GET['status'] ?? '',
             'assigned_to' => $_GET['assigned_to'] ?? '',
@@ -147,9 +146,9 @@ class TaskController extends Controller
             $filters['assigned_to'] = $_SESSION['user']['id'];
         }
 
-        $tasks = $taskModel->findAllWithRelations($filters);
-        $overdue = $taskModel->findOverdue();
-        $users = $userModel->findAllActive();
+        $tasks = $this->tasks->findAllWithRelations($filters);
+        $overdue = $this->tasks->findOverdue();
+        $users = $this->users->findAllActive();
 
         $this->render('tasks/index', [
             'pageTitle' => 'Tarefas',
@@ -188,8 +187,7 @@ class TaskController extends Controller
 
         $assignedTo = $this->inputPost('assigned_to') ?: $_SESSION['user']['id'];
 
-        $taskModel = new Task();
-        $taskModel->create([
+        $this->tasks->create([
             'client_id' => $clientId ?: null,
             'assigned_to' => $assignedTo,
             'title' => $title,
@@ -236,8 +234,7 @@ class TaskController extends Controller
         if (isset($_POST['due_date']))
             $data['due_date'] = str_replace('T', ' ', $this->inputPost('due_date')) . ':00';
 
-        $taskModel = new Task();
-        $task = $taskModel->findById($id);
+        $task = $this->tasks->findById($id);
         if (!$task) {
             $this->redirect('/tasks');
             return;
@@ -263,7 +260,7 @@ class TaskController extends Controller
             return;
         }
 
-        $taskModel->update($id, $data);
+        $this->tasks->update($id, $data);
 
         // Se for requisição AJAX, retorna JSON; senão, redireciona
         if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
@@ -283,8 +280,7 @@ class TaskController extends Controller
         $seller = ($role === 'seller');
         $userId = (int) ($_SESSION['user']['id'] ?? 0);
 
-        $taskModel = new Task();
-        $task = $taskModel->findById($id);
+        $task = $this->tasks->findById($id);
         if (!$task) {
             $this->redirect('/tasks');
             return;
@@ -310,7 +306,7 @@ class TaskController extends Controller
             return;
         }
 
-        $taskModel->delete($id);
+        $this->tasks->delete($id);
 
         if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
             $this->json(['success' => true, 'csrf_token' => CsrfMiddleware::getToken()]);

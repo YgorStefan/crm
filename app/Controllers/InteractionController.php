@@ -9,6 +9,11 @@ use App\Models\Client;
 
 class InteractionController extends Controller
 {
+    public function __construct(
+        private Interaction $interactions = new Interaction(),
+        private Client      $clients      = new Client(),
+    ) {}
+
     public function store(array $params = []): void
     {
         $clientId    = (int) ($this->inputPost('client_id') ?? 0);
@@ -22,8 +27,7 @@ class InteractionController extends Controller
         }
 
         // Garante que o cliente pertence ao tenant do usuário logado
-        $clientModel = new Client();
-        $client = $clientModel->findById($clientId);
+        $client = $this->clients->findById($clientId);
         if (!$client) {
             $this->flash('error', 'Cliente não encontrado.');
             $this->redirect('/clients');
@@ -32,9 +36,8 @@ class InteractionController extends Controller
 
         $occurredAt = str_replace('T', ' ', $occurredAt) . ':00';
 
-        $interactionModel = new Interaction();
         try {
-            $interactionModel->create([
+            $this->interactions->create([
                 'client_id'   => $clientId,
                 'user_id'     => $_SESSION['user']['id'],
                 'type'        => $this->inputPost('type', 'note'),
@@ -63,8 +66,7 @@ class InteractionController extends Controller
         }
 
         // Garante que a interação pertence ao tenant (via override findById)
-        $interactionModel = new Interaction();
-        $interaction = $interactionModel->findById($id);
+        $interaction = $this->interactions->findById($id);
         if (!$interaction) {
             $this->json(['success' => false, 'error' => 'Interação não encontrada.'], 404);
             return;
@@ -82,7 +84,7 @@ class InteractionController extends Controller
 
         $occurredAt = str_replace('T', ' ', $occurredAt) . ':00';
 
-        $ok = $interactionModel->update($id, [
+        $ok = $this->interactions->update($id, [
             'description' => $description,
             'type'        => $type,
             'occurred_at' => $occurredAt,
@@ -96,13 +98,11 @@ class InteractionController extends Controller
         $id       = (int) ($params['id'] ?? 0);
         $clientId = (int) ($this->inputPost('client_id') ?? 0);
 
-        $interactionModel = new Interaction();
-
         // findById já aplica tenant gate via INNER JOIN clients
-        $inter = $interactionModel->findById($id);
+        $inter = $this->interactions->findById($id);
         if ($inter) {
             $clientId = $clientId ?: (int) $inter['client_id'];
-            $interactionModel->delete($id);
+            $this->interactions->delete($id);
         }
 
         $this->flash('success', 'Interação removida.');

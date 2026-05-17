@@ -12,6 +12,10 @@ use App\Models\User;
 
 class AuthController extends Controller
 {
+    public function __construct(
+        private User $users = new User(),
+    ) {}
+
     //Exibe o formulário de login.
     //Se o usuário já estiver logado, redireciona para o dashboard.
     public function loginForm(array $params = []): void
@@ -59,8 +63,7 @@ class AuthController extends Controller
             return;
         }
 
-        $userModel = new User();
-        $user = $userModel->findByEmail($email);
+        $user = $this->users->findByEmail($email);
 
         // Verifica a senha SOMENTE se o usuário existir.
         // sempre chamamos password_verify() para evitar
