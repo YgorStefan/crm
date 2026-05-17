@@ -10,18 +10,23 @@ use App\Models\PipelineStage;
 use App\Models\User;
 use App\Models\Interaction;
 use App\Models\Task;
+use Core\Http\ApiResponse;
+use App\Services\ClientService;
 
 class ClientController extends Controller
 {
-    /**
-     * Lista todos os clientes com filtros opcionais.
-     */
+    public function __construct(
+        private Client        $clients      = new Client(),
+        private PipelineStage $stages       = new PipelineStage(),
+        private User          $users        = new User(),
+        private Interaction   $interactions = new Interaction(),
+        private Task          $tasks        = new Task(),
+        private ClientSale    $sales        = new ClientSale(),
+        private ClientService $service      = new ClientService(),
+    ) {}
+
     public function index(array $params = []): void
     {
-        $clientModel = new Client();
-        $stageModel = new PipelineStage();
-        $userModel = new User();
-
         // Lê os filtros da query string (?search=...&stage_id=...&assigned_to=...&tipo_venda=...)
         $filters = [
             'search'      => $_GET['search'] ?? '',
@@ -49,12 +54,13 @@ class ClientController extends Controller
 
         $offset = ($page - 1) * $limit;
 
-        $totalCount = $clientModel->countAllWithRelations($filters);
-        $clients    = $clientModel->findAllWithRelations($filters, $limit, $offset);
+        $overdueIds = $this->service->getOverdueClientIds();
+        $totalCount = $this->clients->countAllWithRelations($filters);
+        $clients    = $this->clients->findAllWithRelations($filters, $limit, $offset, $overdueIds);
         $totalPages = (int) ceil($totalCount / $limit);
 
-        $stages = $stageModel->findAllOrdered();
-        $users = $userModel->findAllActive();
+        $stages = $this->stages->findAllOrdered();
+        $users = $this->users->findAllActive();
 
         $pagination = [
             'current_page' => $page,
@@ -77,26 +83,17 @@ class ClientController extends Controller
         ]);
     }
 
-    /**
-     * Exibe o formulário de cadastro de cliente.
-     */
     public function create(array $params = []): void
     {
-        $stageModel = new PipelineStage();
-        $userModel = new User();
-
         $this->render('clients/create', [
             'pageTitle' => 'Novo Cliente',
             'title' => 'Novo Cliente — ' . APP_NAME,
-            'stages' => $stageModel->findAllOrdered(),
-            'users' => $userModel->findAllActive(),
+            'stages' => $this->stages->findAllOrdered(),
+            'users' => $this->users->findAllActive(),
             'csrf_token' => CsrfMiddleware::getToken(),
         ]);
     }
 
-    /**
-     * Processa o formulário e cria o cliente no banco.
-     */
     public function store(array $params = []): void
     {
         // nome e etapa do funil são obrigatórios
@@ -109,8 +106,7 @@ class ClientController extends Controller
             return;
         }
 
-        $stageModel = new PipelineStage();
-        $stage = $stageModel->findById((int) $stageId);
+        $stage = $this->stages->findById((int) $stageId);
         $isVendaFechada = $stage && !empty($stage['is_won_stage']);
 
         $data = [
@@ -136,10 +132,8 @@ class ClientController extends Controller
             'closed_at' => $isVendaFechada ? ($this->inputPost('closed_at') ?: null) : null,
         ];
 
-        $clientModel = new Client();
-
         if (!empty($data['phone'])) {
-            $existing = $clientModel->findByPhone($data['phone']);
+            $existing = $this->clients->findByPhone($data['phone']);
             if ($existing) {
                 $this->flash('error', 'Já existe um cliente cadastrado com este telefone: ' . htmlspecialchars($existing['name'], ENT_QUOTES, 'UTF-8') . '.');
                 $this->redirect('/clients/create');
@@ -147,76 +141,57 @@ class ClientController extends Controller
             }
         }
 
-        $id = $clientModel->create($data);
+        $id = $this->clients->create($data);
 
         $this->flash('success', 'Cliente cadastrado com sucesso!');
         $this->redirect('/clients/' . $id);
     }
 
-    /**
-     * Exibe os detalhes de um cliente com histórico de interações e tarefas.
-     */
     public function show(array $params = []): void
     {
         $id = (int) ($params['id'] ?? 0);
-        $clientModel = new Client();
-        $client = $clientModel->findByIdWithRelations($id);
+        $client = $this->clients->findByIdWithRelations($id);
 
         if (!$client) {
             $this->flash('error', 'Cliente não encontrado.');
             $this->redirect('/clients');
         }
 
-        $interactionModel = new Interaction();
-        $taskModel = new Task();
-        $stageModel = new PipelineStage();
-        $userModel = new User();
-        $saleModel = new ClientSale();
-        $sales = $saleModel->findByClientId($id);
+        $sales = $this->service->getSalesWithPaymentStatus($id);
 
         $this->render('clients/show', [
             'pageTitle' => $client['name'],
             'title' => $client['name'] . ' — ' . APP_NAME,
             'client' => $client,
-            'interactions' => $interactionModel->findByClient($id),
-            'tasks' => $taskModel->findByClient($id),
-            'stages' => $stageModel->findAllOrdered(),
-            'users' => $userModel->findAllActive(),
+            'interactions' => $this->interactions->findByClient($id),
+            'tasks' => $this->tasks->findByClient($id),
+            'stages' => $this->stages->findAllOrdered(),
+            'users' => $this->users->findAllActive(),
             'csrf_token' => CsrfMiddleware::getToken(),
             'sales' => $sales,
         ]);
     }
 
-    /**
-     * Exibe o formulário de edição de um cliente.
-     */
     public function edit(array $params = []): void
     {
         $id = (int) ($params['id'] ?? 0);
-        $clientModel = new Client();
-        $client = $clientModel->findById($id);
+        $client = $this->clients->findById($id);
 
         if (!$client) {
             $this->flash('error', 'Cliente não encontrado.');
             $this->redirect('/clients');
         }
 
-        $stageModel = new PipelineStage();
-        $userModel = new User();
-
         $this->render('clients/edit', [
             'pageTitle' => 'Editar: ' . $client['name'],
             'title' => 'Editar Cliente — ' . APP_NAME,
             'client' => $client,
-            'stages' => $stageModel->findAllOrdered(),
-            'users' => $userModel->findAllActive(),
+            'stages' => $this->stages->findAllOrdered(),
+            'users' => $this->users->findAllActive(),
             'csrf_token' => CsrfMiddleware::getToken(),
         ]);
     }
 
-    /**
-     * Processa o formulário de edição.
-     */
     public function update(array $params = []): void
     {
         $id = (int) ($params['id'] ?? 0);
@@ -229,8 +204,7 @@ class ClientController extends Controller
         }
 
         $stageId = (int) $this->inputPost('pipeline_stage_id');
-        $stageModel = new PipelineStage();
-        $stage = $stageModel->findById($stageId);
+        $stage = $this->stages->findById($stageId);
         $isVendaFechada = $stage && !empty($stage['is_won_stage']);
 
         $data = [
@@ -256,147 +230,128 @@ class ClientController extends Controller
             'closed_at' => $isVendaFechada ? ($this->inputPost('closed_at') ?: null) : null,
         ];
 
-        $clientModel = new Client();
-        $client = $clientModel->findById($id);
+        $client = $this->clients->findById($id);
         if (!$client) {
             $this->redirect('/clients');
             return;
         }
-        $clientModel->update($id, $data);
+        $this->clients->update($id, $data);
 
         $this->flash('success', 'Cliente atualizado com sucesso!');
         $this->redirect('/clients/' . $id);
     }
 
-    /**
-     * Realiza soft-delete do cliente.
-     */
     public function destroy(array $params = []): void
     {
         $id = (int) ($params['id'] ?? 0);
-        $clientModel = new Client();
-        $client = $clientModel->findById($id);
+        $client = $this->clients->findById($id);
         if (!$client) {
             $this->redirect('/clients');
             return;
         }
-        $clientModel->softDelete($id);
+        $this->clients->softDelete($id);
 
         $this->flash('success', 'Cliente removido com sucesso.');
         $this->redirect('/clients');
     }
 
-    /**
-     * Cria uma nova cota de consórcio para o cliente. Retorna JSON.
-     */
     public function storeSale(array $params = []): void
     {
-        header('Content-Type: application/json');
         $clientId = (int) ($params['id'] ?? 0);
-
         if (!$clientId) {
-            echo json_encode(['success' => false, 'error' => 'Cliente inválido.']);
-            exit;
+            $this->json(ApiResponse::error('Cliente inválido.'), 400);
+            return;
         }
 
-        $tipo = $this->inputPost('tipo');
+        $tipo        = $this->inputPost('tipo');
         $tiposValidos = ['Imóvel', 'Veículo', 'Serviço'];
         if (!in_array($tipo, $tiposValidos, true)) {
-            echo json_encode(['success' => false, 'error' => 'Tipo de consórcio inválido.']);
-            exit;
+            $this->json(ApiResponse::error('Tipo de consórcio inválido.'), 422);
+            return;
         }
 
         $data = [
-            'grupo' => $this->input('grupo'),
-            'cota' => $this->input('cota'),
-            'tipo' => $tipo,
-            'credito_contratado' => $this->inputPost('credito_contratado', '0'),
+            'grupo'               => $this->input('grupo'),
+            'cota'                => $this->input('cota'),
+            'tipo'                => $tipo,
+            'credito_contratado'  => $this->inputPost('credito_contratado', '0'),
         ];
 
-        $saleModel = new ClientSale();
-        $saleId = $saleModel->create($clientId, $data);
+        $saleId = $this->sales->create($clientId, $data);
 
-        echo json_encode([
-            'success' => true,
-            'csrf_token' => CsrfMiddleware::getToken(),
+        $this->json(ApiResponse::success([
             'sale' => [
-                'id' => $saleId,
-                'grupo' => $data['grupo'],
-                'cota' => $data['cota'],
-                'tipo' => $data['tipo'],
+                'id'                 => $saleId,
+                'grupo'              => $data['grupo'],
+                'cota'               => $data['cota'],
+                'tipo'               => $data['tipo'],
                 'credito_contratado' => $data['credito_contratado'],
             ],
-        ]);
-        exit;
+        ], token: true));
     }
 
-    /**
-     * Remove uma cota de consórcio. Retorna JSON.
-     */
     public function destroySale(array $params = []): void
     {
-        header('Content-Type: application/json');
         $clientId = (int) ($params['id'] ?? 0);
-        $saleId = (int) ($params['sale_id'] ?? 0);
+        $saleId   = (int) ($params['sale_id'] ?? 0);
 
         if (!$clientId || !$saleId) {
-            echo json_encode(['success' => false, 'error' => 'Parâmetros inválidos.']);
-            exit;
+            $this->json(ApiResponse::error('Parâmetros inválidos.'), 400);
+            return;
         }
 
-        $saleModel = new ClientSale();
-        $deleted = $saleModel->delete($saleId, $clientId);
+        $deleted = $this->sales->delete($saleId, $clientId);
 
-        echo json_encode(['success' => $deleted, 'csrf_token' => CsrfMiddleware::getToken()]);
-        exit;
+        if (!$deleted) {
+            $this->json(ApiResponse::error('Cota não encontrada.'), 404);
+            return;
+        }
+
+        $this->json(ApiResponse::success([], token: true));
     }
 
-    /**
-     * Registra paid_at = NOW() para a cota. Retorna JSON.
-     */
     public function markSalePaid(array $params = []): void
     {
-        header('Content-Type: application/json');
         $clientId = (int) ($params['id'] ?? 0);
-        $saleId = (int) ($params['sale_id'] ?? 0);
+        $saleId   = (int) ($params['sale_id'] ?? 0);
 
         if (!$clientId || !$saleId) {
-            echo json_encode(['success' => false, 'error' => 'Parâmetros inválidos.']);
-            exit;
+            $this->json(ApiResponse::error('Parâmetros inválidos.'), 400);
+            return;
         }
 
-        $saleModel = new ClientSale();
-        $updated = $saleModel->updatePaidAt($saleId, $clientId);
+        $updated = $this->sales->updatePaidAt($saleId, $clientId);
 
-        echo json_encode([
-            'success' => $updated,
-            'csrf_token' => CsrfMiddleware::getToken(),
-        ]);
-        exit;
+        if (!$updated) {
+            $this->json(ApiResponse::error('Cota não encontrada.'), 404);
+            return;
+        }
+
+        $paidFormatted = null;
+        $sales = $this->service->getSalesWithPaymentStatus($clientId);
+        foreach ($sales as $s) {
+            if ((int) $s['id'] === $saleId) {
+                $paidFormatted = $s['paid_at_formatted'];
+                break;
+            }
+        }
+
+        $this->json(ApiResponse::success([
+            'paid_at_formatted' => $paidFormatted,
+        ], token: true));
     }
 
-    /**
-     * Atualiza o campo notes do cliente. Retorna JSON.
-     */
     public function updateNotes(array $params = []): void
     {
-        header('Content-Type: application/json');
         $id = (int) ($params['id'] ?? 0);
-
         if (!$id) {
-            echo json_encode(['success' => false, 'error' => 'Cliente inválido.']);
-            exit;
+            $this->json(ApiResponse::error('Cliente inválido.'), 400);
+            return;
         }
 
         $notes = $_POST['notes'] ?? '';
+        $ok    = $this->clients->updateNotes($id, $notes);
 
-        $clientModel = new Client();
-        $ok = $clientModel->updateNotes($id, $notes);
-
-        echo json_encode([
-            'success'    => $ok,
-            'csrf_token' => CsrfMiddleware::getToken(),
-        ]);
-        exit;
+        $this->json(ApiResponse::success(['ok' => $ok], token: true));
     }
 }
