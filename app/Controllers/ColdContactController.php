@@ -5,16 +5,19 @@ namespace App\Controllers;
 use Core\Controller;
 use Core\Middleware\CsrfMiddleware;
 use App\Models\ColdContact;
+use Core\Http\ApiResponse;
 
 class ColdContactController extends Controller
 {
+    public function __construct(
+        private ColdContact $coldContacts = new ColdContact(),
+    ) {}
+
     /**
      * Exibe a tela de Cards Mensais com resumo de importações.
      */
     public function index(array $params = []): void
     {
-        $model = new ColdContact();
-
         // Paginação dos cards mensais
         $page = max(1, (int) ($_GET['page'] ?? 1));
         $allowedLimits = [15, 25, 50, 100];
@@ -29,8 +32,8 @@ class ColdContactController extends Controller
             : 25;
         $offset = ($page - 1) * $limit;
 
-        $totalCount = $model->countFindMonthSummaries();
-        $rawSummaries = $model->findMonthSummaries($limit, $offset);
+        $totalCount = $this->coldContacts->countFindMonthSummaries();
+        $rawSummaries = $this->coldContacts->findMonthSummaries($limit, $offset);
         $totalPages = (int) ceil($totalCount / $limit);
 
         $meses = [
@@ -122,7 +125,6 @@ class ColdContactController extends Controller
         $separator = (substr_count($firstLine, ';') >= substr_count($firstLine, ',')) ? ';' : ',';
         rewind($handle);
 
-        $model = new ColdContact();
         $inserted = 0;
         $skipped = 0;
         $lineNum = 0;
@@ -156,7 +158,7 @@ class ColdContactController extends Controller
                 continue;
             }
 
-            $model->create([
+            $this->coldContacts->create([
                 'phone' => $phone,
                 'name' => $name,
                 'tipo_lista' => $tipoLista,
@@ -182,58 +184,50 @@ class ColdContactController extends Controller
      */
     public function update(array $params = []): void
     {
-        header('Content-Type: application/json');
-        $role = $_SESSION['user']['role'] ?? '';
-        if (!in_array($role, ['admin', 'seller'], true)) {
-            http_response_code(403);
-            echo json_encode(['success' => false, 'error' => 'Acesso negado.']);
-            exit;
+        if (!in_array($_SESSION['user']['role'] ?? '', ['admin', 'seller'], true)) {
+            $this->json(ApiResponse::error('Acesso negado.'), 403);
+            return;
         }
+
         $id = (int) ($params['id'] ?? 0);
-
         if (!$id) {
-            echo json_encode(['success' => false, 'error' => 'ID inválido.']);
-            exit;
+            $this->json(ApiResponse::error('ID inválido.'), 400);
+            return;
         }
 
-        $phone = $this->input('phone');
-        $name = $this->input('name');
+        $phone           = $this->input('phone');
+        $name            = $this->input('name');
         $telefoneEnviado = $this->inputPost('telefone_enviado');
-        $dataMensagem = $this->inputPost('data_mensagem');
+        $dataMensagem    = $this->inputPost('data_mensagem');
 
         if (empty($phone) || empty($name)) {
-            echo json_encode(['success' => false, 'error' => 'Celular e Nome são obrigatórios.']);
-            exit;
+            $this->json(ApiResponse::error('Celular e Nome são obrigatórios.'), 422);
+            return;
         }
 
         if (!empty($telefoneEnviado) && (!ctype_digit($telefoneEnviado) || strlen($telefoneEnviado) > 4)) {
-            echo json_encode(['success' => false, 'error' => 'Telefone enviado deve ser numérico com até 4 dígitos.']);
-            exit;
+            $this->json(ApiResponse::error('Telefone enviado deve ser numérico com até 4 dígitos.'), 422);
+            return;
         }
 
         $dataNormalizada = null;
         if (!empty($dataMensagem)) {
             if (preg_match('/^\d{2}\/\d{2}\/\d{4}$/', $dataMensagem)) {
-                $parts = explode('/', $dataMensagem);
+                $parts           = explode('/', $dataMensagem);
                 $dataNormalizada = $parts[2] . '-' . $parts[1] . '-' . $parts[0];
             } elseif (preg_match('/^\d{4}-\d{2}-\d{2}$/', $dataMensagem)) {
                 $dataNormalizada = $dataMensagem;
             }
         }
 
-        $model = new ColdContact();
-        $updated = $model->update($id, [
-            'phone' => $phone,
-            'name' => $name,
+        $updated = $this->coldContacts->update($id, [
+            'phone'            => $phone,
+            'name'             => $name,
             'telefone_enviado' => !empty($telefoneEnviado) ? $telefoneEnviado : null,
-            'data_mensagem' => $dataNormalizada,
+            'data_mensagem'    => $dataNormalizada,
         ]);
 
-        echo json_encode([
-            'success' => $updated,
-            'csrf_token' => CsrfMiddleware::getToken(),
-        ]);
-        exit;
+        $this->json(ApiResponse::success(['updated' => $updated], token: true));
     }
 
     /**
@@ -241,28 +235,19 @@ class ColdContactController extends Controller
      */
     public function destroy(array $params = []): void
     {
-        header('Content-Type: application/json');
-        $role = $_SESSION['user']['role'] ?? '';
-        if (!in_array($role, ['admin', 'seller'], true)) {
-            http_response_code(403);
-            echo json_encode(['success' => false, 'error' => 'Acesso negado.']);
-            exit;
+        if (!in_array($_SESSION['user']['role'] ?? '', ['admin', 'seller'], true)) {
+            $this->json(ApiResponse::error('Acesso negado.'), 403);
+            return;
         }
+
         $id = (int) ($params['id'] ?? 0);
-
         if (!$id) {
-            echo json_encode(['success' => false, 'error' => 'ID inválido.']);
-            exit;
+            $this->json(ApiResponse::error('ID inválido.'), 400);
+            return;
         }
 
-        $model = new ColdContact();
-        $deleted = $model->destroy($id);
-
-        echo json_encode([
-            'success' => $deleted,
-            'csrf_token' => CsrfMiddleware::getToken(),
-        ]);
-        exit;
+        $deleted = $this->coldContacts->destroy($id);
+        $this->json(ApiResponse::success(['deleted' => $deleted], token: true));
     }
 
     /**
@@ -270,34 +255,24 @@ class ColdContactController extends Controller
      */
     public function deleteMonth(array $params = []): void
     {
-        header('Content-Type: application/json');
-        $role = $_SESSION['user']['role'] ?? '';
-        if (!in_array($role, ['admin', 'seller'], true)) {
-            http_response_code(403);
-            echo json_encode(['success' => false, 'error' => 'Acesso negado.']);
-            exit;
+        if (!in_array($_SESSION['user']['role'] ?? '', ['admin', 'seller'], true)) {
+            $this->json(ApiResponse::error('Acesso negado.'), 403);
+            return;
         }
-        $yearMonth = trim($params['year_month'] ?? '');
 
+        $yearMonth = trim($params['year_month'] ?? '');
         if (empty($yearMonth) || !preg_match('/^\d{4}-\d{2}$/', $yearMonth)) {
-            echo json_encode(['success' => false, 'error' => 'Mês inválido.']);
-            exit;
+            $this->json(ApiResponse::error('Mês inválido.'), 422);
+            return;
         }
 
         try {
-            $model = new ColdContact();
-            $deleted = $model->deleteByMonth($yearMonth);
-            echo json_encode([
-                'success'    => true,
-                'deleted'    => $deleted,
-                'csrf_token' => CsrfMiddleware::getToken(),
-            ]);
+            $deleted = $this->coldContacts->deleteByMonth($yearMonth);
+            $this->json(ApiResponse::success(['deleted' => $deleted], token: true));
         } catch (\Throwable $e) {
             error_log('[ColdContact deleteMonth] yearMonth=' . $yearMonth . ' exception: ' . $e->getMessage());
-            http_response_code(500);
-            echo json_encode(['success' => false, 'error' => 'Erro ao excluir mês.']);
+            $this->json(ApiResponse::error('Erro ao excluir mês.'), 500);
         }
-        exit;
     }
 
     /**
@@ -322,8 +297,7 @@ class ColdContactController extends Controller
             $filters['telefone_enviado'] = trim($_GET['telefone_enviado']);
         }
 
-        $model = new ColdContact();
-        $contacts = $model->findForExport($yearMonth, $filters);
+        $contacts = $this->coldContacts->findForExport($yearMonth, $filters);
 
         // Nome do arquivo: contatos-frios-YYYY-MM.csv
         $filename = 'contatos-frios-' . $yearMonth . '.csv';
@@ -360,49 +334,42 @@ class ColdContactController extends Controller
      */
     public function bulkUpdate(array $params = []): void
     {
-        header('Content-Type: application/json');
-        $role = $_SESSION['user']['role'] ?? '';
-        if (!in_array($role, ['admin', 'seller'], true)) {
-            http_response_code(403);
-            echo json_encode(['success' => false, 'error' => 'Acesso negado.']);
-            exit;
+        if (!in_array($_SESSION['user']['role'] ?? '', ['admin', 'seller'], true)) {
+            $this->json(ApiResponse::error('Acesso negado.'), 403);
+            return;
         }
 
         $telefone = trim($_POST['telefone_enviado'] ?? '');
-        $dataMsg = trim($_POST['data_mensagem'] ?? '');
+        $dataMsg  = trim($_POST['data_mensagem'] ?? '');
 
         if (!empty($telefone) && (!ctype_digit($telefone) || strlen($telefone) > 4)) {
-            echo json_encode(['success' => false, 'error' => 'Tel. enviado deve ser numérico com até 4 dígitos.']);
-            exit;
+            $this->json(ApiResponse::error('Tel. enviado deve ser numérico com até 4 dígitos.'), 422);
+            return;
         }
 
         $dataNormalizada = null;
-        if (!empty($dataMsg)) {
-            if (preg_match('/^\d{4}-\d{2}-\d{2}$/', $dataMsg)) {
-                $dataNormalizada = $dataMsg;
-            }
+        if (!empty($dataMsg) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $dataMsg)) {
+            $dataNormalizada = $dataMsg;
         }
 
         $ids = array_filter(array_map('intval', (array) ($_POST['ids'] ?? [])));
         if (empty($ids)) {
-            echo json_encode(['success' => false, 'error' => 'Nenhum contato selecionado.']);
-            exit;
+            $this->json(ApiResponse::error('Nenhum contato selecionado.'), 422);
+            return;
         }
-        
+
         if ($telefone === '' && $dataMsg === '') {
-            echo json_encode(['success' => false, 'error' => 'Nenhum dado informado para atualizar.']);
-            exit;
+            $this->json(ApiResponse::error('Nenhum dado informado para atualizar.'), 422);
+            return;
         }
 
-        $model = new ColdContact();
-        $updated = $model->bulkAtualizarExtras($ids, $telefone === '' ? null : $telefone, $dataMsg === '' ? null : $dataNormalizada);
+        $updated = $this->coldContacts->bulkAtualizarExtras(
+            $ids,
+            $telefone === '' ? null : $telefone,
+            $dataMsg  === '' ? null : $dataNormalizada
+        );
 
-        echo json_encode([
-            'success' => $updated > 0,
-            'updated' => $updated,
-            'csrf_token' => CsrfMiddleware::getToken(),
-        ]);
-        exit;
+        $this->json(ApiResponse::success(['updated' => $updated], token: true));
     }
 
     /**
@@ -411,23 +378,18 @@ class ColdContactController extends Controller
      */
     public function listJson(array $params = []): void
     {
-        header('Content-Type: application/json');
         $yearMonth = trim($_GET['month'] ?? '');
         if (empty($yearMonth) || !preg_match('/^\d{4}-\d{2}$/', $yearMonth)) {
-            echo json_encode(['contacts' => [], 'pagination' => []]);
-            exit;
+            $this->json(['contacts' => [], 'pagination' => []]);
+            return;
         }
 
         $filters = [];
-        if (!empty($_GET['nome']))
-            $filters['nome'] = trim($_GET['nome']);
-        if (!empty($_GET['dia']))
-            $filters['dia'] = (int) $_GET['dia'];
-        if (!empty($_GET['telefone_enviado']))
-            $filters['telefone_enviado'] = trim($_GET['telefone_enviado']);
+        if (!empty($_GET['nome']))             $filters['nome']             = trim($_GET['nome']);
+        if (!empty($_GET['dia']))              $filters['dia']              = (int) $_GET['dia'];
+        if (!empty($_GET['telefone_enviado'])) $filters['telefone_enviado'] = trim($_GET['telefone_enviado']);
 
-        // Paginação
-        $page = max(1, (int) ($_GET['page'] ?? 1));
+        $page          = max(1, (int) ($_GET['page'] ?? 1));
         $allowedLimits = [15, 25, 50, 100];
         if (!empty($_GET['per_page'])) {
             $requestedLimit = (int) $_GET['per_page'];
@@ -435,34 +397,27 @@ class ColdContactController extends Controller
                 $_SESSION['per_page'] = $requestedLimit;
             }
         }
-        $limit = isset($_SESSION['per_page']) && in_array((int) $_SESSION['per_page'], $allowedLimits, true)
+        $limit  = isset($_SESSION['per_page']) && in_array((int) $_SESSION['per_page'], $allowedLimits, true)
             ? (int) $_SESSION['per_page']
             : 25;
         $offset = ($page - 1) * $limit;
 
         try {
-            $model = new ColdContact();
-            $totalCount = $model->countByMonth($yearMonth, $filters);
-            $contacts = $model->findByMonth($yearMonth, $filters, $limit, $offset);
+            $totalCount = $this->coldContacts->countByMonth($yearMonth, $filters);
+            $contacts   = $this->coldContacts->findByMonth($yearMonth, $filters, $limit, $offset);
 
-            $paginationMeta = [
-                'current_page' => $page,
-                'total_pages'  => (int) ceil($totalCount / $limit),
-                'total_items'  => $totalCount,
-                'per_page'     => $limit,
-            ];
-
-            // JSON_INVALID_UTF8_SUBSTITUTE substitui bytes inválidos em vez de retornar false
-            $json = json_encode(
-                ['contacts' => $contacts, 'pagination' => $paginationMeta],
-                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES | JSON_INVALID_UTF8_SUBSTITUTE
-            );
-            echo $json !== false ? $json : json_encode(['contacts' => [], 'pagination' => []]);
+            $this->json([
+                'contacts'   => $contacts,
+                'pagination' => [
+                    'current_page' => $page,
+                    'total_pages'  => (int) ceil($totalCount / $limit),
+                    'total_items'  => $totalCount,
+                    'per_page'     => $limit,
+                ],
+            ]);
         } catch (\Throwable $e) {
-            // Loga a exceção real para diagnóstico; retorna 200 com array vazio
             error_log('[ColdContact listJson] yearMonth=' . $yearMonth . ' exception: ' . $e->getMessage() . ' | ' . $e->getTraceAsString());
-            echo json_encode(['contacts' => [], 'pagination' => []]);
+            $this->json(['contacts' => [], 'pagination' => []]);
         }
-        exit;
     }
 }
