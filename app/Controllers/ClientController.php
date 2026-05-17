@@ -49,11 +49,8 @@ class ClientController extends Controller
 
         $offset = ($page - 1) * $limit;
 
-        $saleModel        = new ClientSale();
-        $overdueClientIds = $saleModel->findOverdueClientIds();
-
         $totalCount = $clientModel->countAllWithRelations($filters);
-        $clients    = $clientModel->findAllWithRelations($filters, $limit, $offset, $overdueClientIds);
+        $clients    = $clientModel->findAllWithRelations($filters, $limit, $offset);
         $totalPages = (int) ceil($totalCount / $limit);
 
         $stages = $stageModel->findAllOrdered();
@@ -175,8 +172,7 @@ class ClientController extends Controller
         $stageModel = new PipelineStage();
         $userModel = new User();
         $saleModel = new ClientSale();
-        $ref   = $saleModel->computeRefMonth();
-        $sales = $saleModel->findWithPaymentStatus($id, $ref['mes'], $ref['ano']);
+        $sales = $saleModel->findByClientId($id);
 
         $this->render('clients/show', [
             'pageTitle' => $client['name'],
@@ -372,23 +368,9 @@ class ClientController extends Controller
         $saleModel = new ClientSale();
         $updated = $saleModel->updatePaidAt($saleId, $clientId);
 
-        // Busca paid_at atualizado para retornar a data formatada ao front
-        $paidFormatted = null;
-        if ($updated) {
-            $ref   = $saleModel->computeRefMonth();
-            $sales = $saleModel->findWithPaymentStatus($clientId, $ref['mes'], $ref['ano']);
-            foreach ($sales as $s) {
-                if ((int) $s['id'] === $saleId) {
-                    $paidFormatted = $s['paid_at_formatted'];
-                    break;
-                }
-            }
-        }
-
         echo json_encode([
             'success' => $updated,
             'csrf_token' => CsrfMiddleware::getToken(),
-            'paid_at_formatted' => $paidFormatted,
         ]);
         exit;
     }
