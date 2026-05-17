@@ -9,13 +9,39 @@ class Client extends Model
     protected string $table = 'clients';
 
     /**
-     * Busca todos os clientes com JOIN nas tabelas relacionadas.
-     * Retorna também o nome da etapa do funil e do vendedor responsável
-     * para exibição na listagem sem precisar de queries adicionais.
+     * Monta cláusulas WHERE e parâmetros PDO a partir dos filtros da listagem.
+     * Reutilizado por countAllWithRelations e findAllWithRelations.
      *
-     * @param  array  $filters  ['stage_id', 'assigned_to', 'search']
-     * @return array
+     * @param  array  $filters  ['stage_id', 'assigned_to', 'search', 'tipo_venda']
+     * @return array{sql: string, params: array}
      */
+    private function buildClientFilters(array $filters): array
+    {
+        $sql    = '';
+        $params = [];
+
+        if (!empty($filters['stage_id'])) {
+            $sql .= " AND c.pipeline_stage_id = :stage_id";
+            $params[':stage_id'] = (int) $filters['stage_id'];
+        }
+        if (!empty($filters['assigned_to'])) {
+            $sql .= " AND c.assigned_to = :assigned_to";
+            $params[':assigned_to'] = (int) $filters['assigned_to'];
+        }
+        if (!empty($filters['search'])) {
+            $sql .= " AND (c.name LIKE :search1 OR c.company LIKE :search2 OR c.email LIKE :search3)";
+            $params[':search1'] = '%' . $filters['search'] . '%';
+            $params[':search2'] = '%' . $filters['search'] . '%';
+            $params[':search3'] = '%' . $filters['search'] . '%';
+        }
+        if (!empty($filters['tipo_venda'])) {
+            $sql .= " AND cs.tipo = :tipo_venda";
+            $params[':tipo_venda'] = $filters['tipo_venda'];
+        }
+
+        return ['sql' => $sql, 'params' => $params];
+    }
+
     /**
      * Conta o total de clientes ativos que correspondem aos filtros fornecidos.
      * Usa os mesmos JOINs de findAllWithRelations, contando DISTINCT c.id.
@@ -36,34 +62,16 @@ class Client extends Model
         $sql .= " AND c.tenant_id = :tenant_id";
         $params[':tenant_id'] = $tenantId;
 
-        if (!empty($filters['stage_id'])) {
-            $sql .= " AND c.pipeline_stage_id = :stage_id";
-            $params[':stage_id'] = (int) $filters['stage_id'];
-        }
-
-        if (!empty($filters['assigned_to'])) {
-            $sql .= " AND c.assigned_to = :assigned_to";
-            $params[':assigned_to'] = (int) $filters['assigned_to'];
-        }
-
-        if (!empty($filters['search'])) {
-            $sql .= " AND (c.name LIKE :search1 OR c.company LIKE :search2 OR c.email LIKE :search3)";
-            $params[':search1'] = '%' . $filters['search'] . '%';
-            $params[':search2'] = '%' . $filters['search'] . '%';
-            $params[':search3'] = '%' . $filters['search'] . '%';
-        }
-
-        if (!empty($filters['tipo_venda'])) {
-            $sql .= " AND cs.tipo = :tipo_venda";
-            $params[':tipo_venda'] = $filters['tipo_venda'];
-        }
+        $clauses = $this->buildClientFilters($filters);
+        $sql    .= $clauses['sql'];
+        $params  = array_merge($params, $clauses['params']);
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return (int) $stmt->fetchColumn();
     }
 
-    public function findAllWithRelations(array $filters = [], ?int $limit = null, ?int $offset = null): array
+    public function findAllWithRelations(array $filters = [], ?int $limit = null, ?int $offset = null, array $overdueClientIds = []): array
     {
         // Query base com JOINs
         $sql = "
@@ -85,31 +93,9 @@ class Client extends Model
         $sql .= " AND c.tenant_id = :tenant_id";
         $params[':tenant_id'] = $tenantId;
 
-        // Filtro por etapa do funil
-        if (!empty($filters['stage_id'])) {
-            $sql .= " AND c.pipeline_stage_id = :stage_id";
-            $params[':stage_id'] = (int) $filters['stage_id'];
-        }
-
-        // Filtro por vendedor responsável
-        if (!empty($filters['assigned_to'])) {
-            $sql .= " AND c.assigned_to = :assigned_to";
-            $params[':assigned_to'] = (int) $filters['assigned_to'];
-        }
-
-        // Busca por nome, empresa ou e-mail (pesquisa livre)
-        if (!empty($filters['search'])) {
-            $sql .= " AND (c.name LIKE :search1 OR c.company LIKE :search2 OR c.email LIKE :search3)";
-            $params[':search1'] = '%' . $filters['search'] . '%';
-            $params[':search2'] = '%' . $filters['search'] . '%';
-            $params[':search3'] = '%' . $filters['search'] . '%';
-        }
-
-        // Filtro por tipo de venda (Imóvel, Veículo, Serviço)
-        if (!empty($filters['tipo_venda'])) {
-            $sql .= " AND cs.tipo = :tipo_venda";
-            $params[':tipo_venda'] = $filters['tipo_venda'];
-        }
+        $clauses = $this->buildClientFilters($filters);
+        $sql    .= $clauses['sql'];
+        $params  = array_merge($params, $clauses['params']);
 
         $sql .= " GROUP BY c.id";
         $allowedSorts = [
@@ -139,12 +125,11 @@ class Client extends Model
 
         $stmt->execute();
         $rows = $stmt->fetchAll();
-        $overdueIds = array_flip($this->findAllOverdueSalesByClient());
 
+        $overdueSet = array_flip($overdueClientIds);
         foreach ($rows as &$row) {
-            // FRAG-03: identificação por coluna estruturada, não por nome de string
-            $isWonStage = !empty($row['is_won_stage']);
-            $row['has_overdue'] = $isWonStage && isset($overdueIds[(int) $row['id']]);
+            $isWonStage      = !empty($row['is_won_stage']);
+            $row['has_overdue'] = $isWonStage && isset($overdueSet[(int) $row['id']]);
         }
         unset($row);
 
@@ -363,122 +348,6 @@ class Client extends Model
     }
 
     /**
-     * Retorna todas as cotas de um cliente específico.
-     */
-    public function findSalesByClientId(int $clientId): array
-    {
-        $stmt = $this->db->prepare(
-            "SELECT cs.* FROM client_sales cs
-             INNER JOIN clients c ON c.id = cs.client_id AND c.tenant_id = :tenant_id
-             WHERE cs.client_id = :client_id ORDER BY cs.created_at ASC"
-        );
-        $stmt->execute([':client_id' => $clientId, ':tenant_id' => $this->currentTenantId()]);
-        return $stmt->fetchAll();
-    }
-
-    /**
-     * Cria uma nova cota de consórcio para um cliente.
-     *
-     * @param  int    $clientId
-     * @param  array  $data  Chaves: grupo, cota, tipo, credito_contratado
-     * @return int    ID da cota criada
-     */
-    public function createSale(int $clientId, array $data): int
-    {
-        $stmt = $this->db->prepare("
-            INSERT INTO client_sales (client_id, grupo, cota, tipo, credito_contratado)
-            VALUES (:client_id, :grupo, :cota, :tipo, :credito_contratado)
-        ");
-        $stmt->execute([
-            ':client_id' => $clientId,
-            ':grupo' => $data['grupo'] ?: null,
-            ':cota' => $data['cota'] ?: null,
-            ':tipo' => $data['tipo'],
-            ':credito_contratado' => !empty($data['credito_contratado'])
-                ? self::parseMoney($data['credito_contratado'])
-                : 0,
-        ]);
-        return (int) $this->db->lastInsertId();
-    }
-
-    /**
-     * Remove uma cota de consórcio pelo ID (verificando que pertence ao cliente).
-     */
-    public function deleteSale(int $saleId, int $clientId): bool
-    {
-        $stmt = $this->db->prepare(
-            "DELETE cs FROM client_sales cs
-             INNER JOIN clients c ON c.id = cs.client_id AND c.tenant_id = :tenant_id
-             WHERE cs.id = :id AND cs.client_id = :client_id"
-        );
-        $stmt->execute([':id' => $saleId, ':client_id' => $clientId, ':tenant_id' => $this->currentTenantId()]);
-        return $stmt->rowCount() > 0;
-    }
-
-    /**
-     * Busca cotas do cliente com status de pagamento calculado em PHP.
-     *   - dia atual >= cutoff → mês de referência = mês atual
-     *   - dia atual < cutoff  → mês de referência = mês anterior
-     * A cota está "em dia" se paid_at NÃO for NULL e cair dentro do mês de referência.
-     * @param  int   $clientId
-     * @return array  Cada elemento possui todos os campos de client_sales
-     */
-    public function findSalesWithPaymentStatus(int $clientId): array
-    {
-        $stmt = $this->db->prepare(
-            "SELECT cs.* FROM client_sales cs
-             INNER JOIN clients c ON c.id = cs.client_id AND c.tenant_id = :tenant_id
-             WHERE cs.client_id = :client_id ORDER BY cs.created_at ASC"
-        );
-        $stmt->execute([':client_id' => $clientId, ':tenant_id' => $this->currentTenantId()]);
-        $sales = $stmt->fetchAll();
-
-        // Determina mês/ano de referência do ciclo vigente
-        $ref = $this->computeRefMonth();
-        $refMes = $ref['mes'];
-        $refAno = $ref['ano'];
-
-        foreach ($sales as &$sale) {
-            $isPaid = false;
-            $paidFormatted = null;
-
-            if (!empty($sale['paid_at'])) {
-                $paidDt  = new \DateTimeImmutable($sale['paid_at']);
-                $refStart = new \DateTimeImmutable(sprintf('%04d-%02d-01 00:00:00', $refAno, $refMes));
-                $now      = new \DateTimeImmutable('now');
-
-                if ($paidDt >= $refStart && $paidDt <= $now) {
-                    $isPaid = true;
-                    $paidFormatted = $paidDt->format('d/m/Y H:i');
-                }
-            }
-
-            $sale['is_paid'] = $isPaid;
-            $sale['paid_at_formatted'] = $paidFormatted;
-        }
-        unset($sale);
-
-        return $sales;
-    }
-
-    /**
-     * Registra o pagamento da cota no mês de referência do ciclo vigente.
-     * Grava paid_at com uma data dentro do mês de referência para que
-     * findSalesWithPaymentStatus reconheça como pago corretamente.
-     */
-    public function updateSalePaidAt(int $saleId, int $clientId): bool
-    {
-        $stmt = $this->db->prepare(
-            "UPDATE client_sales cs
-             INNER JOIN clients c ON c.id = cs.client_id AND c.tenant_id = :tenant_id
-             SET cs.paid_at = NOW()
-             WHERE cs.id = :id AND cs.client_id = :client_id"
-        );
-        $stmt->execute([':id' => $saleId, ':client_id' => $clientId, ':tenant_id' => $this->currentTenantId()]);
-        return $stmt->rowCount() > 0;
-    }
-
-    /**
      * Busca cliente ativo pelo telefone (para verificar duplicata).
      */
     public function findByPhone(string $phone): array|bool
@@ -507,41 +376,6 @@ class Client extends Model
         }
         // Sem vírgula: já está em formato neutro (ex: "60000.00" ou "60000")
         return (float) $value;
-    }
-
-    /**
-     * Returns the configured payment cutoff day for the current tenant.
-     * Reads tenants.payment_cutoff_day; falls back to 20 if missing.
-     */
-    private function getTenantCutoffDay(): int
-    {
-        try {
-            $stmt = $this->db->prepare('SELECT payment_cutoff_day FROM tenants WHERE id = :id LIMIT 1');
-            $stmt->execute([':id' => $this->currentTenantId()]);
-            $value = $stmt->fetchColumn();
-            return ((int) $value) ?: 20;
-        } catch (\RuntimeException $e) {
-            return 20;
-        }
-    }
-
-    /**
-     * Determina o mês/ano de referência do ciclo vigente de pagamentos.
-     * dia >= cutoff → mês atual; dia < cutoff → mês anterior. (D-04)
-     *
-     * @return array{mes: int, ano: int}
-     */
-    private function computeRefMonth(): array
-    {
-        $hoje = new \DateTimeImmutable('now');
-        $diaHoje = (int) $hoje->format('j');
-
-        if ($diaHoje >= $this->getTenantCutoffDay()) {
-            return ['mes' => (int) $hoje->format('n'), 'ano' => (int) $hoje->format('Y')];
-        }
-
-        $refDt = $hoje->modify('first day of last month');
-        return ['mes' => (int) $refDt->format('n'), 'ano' => (int) $refDt->format('Y')];
     }
 
     /**
@@ -584,52 +418,4 @@ class Client extends Model
         return $stmt->fetchAll();
     }
 
-    public function findAllOverdueSalesByClient(): array
-    {
-        $ref = $this->computeRefMonth();
-        $refMes = $ref['mes'];
-        $refAno = $ref['ano'];
-
-        // Busca todas as cotas ativas (de clientes is_active=1)
-        $t = $this->currentTenantId();
-        $stmt = $this->db->prepare("
-            SELECT cs.client_id, cs.paid_at
-            FROM client_sales cs
-            INNER JOIN clients c ON c.id = cs.client_id
-                AND c.is_active = 1
-                AND c.tenant_id = :tenant_id
-        ");
-        $stmt->execute([':tenant_id' => $t]);
-        $rows = $stmt->fetchAll();
-
-        // Só exibe em atraso a partir do dia de corte configurado do tenant sem pagamento
-        $hoje    = new \DateTimeImmutable('now');
-        $diaHoje = (int) $hoje->format('j');
-        if ($diaHoje < $this->getTenantCutoffDay()) {
-            return [];
-        }
-
-        $refStart = new \DateTimeImmutable(sprintf('%04d-%02d-01 00:00:00', $refAno, $refMes));
-
-        $overdueSet = [];
-        foreach ($rows as $row) {
-            $clientId = (int) $row['client_id'];
-            if (isset($overdueSet[$clientId]))
-                continue;
-
-            $isPaid = false;
-            if (!empty($row['paid_at'])) {
-                $paidDt = new \DateTimeImmutable($row['paid_at']);
-                if ($paidDt >= $refStart && $paidDt <= $hoje) {
-                    $isPaid = true;
-                }
-            }
-
-            if (!$isPaid) {
-                $overdueSet[$clientId] = true;
-            }
-        }
-
-        return array_keys($overdueSet);
-    }
 }

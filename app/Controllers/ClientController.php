@@ -5,6 +5,7 @@ namespace App\Controllers;
 use Core\Controller;
 use Core\Middleware\CsrfMiddleware;
 use App\Models\Client;
+use App\Models\ClientSale;
 use App\Models\PipelineStage;
 use App\Models\User;
 use App\Models\Interaction;
@@ -48,8 +49,11 @@ class ClientController extends Controller
 
         $offset = ($page - 1) * $limit;
 
+        $saleModel        = new ClientSale();
+        $overdueClientIds = $saleModel->findOverdueClientIds();
+
         $totalCount = $clientModel->countAllWithRelations($filters);
-        $clients = $clientModel->findAllWithRelations($filters, $limit, $offset);
+        $clients    = $clientModel->findAllWithRelations($filters, $limit, $offset, $overdueClientIds);
         $totalPages = (int) ceil($totalCount / $limit);
 
         $stages = $stageModel->findAllOrdered();
@@ -170,7 +174,9 @@ class ClientController extends Controller
         $taskModel = new Task();
         $stageModel = new PipelineStage();
         $userModel = new User();
-        $sales = $clientModel->findSalesWithPaymentStatus($id);
+        $saleModel = new ClientSale();
+        $ref   = $saleModel->computeRefMonth();
+        $sales = $saleModel->findWithPaymentStatus($id, $ref['mes'], $ref['ano']);
 
         $this->render('clients/show', [
             'pageTitle' => $client['name'],
@@ -311,8 +317,8 @@ class ClientController extends Controller
             'credito_contratado' => $this->inputPost('credito_contratado', '0'),
         ];
 
-        $clientModel = new Client();
-        $saleId = $clientModel->createSale($clientId, $data);
+        $saleModel = new ClientSale();
+        $saleId = $saleModel->create($clientId, $data);
 
         echo json_encode([
             'success' => true,
@@ -342,8 +348,8 @@ class ClientController extends Controller
             exit;
         }
 
-        $clientModel = new Client();
-        $deleted = $clientModel->deleteSale($saleId, $clientId);
+        $saleModel = new ClientSale();
+        $deleted = $saleModel->delete($saleId, $clientId);
 
         echo json_encode(['success' => $deleted, 'csrf_token' => CsrfMiddleware::getToken()]);
         exit;
@@ -363,13 +369,14 @@ class ClientController extends Controller
             exit;
         }
 
-        $clientModel = new Client();
-        $updated = $clientModel->updateSalePaidAt($saleId, $clientId);
+        $saleModel = new ClientSale();
+        $updated = $saleModel->updatePaidAt($saleId, $clientId);
 
         // Busca paid_at atualizado para retornar a data formatada ao front
         $paidFormatted = null;
         if ($updated) {
-            $sales = $clientModel->findSalesWithPaymentStatus($clientId);
+            $ref   = $saleModel->computeRefMonth();
+            $sales = $saleModel->findWithPaymentStatus($clientId, $ref['mes'], $ref['ano']);
             foreach ($sales as $s) {
                 if ((int) $s['id'] === $saleId) {
                     $paidFormatted = $s['paid_at_formatted'];
