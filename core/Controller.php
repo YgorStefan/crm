@@ -30,7 +30,8 @@ abstract class Controller
         // Closure segura que injeta variáveis do array $data no escopo da view
         // sem contaminar $this nem usar extract() (que poderia sobrescrever propriedades
         // do Controller via variáveis como $this ou propriedades mágicas).
-        $renderView = function(string $__viewFile, array $__data) {
+        $pageScripts = '';
+        $renderView = function(string $__viewFile, array $__data) use (&$pageScripts) {
             foreach ($__data as $__k => $__v) { $$__k = $__v; }
             unset($__k, $__v);
             ob_start();
