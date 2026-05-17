@@ -9,6 +9,33 @@ class Task extends Model
     protected string $table = 'tasks';
 
     /**
+     * Constrói cláusulas SQL e parâmetros para filtros de tarefas.
+     *
+     * @param  array  $filters  ['status', 'assigned_to', 'priority']
+     * @return array ['sql' => string, 'params' => array]
+     */
+    private function buildTaskFilters(array $filters): array
+    {
+        $sql    = '';
+        $params = [];
+
+        if (!empty($filters['status'])) {
+            $sql .= " AND t.status = :status";
+            $params[':status'] = $filters['status'];
+        }
+        if (!empty($filters['assigned_to'])) {
+            $sql .= " AND t.assigned_to = :assigned_to";
+            $params[':assigned_to'] = (int) $filters['assigned_to'];
+        }
+        if (!empty($filters['priority'])) {
+            $sql .= " AND t.priority = :priority";
+            $params[':priority'] = $filters['priority'];
+        }
+
+        return ['sql' => $sql, 'params' => $params];
+    }
+
+    /**
      * Retorna todas as tarefas com relações (cliente, responsável, criador).
      *
      * @param  array  $filters  ['status', 'assigned_to', 'priority']
@@ -33,18 +60,9 @@ class Task extends Model
         ";
         $params = [':tenant_id_c' => $tenantId, ':tenant_id_u' => $tenantId];
 
-        if (!empty($filters['status'])) {
-            $sql .= " AND t.status = :status";
-            $params[':status'] = $filters['status'];
-        }
-        if (!empty($filters['assigned_to'])) {
-            $sql .= " AND t.assigned_to = :assigned_to";
-            $params[':assigned_to'] = (int) $filters['assigned_to'];
-        }
-        if (!empty($filters['priority'])) {
-            $sql .= " AND t.priority = :priority";
-            $params[':priority'] = $filters['priority'];
-        }
+        $clauses  = $this->buildTaskFilters($filters);
+        $sql     .= $clauses['sql'];
+        $params   = array_merge($params, $clauses['params']);
 
         // Ordena por: tarefas atrasadas primeiro, depois por prazo crescente
         $sql .= " ORDER BY t.due_date ASC";
