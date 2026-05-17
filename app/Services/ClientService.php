@@ -1,0 +1,107 @@
+<?php
+
+namespace App\Services;
+
+use App\Models\Client;
+use App\Models\ClientSale;
+use Core\Database;
+
+class ClientService
+{
+    public function __construct(
+        private Client     $clients = new Client(),
+        private ClientSale $sales   = new ClientSale(),
+    ) {}
+
+    public function getSalesWithPaymentStatus(int $clientId): array
+    {
+        $sales  = $this->sales->findByClientId($clientId);
+        $ref    = $this->computeRefMonth();
+        $refMes = $ref['mes'];
+        $refAno = $ref['ano'];
+
+        foreach ($sales as &$sale) {
+            $isPaid       = false;
+            $paidFormatted = null;
+
+            if (!empty($sale['paid_at'])) {
+                $paidDt   = new \DateTimeImmutable($sale['paid_at']);
+                $refStart = new \DateTimeImmutable(sprintf('%04d-%02d-01 00:00:00', $refAno, $refMes));
+                $now      = new \DateTimeImmutable('now');
+
+                if ($paidDt >= $refStart && $paidDt <= $now) {
+                    $isPaid        = true;
+                    $paidFormatted = $paidDt->format('d/m/Y H:i');
+                }
+            }
+
+            $sale['is_paid']          = $isPaid;
+            $sale['paid_at_formatted'] = $paidFormatted;
+        }
+        unset($sale);
+
+        return $sales;
+    }
+
+    public function getOverdueClientIds(): array
+    {
+        $hoje    = new \DateTimeImmutable('now');
+        $diaHoje = (int) $hoje->format('j');
+
+        if ($diaHoje < $this->getTenantCutoffDay()) {
+            return [];
+        }
+
+        $ref      = $this->computeRefMonth();
+        $refStart = new \DateTimeImmutable(sprintf('%04d-%02d-01 00:00:00', $ref['ano'], $ref['mes']));
+        $rows     = $this->sales->findAllForOverdueCheck();
+
+        $overdueSet = [];
+        foreach ($rows as $row) {
+            $clientId = (int) $row['client_id'];
+            if (isset($overdueSet[$clientId])) {
+                continue;
+            }
+
+            $isPaid = false;
+            if (!empty($row['paid_at'])) {
+                $paidDt = new \DateTimeImmutable($row['paid_at']);
+                if ($paidDt >= $refStart && $paidDt <= $hoje) {
+                    $isPaid = true;
+                }
+            }
+
+            if (!$isPaid) {
+                $overdueSet[$clientId] = true;
+            }
+        }
+
+        return array_keys($overdueSet);
+    }
+
+    private function computeRefMonth(): array
+    {
+        $hoje    = new \DateTimeImmutable('now');
+        $diaHoje = (int) $hoje->format('j');
+
+        if ($diaHoje >= $this->getTenantCutoffDay()) {
+            return ['mes' => (int) $hoje->format('n'), 'ano' => (int) $hoje->format('Y')];
+        }
+
+        $refDt = $hoje->modify('first day of last month');
+        return ['mes' => (int) $refDt->format('n'), 'ano' => (int) $refDt->format('Y')];
+    }
+
+    private function getTenantCutoffDay(): int
+    {
+        try {
+            $db   = Database::getInstance();
+            $stmt = $db->prepare('SELECT payment_cutoff_day FROM tenants WHERE id = :id LIMIT 1');
+            $stmt->execute([':id' => (int) ($_SESSION['tenant_id'] ?? 0)]);
+            $value = $stmt->fetchColumn();
+            return ((int) $value) ?: 20;
+        } catch (\RuntimeException) {
+            return 20;
+        }
+    }
+}
