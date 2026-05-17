@@ -48,18 +48,10 @@ class ColdContact extends Model
         return $stmt->fetchAll();
     }
 
-    public function countByMonth(string $yearMonth, array $filters = []): int
+    private function buildContactFilters(array $filters): array
     {
-        $sql = "
-            SELECT COUNT(*)
-            FROM cold_contacts
-            WHERE imported_year_month = :year_month
-              AND tenant_id = :tenant_id
-        ";
-        $params = [
-            ':year_month' => $yearMonth,
-            ':tenant_id'  => $this->currentTenantId(),
-        ];
+        $sql    = '';
+        $params = [];
 
         if (!empty($filters['nome'])) {
             $sql .= " AND name LIKE :nome";
@@ -73,6 +65,26 @@ class ColdContact extends Model
             $sql .= " AND telefone_enviado LIKE :telefone_enviado";
             $params[':telefone_enviado'] = '%' . $filters['telefone_enviado'] . '%';
         }
+
+        return ['sql' => $sql, 'params' => $params];
+    }
+
+    public function countByMonth(string $yearMonth, array $filters = []): int
+    {
+        $sql = "
+            SELECT COUNT(*)
+            FROM cold_contacts
+            WHERE imported_year_month = :year_month
+              AND tenant_id = :tenant_id
+        ";
+        $params = [
+            ':year_month' => $yearMonth,
+            ':tenant_id'  => $this->currentTenantId(),
+        ];
+
+        $clauses  = $this->buildContactFilters($filters);
+        $sql     .= $clauses['sql'];
+        $params   = array_merge($params, $clauses['params']);
 
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
@@ -92,18 +104,9 @@ class ColdContact extends Model
             ':tenant_id'  => $this->currentTenantId(),
         ];
 
-        if (!empty($filters['nome'])) {
-            $sql .= " AND name LIKE :nome";
-            $params[':nome'] = '%' . $filters['nome'] . '%';
-        }
-        if (!empty($filters['dia'])) {
-            $sql .= " AND DAY(data_mensagem) = :dia";
-            $params[':dia'] = (int) $filters['dia'];
-        }
-        if (!empty($filters['telefone_enviado'])) {
-            $sql .= " AND telefone_enviado LIKE :telefone_enviado";
-            $params[':telefone_enviado'] = '%' . $filters['telefone_enviado'] . '%';
-        }
+        $clauses  = $this->buildContactFilters($filters);
+        $sql     .= $clauses['sql'];
+        $params   = array_merge($params, $clauses['params']);
 
         $sql .= " ORDER BY id ASC";
 
