@@ -1,7 +1,14 @@
 <?php
 ?>
+<?php
+$_jsV = static fn(string $f): string => is_file(__DIR__ . '/../../../public/assets/js/' . $f)
+    ? (string) filemtime(__DIR__ . '/../../../public/assets/js/' . $f) : '0';
+$pageScripts = '<script nonce="' . CSP_NONCE . '" defer src="' . APP_URL . '/assets/js/client-index.js?v=' . $_jsV('client-index.js') . '"></script>';
+unset($_jsV);
+?>
 <!-- Toolbar unificada: titulo + filtros + acoes em uma linha -->
-<div class="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 p-3 mb-4">
+<div data-crm-widget="client-index"
+     class="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 p-3 mb-4">
     <form id="filterForm" method="GET" action="<?= APP_URL ?>/clients"
           class="flex flex-col lg:flex-row lg:items-center gap-2">
 
@@ -58,24 +65,6 @@
         </a>
     </form>
 </div>
-<script nonce="<?= CSP_NONCE ?>">
-// Ao submeter o formulário de filtros, reseta para a página 1
-(function () {
-    var filterForm = document.getElementById('filterForm');
-    if (filterForm) {
-        filterForm.addEventListener('submit', function () {
-            var pageInput = this.querySelector('input[name="page"]');
-            if (!pageInput) {
-                pageInput = document.createElement('input');
-                pageInput.type = 'hidden';
-                pageInput.name = 'page';
-                this.appendChild(pageInput);
-            }
-            pageInput.value = '1';
-        });
-    }
-})();
-</script>
 
 <!-- Tabela de clientes -->
 <div class="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden">
@@ -191,14 +180,18 @@
                             </a>
                             <!-- Nova interação -->
                             <button
-                                onclick="openQuickInteraction(<?= (int)$client['id'] ?>, <?= htmlspecialchars(json_encode($client['name']), ENT_QUOTES, 'UTF-8') ?>)"
+                                data-action="open-quick-interaction"
+                                data-client-id="<?= (int)$client['id'] ?>"
+                                data-client-name="<?= htmlspecialchars($client['name'], ENT_QUOTES, 'UTF-8') ?>"
                                 data-tooltip="Nova interação"
                                 class="has-tooltip w-7 h-7 flex items-center justify-center rounded-md text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/40 transition-colors">
                                 💬
                             </button>
                             <!-- Nova tarefa -->
                             <button
-                                onclick="openQuickTask(<?= (int)$client['id'] ?>, <?= htmlspecialchars(json_encode($client['name']), ENT_QUOTES, 'UTF-8') ?>)"
+                                data-action="open-quick-task"
+                                data-client-id="<?= (int)$client['id'] ?>"
+                                data-client-name="<?= htmlspecialchars($client['name'], ENT_QUOTES, 'UTF-8') ?>"
                                 data-tooltip="Nova tarefa"
                                 class="has-tooltip w-7 h-7 flex items-center justify-center rounded-md text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/40 transition-colors">
                                 📅
@@ -222,7 +215,7 @@
     <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between">
             <h4 class="font-bold text-gray-800 dark:text-white">💬 Nova Interação — <span id="qiClientName"></span></h4>
-            <button onclick="document.getElementById('modalQuickInteraction').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300 text-xl">&times;</button>
+            <button data-action="close-modal" data-target="modalQuickInteraction" class="text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300 text-xl">&times;</button>
         </div>
         <form method="POST" action="<?= APP_URL ?>/interactions/store" class="px-6 py-5 space-y-4">
             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
@@ -249,7 +242,7 @@
             </div>
             <div class="flex gap-3 pt-2">
                 <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-lg text-sm transition-colors">Salvar</button>
-                <button type="button" onclick="document.getElementById('modalQuickInteraction').classList.add('hidden')"
+                <button type="button" data-action="close-modal" data-target="modalQuickInteraction"
                     class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 font-medium py-2 rounded-lg text-sm transition-colors">Cancelar</button>
             </div>
         </form>
@@ -261,7 +254,7 @@
     <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
         <div class="px-6 py-4 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between">
             <h4 class="font-bold text-gray-800 dark:text-white">📅 Nova Tarefa — <span id="qtClientName"></span></h4>
-            <button onclick="document.getElementById('modalQuickTask').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300 text-xl">&times;</button>
+            <button data-action="close-modal" data-target="modalQuickTask" class="text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300 text-xl">&times;</button>
         </div>
         <form method="POST" action="<?= APP_URL ?>/tasks/store" class="px-6 py-5 space-y-4">
             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
@@ -288,29 +281,9 @@
             </div>
             <div class="flex gap-3 pt-2">
                 <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-lg text-sm transition-colors">Salvar</button>
-                <button type="button" onclick="document.getElementById('modalQuickTask').classList.add('hidden')"
+                <button type="button" data-action="close-modal" data-target="modalQuickTask"
                     class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 font-medium py-2 rounded-lg text-sm transition-colors">Cancelar</button>
             </div>
         </form>
     </div>
 </div>
-
-<script nonce="<?= CSP_NONCE ?>">
-function openQuickInteraction(clientId, clientName) {
-    document.getElementById('qiClientId').value = clientId;
-    document.getElementById('qiClientName').textContent = clientName;
-    const now = new Date();
-    now.setSeconds(0, 0);
-    document.getElementById('qiOccurredAt').value = now.toISOString().slice(0, 16);
-    document.getElementById('modalQuickInteraction').classList.remove('hidden');
-}
-function openQuickTask(clientId, clientName) {
-    document.getElementById('qtClientId').value = clientId;
-    document.getElementById('qtClientName').textContent = clientName;
-    const tomorrow = new Date();
-    tomorrow.setDate(tomorrow.getDate() + 1);
-    tomorrow.setHours(12, 0, 0, 0);
-    document.getElementById('qtDueDate').value = tomorrow.toISOString().slice(0, 16);
-    document.getElementById('modalQuickTask').classList.remove('hidden');
-}
-</script>
