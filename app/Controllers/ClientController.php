@@ -25,6 +25,12 @@ class ClientController extends Controller
         private ClientService $service      = new ClientService(),
     ) {}
 
+    /**
+     * Lista clientes com filtros, paginação e ordenação.
+     *
+     * @param  array  $params  Parâmetros da rota (não utilizados)
+     * @return void
+     */
     public function index(array $params = []): void
     {
         // Lê os filtros da query string (?search=...&stage_id=...&assigned_to=...&tipo_venda=...)
@@ -83,6 +89,12 @@ class ClientController extends Controller
         ]);
     }
 
+    /**
+     * Exibe o formulário de cadastro de novo cliente.
+     *
+     * @param  array  $params  Parâmetros da rota (não utilizados)
+     * @return void
+     */
     public function create(array $params = []): void
     {
         $this->render('clients/create', [
@@ -94,6 +106,12 @@ class ClientController extends Controller
         ]);
     }
 
+    /**
+     * Persiste um novo cliente após validação; redireciona para a ficha criada.
+     *
+     * @param  array  $params  Parâmetros da rota (não utilizados)
+     * @return void
+     */
     public function store(array $params = []): void
     {
         // nome e etapa do funil são obrigatórios
@@ -147,6 +165,12 @@ class ClientController extends Controller
         $this->redirect('/clients/' . $id);
     }
 
+    /**
+     * Exibe a ficha completa de um cliente com interações, tarefas e vendas.
+     *
+     * @param  array  $params  Parâmetros da rota (requer 'id')
+     * @return void
+     */
     public function show(array $params = []): void
     {
         $id = (int) ($params['id'] ?? 0);
@@ -172,6 +196,12 @@ class ClientController extends Controller
         ]);
     }
 
+    /**
+     * Exibe o formulário de edição de um cliente existente.
+     *
+     * @param  array  $params  Parâmetros da rota (requer 'id')
+     * @return void
+     */
     public function edit(array $params = []): void
     {
         $id = (int) ($params['id'] ?? 0);
@@ -192,6 +222,12 @@ class ClientController extends Controller
         ]);
     }
 
+    /**
+     * Atualiza os dados de um cliente após validação.
+     *
+     * @param  array  $params  Parâmetros da rota (requer 'id')
+     * @return void
+     */
     public function update(array $params = []): void
     {
         $id = (int) ($params['id'] ?? 0);
@@ -241,6 +277,12 @@ class ClientController extends Controller
         $this->redirect('/clients/' . $id);
     }
 
+    /**
+     * Remove um cliente via soft delete.
+     *
+     * @param  array  $params  Parâmetros da rota (requer 'id')
+     * @return void
+     */
     public function destroy(array $params = []): void
     {
         $id = (int) ($params['id'] ?? 0);
@@ -255,6 +297,12 @@ class ClientController extends Controller
         $this->redirect('/clients');
     }
 
+    /**
+     * Registra uma nova cota de consórcio para o cliente via AJAX.
+     *
+     * @param  array  $params  Parâmetros da rota (requer 'id')
+     * @return void
+     */
     public function storeSale(array $params = []): void
     {
         $clientId = (int) ($params['id'] ?? 0);
@@ -290,6 +338,12 @@ class ClientController extends Controller
         ], token: true));
     }
 
+    /**
+     * Remove uma cota de consórcio do cliente via AJAX.
+     *
+     * @param  array  $params  Parâmetros da rota (requer 'id' e 'sale_id')
+     * @return void
+     */
     public function destroySale(array $params = []): void
     {
         $clientId = (int) ($params['id'] ?? 0);
@@ -310,6 +364,12 @@ class ClientController extends Controller
         $this->json(ApiResponse::success([], token: true));
     }
 
+    /**
+     * Marca uma cota como paga (atualiza paid_at para NOW()) via AJAX.
+     *
+     * @param  array  $params  Parâmetros da rota (requer 'id' e 'sale_id')
+     * @return void
+     */
     public function markSalePaid(array $params = []): void
     {
         $clientId = (int) ($params['id'] ?? 0);
@@ -341,6 +401,12 @@ class ClientController extends Controller
         ], token: true));
     }
 
+    /**
+     * Atualiza o campo de notas livres do cliente via AJAX.
+     *
+     * @param  array  $params  Parâmetros da rota (requer 'id')
+     * @return void
+     */
     public function updateNotes(array $params = []): void
     {
         $id = (int) ($params['id'] ?? 0);

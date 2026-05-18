@@ -16,8 +16,11 @@ class AuthController extends Controller
         private User $users = new User(),
     ) {}
 
-    //Exibe o formulário de login.
-    //Se o usuário já estiver logado, redireciona para o dashboard.
+    /**
+     * Exibe o formulário de login; redireciona para o dashboard se já autenticado.
+     *
+     * @return void
+     */
     public function loginForm(array $params = []): void
     {
         // Usuário já autenticado? Vai direto ao dashboard

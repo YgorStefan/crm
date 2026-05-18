@@ -271,6 +271,12 @@ class TaskController extends Controller
         }
     }
 
+    /**
+     * Remove uma tarefa permanentemente via AJAX.
+     *
+     * @param  array  $params  Parâmetros da rota (requer 'id')
+     * @return void
+     */
     public function destroy(array $params = []): void
     {
         $id = (int) ($params['id'] ?? 0);

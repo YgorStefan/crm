@@ -12,6 +12,12 @@ class AcompanhamentoController extends Controller
         private ColdContact $coldContacts = new ColdContact(),
     ) {}
 
+    /**
+     * Exibe a tela de acompanhamento de contatos frios por mês.
+     *
+     * @param  array  $params  Parâmetros da rota (não utilizados)
+     * @return void
+     */
     public function index(array $params = []): void
     {
         // Mes selecionado (padrão = mês atual); não permite meses futuros

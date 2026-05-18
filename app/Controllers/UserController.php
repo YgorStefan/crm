@@ -26,6 +26,12 @@ class UserController extends Controller
         ]);
     }
 
+    /**
+     * Exibe o formulário de cadastro de novo usuário (somente admin).
+     *
+     * @param  array  $params  Parâmetros da rota (não utilizados)
+     * @return void
+     */
     public function create(array $params = []): void
     {
         $this->requireRole('admin');
@@ -36,6 +42,12 @@ class UserController extends Controller
         ]);
     }
 
+    /**
+     * Cria um novo usuário com hash bcrypt após validação (somente admin).
+     *
+     * @param  array  $params  Parâmetros da rota (não utilizados)
+     * @return void
+     */
     public function store(array $params = []): void
     {
         $this->requireRole('admin');
@@ -72,6 +84,12 @@ class UserController extends Controller
         $this->redirect('/admin/users');
     }
 
+    /**
+     * Exibe o formulário de edição de um usuário existente (somente admin).
+     *
+     * @param  array  $params  Parâmetros da rota (requer 'id')
+     * @return void
+     */
     public function edit(array $params = []): void
     {
         $this->requireRole('admin');
@@ -91,6 +109,12 @@ class UserController extends Controller
         ]);
     }
 
+    /**
+     * Atualiza dados do usuário; atualiza a sessão se for o próprio admin (somente admin).
+     *
+     * @param  array  $params  Parâmetros da rota (requer 'id')
+     * @return void
+     */
     public function update(array $params = []): void
     {
         $this->requireRole('admin');
