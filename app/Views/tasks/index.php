@@ -1,9 +1,13 @@
 <?php
+$_jsV = static fn(string $f): string => is_file(__DIR__ . '/../../../public/assets/js/' . $f)
+    ? (string) filemtime(__DIR__ . '/../../../public/assets/js/' . $f) : '0';
+$pageScripts = '<script nonce="' . CSP_NONCE . '" defer src="' . APP_URL . '/assets/js/tasks.js?v=' . $_jsV('tasks.js') . '"></script>';
+unset($_jsV);
 ?>
 
 <!-- Alerta compacto: Tarefas Atrasadas (colapsavel + dispensavel por sessao) -->
 <?php if (!empty($overdue)): ?>
-    <div id="overdueBanner"
+    <div id="overdueBanner" data-crm-widget="overdue-banner"
          class="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800/50 rounded-lg mb-4">
         <div class="flex items-center gap-2 px-3 py-2">
             <span class="text-red-500 flex-shrink-0">⚠️</span>
@@ -36,32 +40,11 @@
             <?php endforeach; ?>
         </div>
     </div>
-    <script nonce="<?= CSP_NONCE ?>">
-    (function () {
-        const banner   = document.getElementById('overdueBanner');
-        const toggle   = document.getElementById('overdueToggle');
-        const dismiss  = document.getElementById('overdueDismiss');
-        const list     = document.getElementById('overdueList');
-        const chevron  = document.getElementById('overdueChevron');
-        const lblCol   = toggle.querySelector('[data-label-collapsed]');
-        const lblExp   = toggle.querySelector('[data-label-expanded]');
-
-        toggle.addEventListener('click', function () {
-            const isHidden = list.classList.toggle('hidden');
-            chevron.style.transform = isHidden ? '' : 'rotate(180deg)';
-            lblCol.classList.toggle('hidden', !isHidden);
-            lblExp.classList.toggle('hidden', isHidden);
-        });
-
-        dismiss.addEventListener('click', function () {
-            banner.style.display = 'none';
-        });
-    })();
-    </script>
 <?php endif; ?>
 
 <!-- Calendario FullCalendar -->
-<div class="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 p-4">
+<div data-crm-widget="task-calendar"
+     class="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 p-4">
     <!-- Filtros rapidos -->
     <div class="flex flex-wrap items-center gap-2 mb-3 pb-3 border-b border-gray-100 dark:border-zinc-800">
         <span class="text-xs font-medium text-gray-500 dark:text-zinc-400 mr-1">Filtrar:</span>
@@ -105,12 +88,11 @@
     <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
         <div class="px-6 py-5 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between">
             <h4 id="modalTaskTitle" class="text-lg font-bold text-gray-800 dark:text-white">Nova Tarefa</h4>
-            <button onclick="document.getElementById('modalTask').style.display='none'"
+            <button data-action="close-modal" data-target="modalTask"
                 class="text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300 text-2xl">&times;</button>
         </div>
         <div class="px-6 py-5 space-y-4">
             <input type="hidden" id="task_id" value="">
-            <input type="hidden" id="task_csrf" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
 
             <div id="taskClientLink" style="display:none" class="bg-indigo-50 dark:bg-indigo-900/30 rounded-lg px-3 py-2 flex items-center justify-between">
                 <span class="text-sm text-indigo-700 dark:text-indigo-300">👥 Cliente: <span id="taskClientName" class="font-medium"></span></span>
@@ -175,7 +157,7 @@
                     </button>
                 </div>
                 <div class="flex gap-3 ml-auto">
-                    <button type="button" onclick="document.getElementById('modalTask').style.display='none'"
+                    <button type="button" data-action="close-modal" data-target="modalTask"
                         class="px-4 py-2 border border-gray-300 text-gray-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 rounded-lg text-sm hover:bg-gray-100 transition-colors">
                         Cancelar
                     </button>
@@ -212,321 +194,3 @@
     </div>
 </div>
 
-<script nonce="<?= CSP_NONCE ?>">
-    document.addEventListener('DOMContentLoaded', function () {
-        const calendarEl = document.getElementById('fc-calendar');
-        const appUrl = '<?= APP_URL ?>';
-        let csrfToken = '<?= htmlspecialchars($csrf_token, ENT_QUOTES, "UTF-8") ?>';
-        const USER_ROLE = '<?= htmlspecialchars($_SESSION['user']['role'] ?? '', ENT_QUOTES, 'UTF-8') ?>';
-        const USER_ID = <?= (int)($_SESSION['user']['id'] ?? 0) ?>;
-        let selectedDate = null;
-
-        // Estado dos filtros rapidos
-        let filterStatus = 'all';
-        let filterPriority = 'all';
-        // Flag de reentrancia: ev.setProp dispara eventsSet, evita loop infinito
-        let _applyingFilters = false;
-
-        function passesFilter(ev) {
-            const status = ev.extendedProps.status;
-            const priority = ev.extendedProps.priority;
-            // Filtro de status
-            if (filterStatus === 'pending' && status !== 'pending' && status !== 'in_progress') return false;
-            if (filterStatus === 'done' && status !== 'done') return false;
-            if (filterStatus === 'overdue') {
-                if (status === 'done') return false;
-                if (ev.start && ev.start > new Date()) return false;
-            }
-            // Filtro de prioridade
-            if (filterPriority !== 'all' && priority !== filterPriority) return false;
-            return true;
-        }
-
-        function applyFilters() {
-            if (_applyingFilters) return;
-            _applyingFilters = true;
-            try {
-                calendar.getEvents().forEach(function (ev) {
-                    const wanted = passesFilter(ev) ? 'auto' : 'none';
-                    if (ev.display !== wanted) ev.setProp('display', wanted);
-                });
-            } finally {
-                _applyingFilters = false;
-            }
-        }
-
-        // Tooltip simples (titulo nativo) com descricao + cliente + prioridade
-        function buildTooltip(ev) {
-            const lines = [ev.title];
-            const props = ev.extendedProps || {};
-            if (props.client_name) lines.push('Cliente: ' + props.client_name);
-            const prioLabel = { high: 'Alta', medium: 'Média', low: 'Baixa' }[props.priority] || props.priority;
-            if (prioLabel) lines.push('Prioridade: ' + prioLabel);
-            if (props.status === 'done') lines.push('(concluída)');
-            return lines.join('\n');
-        }
-
-        // Inicializa calendario FullCalendar em pt-BR com visualizacao mes/semana
-        const calendar = new FullCalendar.Calendar(calendarEl, {
-            initialView: 'dayGridMonth',
-            locale: 'pt-br',
-            height: 'auto',
-            headerToolbar: {
-                left: 'prev,next today',
-                center: 'title',
-                right: 'dayGridMonth,timeGridWeek'
-            },
-            buttonText: {
-                today: 'Hoje',
-                month: 'Mês',
-                week: 'Semana'
-            },
-            // Eventos carregados do feed JSON backend
-            events: appUrl + '/api/tasks/calendar',
-            // Mostra ate 3 eventos por dia; resto vira "+N mais" com popover do FullCalendar
-            dayMaxEventRows: 3,
-            moreLinkText: function (n) { return '+' + n + ' mais'; },
-            // Clicar em data
-            dateClick: function (info) {
-                handleDateClick(info.dateStr);
-            },
-            // Clicar no titulo do evento abre modal de edicao
-            eventClick: function (info) {
-                info.jsEvent.preventDefault();
-                openEditTaskModal(info.event.id);
-            },
-            eventDidMount: function (info) {
-                info.el.style.cursor = 'pointer';
-                info.el.setAttribute('title', buildTooltip(info.event));
-                if (info.event.extendedProps.status === 'done') {
-                    info.el.style.textDecoration = 'line-through';
-                    info.el.style.opacity = '0.6';
-                }
-            },
-            // Reaplica filtros sempre que eventos sao (re)carregados
-            eventsSet: function () { applyFilters(); }
-        });
-        calendar.render();
-
-        // Wiring dos filtros
-        document.querySelectorAll('.fc-filter-btn').forEach(function (btn) {
-            btn.addEventListener('click', function () {
-                document.querySelectorAll('.fc-filter-btn').forEach(function (b) { b.classList.remove('active'); });
-                btn.classList.add('active');
-                filterStatus = btn.dataset.filter;
-                applyFilters();
-            });
-        });
-        document.getElementById('fcPriorityFilter').addEventListener('change', function (e) {
-            filterPriority = e.target.value;
-            applyFilters();
-        });
-
-        // Verifica se ha eventos no dia clicado
-        function handleDateClick(dateStr) {
-            selectedDate = dateStr;
-            const eventsOnDate = calendar.getEvents().filter(function (e) {
-                return e.start && e.start.toISOString().slice(0, 10) === dateStr;
-            });
-
-            if (eventsOnDate.length > 0) {
-                const list = document.getElementById('conflictEventsList');
-                list.innerHTML = '';
-                eventsOnDate.forEach(function (ev) {
-                    const div = document.createElement('div');
-                    div.className = 'text-sm text-gray-700 dark:text-zinc-200 py-1 border-b border-gray-100 dark:border-zinc-800 last:border-0';
-                    div.textContent = ev.title;
-                    list.appendChild(div);
-                });
-                document.getElementById('modalDayConflict').style.display = 'flex';
-            } else {
-                openNewTaskModal(dateStr);
-            }
-        }
-
-        // Abre modal de criacao com data pre-preenchida
-        function openNewTaskModal(dateStr) {
-            document.getElementById('modalTaskTitle').textContent = 'Nova Tarefa';
-            document.getElementById('task_id').value = '';
-            document.getElementById('task_title').value = '';
-            document.getElementById('task_due_date').value = dateStr + 'T08:00';
-            document.getElementById('task_priority').value = 'medium';
-            document.getElementById('task_description').value = '';
-            document.getElementById('taskActionBtns').style.display = 'none';
-            document.getElementById('btnSaveTask').style.display = USER_ROLE === 'viewer' ? 'none' : '';
-            document.getElementById('modalTask').style.display = 'flex';
-        }
-
-        // Abre modal de edicao carregando dados via API
-        async function openEditTaskModal(taskId) {
-            try {
-                const resp = await fetch(appUrl + '/api/tasks/' + taskId);
-                if (!resp.ok) return;
-                const task = await resp.json();
-                document.getElementById('modalTaskTitle').textContent = 'Editar Tarefa';
-                document.getElementById('task_id').value = task.id;
-                document.getElementById('task_title').value = task.title;
-                document.getElementById('task_due_date').value = task.due_date.replace(' ', 'T').slice(0, 16);
-                document.getElementById('task_priority').value = task.priority;
-                document.getElementById('task_description').value = task.description || '';
-                // Preenche responsavel se admin
-                const assignedEl = document.getElementById('task_assigned_to');
-                if (assignedEl && task.assigned_to) {
-                    assignedEl.value = task.assigned_to;
-                }
-                // Mostra botoes de acao apenas para quem pode editar a tarefa
-                const canEdit = USER_ROLE === 'admin' ||
-                    (USER_ROLE === 'seller' && (task.assigned_to == USER_ID || task.created_by == USER_ID));
-                document.getElementById('taskActionBtns').style.display = canEdit ? 'flex' : 'none';
-                document.getElementById('btnSaveTask').style.display = canEdit ? '' : 'none';
-                // Ajusta label do botao Concluida conforme status atual
-                const btnToggle = document.getElementById('btnToggleDone');
-                if (task.status === 'done') {
-                    btnToggle.textContent = 'Reabrir';
-                    btnToggle.dataset.nextStatus = 'pending';
-                } else {
-                    btnToggle.textContent = 'Concluída';
-                    btnToggle.dataset.nextStatus = 'done';
-                }
-                document.getElementById('modalTask').style.display = 'flex';
-                // Mostra link do cliente se a tarefa estiver vinculada
-                const clientLinkEl = document.getElementById('taskClientLink');
-                const clientNameEl = document.getElementById('taskClientName');
-                const clientUrlEl  = document.getElementById('taskClientUrl');
-                if (task.client_id) {
-                    clientNameEl.textContent = task.client_name || 'Cliente #' + task.client_id;
-                    clientUrlEl.href = appUrl + '/clients/' + task.client_id;
-                    clientLinkEl.style.display = 'flex';
-                } else {
-                    clientLinkEl.style.display = 'none';
-                }
-            } catch (e) {
-                console.error('Erro ao carregar tarefa:', e);
-            }
-        }
-
-        // Salva tarefa (criacao ou edicao) via AJAX
-        document.getElementById('btnSaveTask').addEventListener('click', async function (e) {
-            e.preventDefault();
-            const taskId = document.getElementById('task_id').value;
-            const url = taskId
-                ? appUrl + '/tasks/' + taskId + '/update'
-                : appUrl + '/tasks/store';
-
-            const body = new URLSearchParams({
-                _csrf_token: csrfToken,
-                title: document.getElementById('task_title').value,
-                due_date: document.getElementById('task_due_date').value,
-                priority: document.getElementById('task_priority').value,
-                description: document.getElementById('task_description').value,
-            });
-
-            // Adiciona assigned_to se presente (apenas admin)
-            const assignedEl = document.getElementById('task_assigned_to');
-            if (assignedEl) body.append('assigned_to', assignedEl.value);
-
-            try {
-                const resp = await fetch(url, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: body.toString()
-                });
-                if (resp.ok) {
-                    const data = await resp.json();
-                    if (data && data.csrf_token) csrfToken = data.csrf_token;
-                    document.getElementById('modalTask').style.display = 'none';
-                    calendar.refetchEvents();
-                } else {
-                    alert('Erro ao salvar tarefa. Verifique os campos e tente novamente.');
-                }
-            } catch (e) {
-                alert('Erro ao salvar tarefa.');
-            }
-        });
-
-        // Botoes do dialog de conflito
-        document.getElementById('btnConflictView').addEventListener('click', function () {
-            document.getElementById('modalDayConflict').style.display = 'none';
-            calendar.changeView('timeGridWeek', selectedDate);
-        });
-        document.getElementById('btnConflictCreate').addEventListener('click', function () {
-            document.getElementById('modalDayConflict').style.display = 'none';
-            openNewTaskModal(selectedDate);
-        });
-
-        // Fecha modais ao clicar no backdrop
-        ['modalTask', 'modalDayConflict'].forEach(function (id) {
-            document.getElementById(id).addEventListener('click', function (e) {
-                if (e.target === this) this.style.display = 'none';
-            });
-        });
-
-        // Exclui tarefa via AJAX
-        document.getElementById('btnDeleteTask').addEventListener('click', async function () {
-            const taskId = document.getElementById('task_id').value;
-            if (!taskId) return;
-            if (!window.confirm('Excluir esta tarefa permanentemente?')) return;
-
-            try {
-                const body = new URLSearchParams({ _csrf_token: csrfToken });
-                const resp = await fetch(appUrl + '/tasks/' + taskId + '/delete', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: body.toString()
-                });
-                const data = await resp.json();
-                if (data.csrf_token) csrfToken = data.csrf_token;
-                if (data.success) {
-                    const ev = calendar.getEventById(taskId);
-                    if (ev) ev.remove();
-                    document.getElementById('modalTask').style.display = 'none';
-                } else {
-                    alert('Erro ao excluir tarefa.');
-                }
-            } catch (e) {
-                alert('Erro de rede ao excluir tarefa.');
-            }
-        });
-
-        // Alterna status da tarefa entre done e pending
-        document.getElementById('btnToggleDone').addEventListener('click', async function () {
-            const taskId = document.getElementById('task_id').value;
-            if (!taskId) return;
-            const nextStatus = this.dataset.nextStatus || 'done';
-
-            try {
-                const body = new URLSearchParams({
-                    _csrf_token: csrfToken,
-                    status: nextStatus
-                });
-                const resp = await fetch(appUrl + '/tasks/' + taskId + '/update', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: body.toString()
-                });
-                const data = await resp.json();
-                if (data.csrf_token) csrfToken = data.csrf_token;
-                if (data.success) {
-                    document.getElementById('modalTask').style.display = 'none';
-                    calendar.refetchEvents();
-                } else {
-                    alert('Erro ao atualizar tarefa.');
-                }
-            } catch (e) {
-                alert('Erro de rede ao atualizar tarefa.');
-            }
-        });
-
-        // Expoe calendario
-        window.__calendar = calendar;
-    });
-</script>
