@@ -444,10 +444,9 @@ Notas importantes antes de escrever:
         }
     }
 
-    document.addEventListener('DOMContentLoaded', function () {
-        OverdueBanner.init();
-        TaskCalendarManager.init();
-    });
+    // Auto-instanciação direta — defer garante DOM pronto (padrão Fase 2)
+    OverdueBanner.init();
+    TaskCalendarManager.init();
 })();
 ```
 
@@ -769,9 +768,8 @@ Criar `public/assets/js/pipeline-stages.js`:
         }
     }
 
-    document.addEventListener('DOMContentLoaded', function () {
-        PipelineStagesManager.init();
-    });
+    // Auto-instanciação direta — defer garante DOM pronto (padrão Fase 2)
+    PipelineStagesManager.init();
 })();
 ```
 
@@ -907,9 +905,8 @@ Criar `public/assets/js/client-index.js`:
         }
     }
 
-    document.addEventListener('DOMContentLoaded', function () {
-        ClientIndexManager.init();
-    });
+    // Auto-instanciação direta — defer garante DOM pronto (padrão Fase 2)
+    ClientIndexManager.init();
 })();
 ```
 
@@ -1089,19 +1086,12 @@ git commit -m "feat: extrai JS inline de clients/index.php para client-index.js"
 **Files:**
 - Modify: `core/Http/ApiResponse.php`
 
-- [ ] **Passo 1: Adicionar docblocks nos dois métodos públicos**
+- [ ] **Passo 1: Adicionar docblocks nos dois métodos públicos (gap-fill)**
 
-O arquivo atual não tem docblocks. Adicionar:
+O arquivo atual não tem docblocks. Adicionar docblocks **acima de cada método**, sem reescrever o corpo do método:
 
+Antes de `public static function success(...):`
 ```php
-<?php
-
-namespace Core\Http;
-
-use Core\Middleware\CsrfMiddleware;
-
-class ApiResponse
-{
     /**
      * Monta payload JSON de sucesso, opcionalmente com CSRF token renovado.
      *
@@ -1109,26 +1099,16 @@ class ApiResponse
      * @param  bool   $token  Se true, inclui 'csrf_token' com token renovado
      * @return array
      */
-    public static function success(array $data = [], bool $token = false): array
-    {
-        $payload = array_merge(['success' => true], $data);
-        if ($token) {
-            $payload['csrf_token'] = CsrfMiddleware::getToken();
-        }
-        return $payload;
-    }
+```
 
+Antes de `public static function error(...):`
+```php
     /**
      * Monta payload JSON de erro com shape consistente para o frontend.
      *
      * @param  string  $message  Mensagem de erro legível pelo usuário
      * @return array
      */
-    public static function error(string $message): array
-    {
-        return ['success' => false, 'error' => $message];
-    }
-}
 ```
 
 - [ ] **Passo 2: Verificar sintaxe PHP**
@@ -1149,26 +1129,27 @@ git commit -m "docs: adiciona docblocks em ApiResponse"
 
 ## Task 9: Docblocks nos controllers
 
-**Files:**
-- Modify: `app/Controllers/TaskController.php` (método `destroy` sem docblock)
-- Modify: `app/Controllers/AuthController.php`
-- Modify: `app/Controllers/AdminController.php`
-- Modify: `app/Controllers/UserController.php`
-- Modify: `app/Controllers/ClientController.php`
-- Modify: `app/Controllers/ColdContactController.php`
-- Modify: `app/Controllers/DashboardController.php`
-- Modify: `app/Controllers/InteractionController.php`
-- Modify: `app/Controllers/PipelineController.php`
-- Modify: `app/Controllers/SettingsController.php`
-- Modify: `app/Controllers/AcompanhamentoController.php`
+**Files (apenas os que precisam de gap-fill):**
+- Modify: `app/Controllers/ClientController.php` — **10 métodos sem docblock** (maior gap)
+- Modify: `app/Controllers/UserController.php` — 4 métodos sem docblock (`create`, `store`, `edit`, `update`)
+- Modify: `app/Controllers/TaskController.php` — 1 método sem docblock (`destroy`)
+- Modify: `app/Controllers/AuthController.php` — 1 método sem docblock (`loginForm`)
+- Modify: `app/Controllers/AcompanhamentoController.php` — 1 método sem docblock (`index`)
 
-**Nota:** `core/Controller.php` já possui docblocks completos em todos os métodos — nenhuma alteração necessária.
+**Já completos (não modificar):**
+- `app/Controllers/PipelineController.php` — 8/8 métodos com docblock ✅
+- `app/Controllers/ColdContactController.php` — 8/8 métodos com docblock ✅
+- `app/Controllers/DashboardController.php` — 2/2 métodos com docblock ✅
+- `app/Controllers/InteractionController.php` — 3/3 métodos com docblock ✅
+- `app/Controllers/SettingsController.php` — 2/2 métodos com docblock ✅
+- `app/Controllers/AdminController.php` — 1/1 método com docblock ✅
+- `core/Controller.php` — 6/6 métodos com docblock ✅
 
-**Regra:** Ler cada controller. Para cada método público sem docblock `@param`/`@return`, adicionar. Se já tem docblock completo, não reescrever.
+**Regra:** Para cada método público sem docblock `@param`/`@return`, adicionar. Se já tem docblock completo, não reescrever.
 
-- [ ] **Passo 1: Gap-fill em cada controller**
+- [ ] **Passo 1: Gap-fill em `ClientController.php` (10 métodos)**
 
-Para cada controller, abrir o arquivo e percorrer os métodos públicos. A assinatura-padrão dos action methods é `public function nome(array $params = []): void`. Adicionar docblocks faltantes conforme o padrão:
+Todos os 10 métodos públicos precisam de docblock. Padrão:
 
 ```php
 /**
@@ -1180,9 +1161,14 @@ Para cada controller, abrir o arquivo e percorrer os métodos públicos. A assin
 public function nome(array $params = []): void
 ```
 
-Para métodos que retornam outros tipos (ex.: `bool`, `array`), ajustar `@return` conforme a assinatura real.
+Métodos a documentar: `index`, `create`, `store`, `show`, `edit`, `update`, `destroy`, `storeSale`, `destroySale`, `markSalePaid`, `updateNotes`. Ler o corpo de cada método para descrever o que faz — não usar descrições genéricas.
 
-**`TaskController`** — único método faltante identificado:
+- [ ] **Passo 2: Gap-fill em `UserController.php` (4 métodos)**
+
+Métodos sem docblock: `create`, `store`, `edit`, `update`. Os outros (`index`, `destroy`) já possuem.
+
+- [ ] **Passo 3: Gap-fill em `TaskController.php` (1 método)**
+
 ```php
 // Adicionar antes de `public function destroy`:
 /**
@@ -1193,26 +1179,26 @@ Para métodos que retornam outros tipos (ex.: `bool`, `array`), ajustar `@return
  */
 ```
 
-Para os demais controllers: ler o arquivo, identificar métodos sem docblock e adicionar seguindo o mesmo padrão. Não inventar descrições genéricas — ler o corpo do método para entender o que ele faz.
+- [ ] **Passo 4: Gap-fill em `AuthController.php` (1 método)**
 
-- [ ] **Passo 2: Verificar sintaxe PHP de cada controller modificado**
+Adicionar docblock antes de `public function loginForm`.
+
+- [ ] **Passo 5: Gap-fill em `AcompanhamentoController.php` (1 método)**
+
+Adicionar docblock antes de `public function index`.
+
+- [ ] **Passo 6: Verificar sintaxe PHP dos controllers modificados**
 
 ```bash
+php -l app/Controllers/ClientController.php
+php -l app/Controllers/UserController.php
 php -l app/Controllers/TaskController.php
 php -l app/Controllers/AuthController.php
-php -l app/Controllers/AdminController.php
-php -l app/Controllers/UserController.php
-php -l app/Controllers/ClientController.php
-php -l app/Controllers/ColdContactController.php
-php -l app/Controllers/DashboardController.php
-php -l app/Controllers/InteractionController.php
-php -l app/Controllers/PipelineController.php
-php -l app/Controllers/SettingsController.php
 php -l app/Controllers/AcompanhamentoController.php
 ```
 Esperado: `No syntax errors detected` em todos.
 
-- [ ] **Passo 3: Commit**
+- [ ] **Passo 7: Commit**
 
 ```bash
 git add app/Controllers/
@@ -1223,22 +1209,25 @@ git commit -m "docs: gap-fill de docblocks nos controllers"
 
 ## Task 10: Docblocks em models e `ClientService`
 
-**Files:**
-- Modify: `app/Models/Client.php`
-- Modify: `app/Models/ClientSale.php`
-- Modify: `app/Models/ColdContact.php`
-- Modify: `app/Models/Task.php`
-- Modify: `app/Models/Interaction.php`
-- Modify: `app/Models/PipelineStage.php`
-- Modify: `app/Models/User.php`
-- Modify: `app/Services/ClientService.php`
+**Files (apenas os que precisam de gap-fill):**
+- Modify: `app/Models/ColdContact.php` — **11 métodos sem docblock** (maior gap)
+- Modify: `app/Models/ClientSale.php` — **5 métodos sem docblock**
+- Modify: `app/Services/ClientService.php` — 2 métodos sem docblock
+
+**Já completos (não modificar):**
+- `app/Models/Client.php` — 14/14 métodos com docblock ✅
+- `app/Models/Task.php` — 10/10 métodos com docblock ✅
+- `app/Models/Interaction.php` — 5/5 métodos com docblock ✅
+- `app/Models/PipelineStage.php` — 8+/8+ métodos com docblock ✅
+- `app/Models/User.php` — 4/4 métodos com docblock ✅
 
 **Regra:** Gap-fill — apenas métodos públicos sem docblock. Não reescrever os que já têm.
 
-- [ ] **Passo 1: Gap-fill em cada model e no service**
+- [ ] **Passo 1: Gap-fill em `ColdContact.php` (11 métodos)**
 
-Padrão para methods de model:
+Todos os métodos públicos precisam de docblock: `countFindMonthSummaries`, `findMonthSummaries`, `countByMonth`, `findByMonth`, `create`, `update`, `destroy`, `deleteByMonth`, `bulkAtualizarExtras`, `findForExport`, `archiveMonth`.
 
+Padrão:
 ```php
 /**
  * [Descrição do que busca/cria/atualiza/remove.]
@@ -1247,29 +1236,31 @@ Padrão para methods de model:
  * @param  array  $data    Dados a persistir
  * @return array|null      Dados do registro, ou null se não encontrado
  */
-public function findById(int $id): ?array
 ```
 
-Para `ClientService`, os métodos públicos são `getSalesWithPaymentStatus(int $clientId): array` e `getOverdueClientIds(): array`. Adicionar docblocks descrevendo o que calculam.
+Ajustar `@param` e `@return` conforme a assinatura real de cada método.
 
-- [ ] **Passo 2: Verificar sintaxe PHP**
+- [ ] **Passo 2: Gap-fill em `ClientSale.php` (5 métodos)**
+
+Métodos: `findByClientId`, `create`, `deleteBySaleAndClient`, `updatePaidAt`, `findAllForOverdueCheck`.
+
+- [ ] **Passo 3: Gap-fill em `ClientService.php` (2 métodos)**
+
+Métodos: `getSalesWithPaymentStatus(int $clientId): array` e `getOverdueClientIds(): array`. O `__construct` usa promoted properties e é auto-documentado — não precisa de docblock.
+
+- [ ] **Passo 4: Verificar sintaxe PHP**
 
 ```bash
-php -l app/Models/Client.php
-php -l app/Models/ClientSale.php
 php -l app/Models/ColdContact.php
-php -l app/Models/Task.php
-php -l app/Models/Interaction.php
-php -l app/Models/PipelineStage.php
-php -l app/Models/User.php
+php -l app/Models/ClientSale.php
 php -l app/Services/ClientService.php
 ```
 Esperado: `No syntax errors detected` em todos.
 
-- [ ] **Passo 3: Commit**
+- [ ] **Passo 5: Commit**
 
 ```bash
-git add app/Models/ app/Services/ClientService.php
+git add app/Models/ColdContact.php app/Models/ClientSale.php app/Services/ClientService.php
 git commit -m "docs: gap-fill de docblocks nos models e ClientService"
 ```
 

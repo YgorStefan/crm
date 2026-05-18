@@ -136,6 +136,7 @@ Auto-instanciação via `data-crm-widget="client-index"`.
 | `window.CRM.clientForm` | `client-form.js` | `ClientForm` | 2 |
 | `window.CRM.clientShow` | `client-show.js` | `ClientShow` | 2 |
 | `window.CRM.coldContacts` | `cold-contacts.js` | `ColdContactManager` | 2 |
+| `window.CRM.overdueBanner` | `tasks.js` | `OverdueBanner` | **3** |
 | `window.CRM.taskCalendar` | `tasks.js` | `TaskCalendarManager` | **3** |
 | `window.CRM.pipelineStages` | `pipeline-stages.js` | `PipelineStagesManager` | **3** |
 | `window.CRM.clientIndex` | `client-index.js` | `ClientIndexManager` | **3** |
@@ -188,7 +189,7 @@ Alvo: `@param` e `@return` nos métodos **públicos** de:
 | `app/Controllers/*.php` (11 controllers) | Todos os métodos públicos |
 | `app/Services/ClientService.php` | Todos os métodos públicos |
 | `core/Http/ApiResponse.php` | Todos os métodos públicos |
-| `core/Controller.php` | Todos os métodos públicos |
+| `core/Controller.php` | Já completo — nenhuma alteração |
 | `app/Models/*.php` (7 models) | Gap-fill: métodos públicos sem docblock |
 
 Regra: se um método já tem docblock completo, não reescrever — apenas gap-fill.
