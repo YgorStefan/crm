@@ -8,6 +8,12 @@ class ClientSale extends Model
 {
     protected string $table = 'client_sales';
 
+    /**
+     * Retorna todas as cotas de consórcio de um cliente ordenadas por data de criação.
+     *
+     * @param  int  $clientId  ID do cliente
+     * @return array
+     */
     public function findByClientId(int $clientId): array
     {
         $stmt = $this->db->prepare(
@@ -19,6 +25,13 @@ class ClientSale extends Model
         return $stmt->fetchAll();
     }
 
+    /**
+     * Insere uma nova cota de consórcio para um cliente e retorna o ID gerado.
+     *
+     * @param  int    $clientId  ID do cliente
+     * @param  array  $data      Dados da cota (grupo, cota, tipo, credito_contratado)
+     * @return int
+     */
     public function create(int $clientId, array $data): int
     {
         $stmt = $this->db->prepare("
@@ -37,6 +50,13 @@ class ClientSale extends Model
         return (int) $this->db->lastInsertId();
     }
 
+    /**
+     * Remove uma cota pelo ID, validando que pertence ao cliente e ao tenant.
+     *
+     * @param  int  $saleId    ID da cota
+     * @param  int  $clientId  ID do cliente
+     * @return bool
+     */
     public function deleteBySaleAndClient(int $saleId, int $clientId): bool
     {
         $stmt = $this->db->prepare(
@@ -48,6 +68,13 @@ class ClientSale extends Model
         return $stmt->rowCount() > 0;
     }
 
+    /**
+     * Define paid_at = NOW() para uma cota, validando cliente e tenant.
+     *
+     * @param  int  $saleId    ID da cota
+     * @param  int  $clientId  ID do cliente
+     * @return bool
+     */
     public function updatePaidAt(int $saleId, int $clientId): bool
     {
         $stmt = $this->db->prepare(
@@ -60,6 +87,11 @@ class ClientSale extends Model
         return $stmt->rowCount() > 0;
     }
 
+    /**
+     * Retorna client_id e paid_at de todas as cotas de clientes ativos do tenant.
+     *
+     * @return array
+     */
     public function findAllForOverdueCheck(): array
     {
         $stmt = $this->db->prepare("

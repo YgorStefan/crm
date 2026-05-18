@@ -13,6 +13,12 @@ class ClientService
         private ClientSale $sales   = new ClientSale(),
     ) {}
 
+    /**
+     * Retorna as cotas do cliente com status de pagamento calculado para o mês de referência.
+     *
+     * @param  int  $clientId  ID do cliente
+     * @return array  Cotas com campos 'is_paid' e 'paid_at_formatted' adicionados
+     */
     public function getSalesWithPaymentStatus(int $clientId): array
     {
         $sales  = $this->sales->findByClientId($clientId);
@@ -43,6 +49,11 @@ class ClientService
         return $sales;
     }
 
+    /**
+     * Retorna IDs de clientes que possuem cota não paga no mês de referência.
+     *
+     * @return array<int>
+     */
     public function getOverdueClientIds(): array
     {
         $hoje    = new \DateTimeImmutable('now');
