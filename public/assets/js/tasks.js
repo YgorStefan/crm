@@ -59,7 +59,7 @@
         #calendar;
         #filterStatus  = 'all';
         #filterPriority = 'all';
-        #_applyingFilters = false;
+        #applyingFilters = false;
         #selectedDate  = null;
 
         constructor(el) {
@@ -82,7 +82,7 @@
             }
         }
 
-        passesFilter(ev) {
+        #passesFilter(ev) {
             const status   = ev.extendedProps.status;
             const priority = ev.extendedProps.priority;
             if (this.#filterStatus === 'pending' && status !== 'pending' && status !== 'in_progress') return false;
@@ -96,15 +96,15 @@
         }
 
         applyFilters() {
-            if (this.#_applyingFilters) return;
-            this.#_applyingFilters = true;
+            if (this.#applyingFilters) return;
+            this.#applyingFilters = true;
             try {
                 this.#calendar.getEvents().forEach(ev => {
-                    const wanted = this.passesFilter(ev) ? 'auto' : 'none';
+                    const wanted = this.#passesFilter(ev) ? 'auto' : 'none';
                     if (ev.display !== wanted) ev.setProp('display', wanted);
                 });
             } finally {
-                this.#_applyingFilters = false;
+                this.#applyingFilters = false;
             }
         }
 
