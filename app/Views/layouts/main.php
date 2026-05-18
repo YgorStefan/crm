@@ -32,6 +32,8 @@ $assetV = static function (string $rel): string {
     <!-- Token CSRF e URL base — lidos pelo JS externo -->
     <meta name="csrf-token" content="<?= htmlspecialchars(\Core\Middleware\CsrfMiddleware::getToken(), ENT_QUOTES, 'UTF-8') ?>">
     <meta name="app-url" content="<?= htmlspecialchars(APP_URL, ENT_QUOTES, 'UTF-8') ?>">
+    <meta name="user-role" content="<?= htmlspecialchars($_SESSION['user']['role'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
+    <meta name="user-id" content="<?= (int)($_SESSION['user']['id'] ?? 0) ?>">
     <!-- Scripts globais com defer: executam em ordem após parse completo -->
     <script nonce="<?= CSP_NONCE ?>" defer src="<?= $safeAppUrl ?>/assets/js/toast.js?v=<?= $assetV('assets/js/toast.js') ?>"></script>
     <script nonce="<?= CSP_NONCE ?>" defer src="<?= $safeAppUrl ?>/assets/js/notifications.js?v=<?= $assetV('assets/js/notifications.js') ?>"></script>
