@@ -65,9 +65,9 @@ class ColdContact extends Model
         $sql    = '';
         $params = [];
 
-        if (!empty($filters['nome'])) {
-            $sql .= " AND name LIKE :nome";
-            $params[':nome'] = '%' . $filters['nome'] . '%';
+        if (!empty($filters['tipo_lista'])) {
+            $sql .= " AND tipo_lista LIKE :tipo_lista";
+            $params[':tipo_lista'] = '%' . $filters['tipo_lista'] . '%';
         }
         if (!empty($filters['dia'])) {
             $sql .= " AND DAY(data_mensagem) = :dia";

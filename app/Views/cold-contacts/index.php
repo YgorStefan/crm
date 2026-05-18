@@ -148,8 +148,8 @@ $_canEdit = in_array($_SESSION['user']['role'] ?? '', ['admin', 'seller']) ? '1'
         <!-- Filtros e exportação -->
         <div class="px-6 py-3 border-b border-gray-100 dark:border-zinc-800 flex flex-col sm:flex-row gap-3 items-end flex-shrink-0">
             <div>
-                <label class="block text-xs font-medium text-gray-600 dark:text-zinc-400 mb-1">Filtrar por nome</label>
-                <input type="text" id="filterNome" placeholder="Nome"
+                <label class="block text-xs font-medium text-gray-600 dark:text-zinc-400 mb-1">Filtrar por tipo de lista</label>
+                <input type="text" id="filterTipoLista" placeholder="Tipo de lista"
                     class="w-36 px-3 py-1.5 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
             <div>

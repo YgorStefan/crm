@@ -4,21 +4,21 @@
     // ── Classes auxiliares ─────────────────────────────────────────
 
     class FilterState {
-        nome = '';
+        tipoLista = '';
         dia  = '';
         telefoneEnviado = '';
         page = 1;
 
         toQueryParams() {
             let p = '';
-            if (this.nome)            p += '&nome='             + encodeURIComponent(this.nome);
+            if (this.tipoLista)       p += '&tipo_lista='       + encodeURIComponent(this.tipoLista);
             if (this.dia)             p += '&dia='              + encodeURIComponent(this.dia);
             if (this.telefoneEnviado) p += '&telefone_enviado=' + encodeURIComponent(this.telefoneEnviado);
             return p;
         }
 
         reset() {
-            this.nome = ''; this.dia = ''; this.telefoneEnviado = ''; this.page = 1;
+            this.tipoLista = ''; this.dia = ''; this.telefoneEnviado = ''; this.page = 1;
         }
     }
 
@@ -492,7 +492,7 @@
 
         #resetFilterInputs() {
             const v = id => { const el = document.getElementById(id); if (el) el.value = ''; };
-            v('filterNome'); v('filterDia'); v('filterTelEnviado');
+            v('filterTipoLista'); v('filterDia'); v('filterTelEnviado');
         }
 
         #setupFilters() {
@@ -506,11 +506,11 @@
             document.getElementById('btnApplyFilter')?.addEventListener('click', apply);
             document.getElementById('btnClearFilter')?.addEventListener('click', clear);
 
-            ['filterNome', 'filterDia', 'filterTelEnviado'].forEach(id => {
+            ['filterTipoLista', 'filterDia', 'filterTelEnviado'].forEach(id => {
                 document.getElementById(id)?.addEventListener('keydown', e => {
                     if (e.key === 'Enter') {
-                        this.#filterState.nome           = document.getElementById('filterNome')?.value.trim() || '';
-                        this.#filterState.dia            = document.getElementById('filterDia')?.value.trim() || '';
+                        this.#filterState.tipoLista       = document.getElementById('filterTipoLista')?.value.trim() || '';
+                        this.#filterState.dia             = document.getElementById('filterDia')?.value.trim() || '';
                         this.#filterState.telefoneEnviado = document.getElementById('filterTelEnviado')?.value.trim() || '';
                         apply();
                     }
@@ -518,8 +518,8 @@
             });
 
             document.getElementById('btnApplyFilter')?.addEventListener('click', () => {
-                this.#filterState.nome           = document.getElementById('filterNome')?.value.trim() || '';
-                this.#filterState.dia            = document.getElementById('filterDia')?.value.trim() || '';
+                this.#filterState.tipoLista       = document.getElementById('filterTipoLista')?.value.trim() || '';
+                this.#filterState.dia             = document.getElementById('filterDia')?.value.trim() || '';
                 this.#filterState.telefoneEnviado = document.getElementById('filterTelEnviado')?.value.trim() || '';
             });
         }
