@@ -72,16 +72,14 @@ class TaskController extends Controller
 
         $tz   = new \DateTimeZone('America/Sao_Paulo');
         $now  = new \DateTime('now', $tz);
-        $in24 = (clone $now)->modify('+24 hours');
+        $in15 = (clone $now)->modify('+15 minutes');
 
         $alerts = [];
 
-        // Tarefas atrasadas (status pending/in_progress, due_date no passado, limite 7 dias)
+        // Todas as tarefas atrasadas (sem limite de data)
         $overdue = $this->tasks->findOverdue($isAdmin ? null : $userId);
-        $cutoff  = (clone $now)->modify('-7 days');
         foreach ($overdue as $t) {
             $due = new \DateTime($t['due_date'], $tz);
-            if ($due < $cutoff) continue;
             $alerts[] = [
                 'key'      => 'task_overdue_' . $t['id'],
                 'type'     => 'task',
@@ -90,29 +88,21 @@ class TaskController extends Controller
             ];
         }
 
-        // Tarefas com vencimento nas proximas 24h
+        // Tarefas urgentes (high) com vencimento nos proximos 15 min
         $upcoming = $this->tasks->findUpcoming(
             $userId,
             $now->format('Y-m-d H:i:s'),
-            $in24->format('Y-m-d H:i:s'),
+            $in15->format('Y-m-d H:i:s'),
             $isAdmin
         );
         foreach ($upcoming as $t) {
+            if (($t['priority'] ?? '') !== 'high') continue;
             $dueTime = new \DateTime($t['due_date'], $tz);
-            $diffMin = (int) round(($dueTime->getTimestamp() - $now->getTimestamp()) / 60);
-
-            if ($diffMin <= 60) {
-                $msg = 'Tarefa em ' . max(0, $diffMin) . ' min: ' . $t['title'];
-            } elseif ($dueTime->format('Y-m-d') === $now->format('Y-m-d')) {
-                $msg = 'Tarefa hoje as ' . $dueTime->format('H:i') . ': ' . $t['title'];
-            } else {
-                $msg = 'Tarefa amanha as ' . $dueTime->format('H:i') . ': ' . $t['title'];
-            }
-
+            $diffMin = max(0, (int) round(($dueTime->getTimestamp() - $now->getTimestamp()) / 60));
             $alerts[] = [
                 'key'      => 'task_' . $t['id'],
                 'type'     => 'task',
-                'message'  => $msg,
+                'message'  => 'Tarefa urgente em ' . $diffMin . ' min: ' . $t['title'],
                 'priority' => $t['priority'],
             ];
         }
