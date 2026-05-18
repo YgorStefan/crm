@@ -36,11 +36,11 @@
             });
 
             container.querySelectorAll('.btn-cancel').forEach(btn => {
-                btn.addEventListener('click', function () {
-                    const row = this.closest('[data-stage-id]');
+                btn.addEventListener('click', () => {
+                    const row = btn.closest('[data-stage-id]');
                     row.querySelector('.edit-name').value  = row.dataset.stageName;
                     row.querySelector('.edit-color').value = row.dataset.stageColor;
-                    exitEditMode(row);
+                    this.#exitEditMode(row);
                 });
             });
 
@@ -67,19 +67,19 @@
                             row.querySelector('.color-preview').style.backgroundColor = color;
                             row.dataset.stageName  = name;
                             row.dataset.stageColor = color;
-                            exitEditMode(row);
+                            this.#exitEditMode(row);
                         })
                         .catch(() => alert('Erro de comunicação. Tente novamente.'));
                 });
             });
+        }
 
-            function exitEditMode(row) {
-                row.querySelector('.view-mode').classList.remove('hidden');
-                row.querySelector('.edit-mode').classList.add('hidden');
-                row.querySelector('.btn-edit').classList.remove('hidden');
-                row.querySelector('.btn-save').classList.add('hidden');
-                row.querySelector('.btn-cancel').classList.add('hidden');
-            }
+        #exitEditMode(row) {
+            row.querySelector('.view-mode').classList.remove('hidden');
+            row.querySelector('.edit-mode').classList.add('hidden');
+            row.querySelector('.btn-edit').classList.remove('hidden');
+            row.querySelector('.btn-save').classList.add('hidden');
+            row.querySelector('.btn-cancel').classList.add('hidden');
         }
 
         #wireMove(container) {
