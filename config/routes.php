@@ -83,3 +83,7 @@ $router->get('/acompanhamento', 'AcompanhamentoController', 'index', ['AuthMiddl
 // ---- Configurações do Tenant ----
 $router->get('/settings', 'SettingsController', 'index', ['AuthMiddleware', 'CspMiddleware']);
 $router->post('/settings/update', 'SettingsController', 'update', ['AuthMiddleware', 'CsrfMiddleware', 'CspMiddleware']);
+
+// ---- Prospecção de Leads ----
+$router->get('/prospecting', 'ProspectingController', 'index', ['AuthMiddleware', 'CspMiddleware']);
+$router->post('/api/prospecting/search', 'ProspectingController', 'search', ['AuthMiddleware', 'CsrfMiddleware', 'CspMiddleware']);
