@@ -96,6 +96,9 @@ $assetV = static function (string $rel): string {
                 <?= navLink('/tasks', '📅', 'Calendário', $currentPath) ?>
                 <?= navLink('/cold-contacts', '🧊', 'Contatos frios', $currentPath) ?>
                 <?= navLink('/acompanhamento', '📉', 'Acompanhamento', $currentPath) ?>
+                <?php if (in_array($_SESSION['user']['role'] ?? '', ['admin', 'seller'], true)): ?>
+                    <?= navLink('/prospecting', '🗺️', 'Prospecção', $currentPath) ?>
+                <?php endif; ?>
             </div>
 
             <!-- Acesso Rápido -->
