@@ -5,6 +5,7 @@ namespace App\Controllers;
 use Core\Controller;
 use Core\Database;
 use Core\Middleware\CsrfMiddleware;
+use App\Services\PlacesApiService;
 
 /**
  * SettingsController — Configurações do tenant (FRAG-04).
@@ -23,7 +24,7 @@ class SettingsController extends Controller
         $tenantId = (int) ($_SESSION['tenant_id'] ?? 0);
         $db = Database::getInstance();
         $stmt = $db->prepare(
-            'SELECT id, name, slug, payment_cutoff_day FROM tenants WHERE id = :id LIMIT 1'
+            'SELECT id, name, slug, payment_cutoff_day, google_maps_api_key FROM tenants WHERE id = :id LIMIT 1'
         );
         $stmt->execute([':id' => $tenantId]);
         $tenant = $stmt->fetch();
@@ -35,10 +36,11 @@ class SettingsController extends Controller
         }
 
         $this->render('settings/index', [
-            'pageTitle'  => 'Configurações',
-            'title'      => 'Configurações — ' . APP_NAME,
-            'tenant'     => $tenant,
-            'csrf_token' => CsrfMiddleware::getToken(),
+            'pageTitle'     => 'Configurações',
+            'title'         => 'Configurações — ' . APP_NAME,
+            'tenant'        => $tenant,
+            'has_gmaps_key' => !empty($tenant['google_maps_api_key']),
+            'csrf_token'    => CsrfMiddleware::getToken(),
         ]);
     }
 
@@ -82,6 +84,20 @@ class SettingsController extends Controller
             ':cutoff' => $cutoffDay,
             ':id'     => $tenantId,
         ]);
+
+        // Salva chave API Google Maps se fornecida
+        $gmapsKey = trim($this->inputPost('google_maps_api_key', ''));
+        if ($gmapsKey !== '') {
+            $appKey = (string) env('APP_KEY', '');
+            if ($appKey === '') {
+                $this->flash('error', 'APP_KEY não configurada no servidor. Contate o administrador.');
+                $this->redirect($redirectTo);
+                return;
+            }
+            $encrypted = PlacesApiService::encryptKey($gmapsKey, $appKey);
+            $stmtKey = $db->prepare('UPDATE tenants SET google_maps_api_key = :key WHERE id = :id');
+            $stmtKey->execute([':key' => $encrypted, ':id' => $tenantId]);
+        }
 
         // Atualiza o nome da organização na sessão (exibido na sidebar)
         if (!empty($_SESSION['tenant'])) {
