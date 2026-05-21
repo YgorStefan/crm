@@ -223,6 +223,8 @@ class TaskController extends Controller
             $data['title'] = $this->input('title');
         if (isset($_POST['due_date']))
             $data['due_date'] = str_replace('T', ' ', $this->inputPost('due_date')) . ':00';
+        if (isset($_POST['description']))
+            $data['description'] = $this->input('description');
 
         $task = $this->tasks->findById($id);
         if (!$task) {
