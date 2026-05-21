@@ -79,8 +79,9 @@ storage/
 # --- Documentação interna (planos e specs ficam somente local) ---
 docs/
 
-# --- node_modules e artefatos de teste ---
+# --- node_modules, ambientes virtuais e artefatos de teste ---
 # package.json/package-lock.json sao versionados (build do Tailwind + Playwright dev).
+.venv/
 node_modules/
 tests/playwright_ui_test.js
 tests/playwright_modal_debug.js
