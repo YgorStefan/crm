@@ -62,6 +62,58 @@
             </div>
         </div>
 
+        <!-- Seção: Integrações -->
+        <div class="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden mb-6">
+            <div class="px-5 py-4 border-b border-gray-100 dark:border-zinc-800">
+                <h4 class="font-semibold text-gray-700 dark:text-zinc-200">Integrações</h4>
+                <p class="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">
+                    Chaves de API para serviços externos.
+                </p>
+            </div>
+            <div class="px-5 py-4">
+                <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
+                    Chave API Google Maps
+                </label>
+                <?php if ($has_gmaps_key): ?>
+                    <p class="text-xs text-green-600 dark:text-green-400 mb-2 flex items-center gap-1">
+                        ✅ Chave configurada. Preencha abaixo apenas para substituir.
+                    </p>
+                <?php else: ?>
+                    <p class="text-xs text-amber-600 dark:text-amber-400 mb-2 flex items-center gap-1">
+                        ⚠️ Nenhuma chave configurada. O módulo de Prospecção não funcionará sem ela.
+                    </p>
+                <?php endif; ?>
+                <div class="relative">
+                    <input type="password" name="google_maps_api_key" id="gmapsKeyInput"
+                        autocomplete="off" placeholder="<?= $has_gmaps_key ? 'Nova chave (deixe vazio para manter a atual)' : 'Cole sua chave API aqui' ?>"
+                        class="w-full px-3 py-2 pr-10 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    <button type="button" id="toggleGmapsKey"
+                        class="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-zinc-300 text-xs px-1"
+                        title="Mostrar/ocultar chave">
+                        👁
+                    </button>
+                </div>
+                <p class="text-xs text-gray-400 dark:text-zinc-600 mt-1">
+                    Ative as APIs <strong>Places API (New)</strong> e <strong>Places API</strong> no Google Cloud Console.
+                    Restrinja a chave por IP do servidor para segurança.
+                </p>
+            </div>
+        </div>
+        <?php
+        $pageScripts = ($pageScripts ?? '') . '
+<script nonce="' . CSP_NONCE . '">
+document.addEventListener("DOMContentLoaded", function () {
+    var btn   = document.getElementById("toggleGmapsKey");
+    var input = document.getElementById("gmapsKeyInput");
+    if (!btn || !input) return;
+    btn.addEventListener("click", function () {
+        input.type = input.type === "password" ? "text" : "password";
+        btn.textContent = input.type === "password" ? "👁" : "🙈";
+    });
+});
+</script>';
+        ?>
+
         <!-- Ações -->
         <div class="flex justify-end">
             <button type="submit"
