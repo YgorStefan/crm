@@ -218,6 +218,7 @@
             document.getElementById('task_description').value = '';
             document.getElementById('taskActionBtns').style.display = 'none';
             document.getElementById('btnSaveTask').style.display = this.#userRole === 'viewer' ? 'none' : '';
+            document.getElementById('taskClientLink').style.display = 'none';
             document.getElementById('modalTask').style.display = 'flex';
         }
 
