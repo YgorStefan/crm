@@ -236,6 +236,9 @@ CREATE TABLE IF NOT EXISTS tasks (
                                 NOT NULL DEFAULT 'medium',
     status      ENUM('pending','in_progress','done','cancelled')
                                 NOT NULL DEFAULT 'pending',
+    recurrence_type     ENUM('none','weekly','monthly','yearly')
+                                NOT NULL DEFAULT 'none',
+    recurrence_parent_id INT UNSIGNED NULL COMMENT 'FK para tasks.id — NULL = task-pai ou não recorrente',
     created_by  INT UNSIGNED    NOT NULL COMMENT 'Usuário que criou a tarefa',
     tenant_id   INT UNSIGNED    NOT NULL DEFAULT 1 COMMENT 'Isolamento multi-tenant',
     created_at  TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -253,6 +256,9 @@ CREATE TABLE IF NOT EXISTS tasks (
     CONSTRAINT fk_task_created
         FOREIGN KEY (created_by) REFERENCES users(id)
         ON DELETE RESTRICT,
+    CONSTRAINT fk_task_recurrence_parent
+        FOREIGN KEY (recurrence_parent_id) REFERENCES tasks(id)
+        ON DELETE CASCADE,
     CONSTRAINT fk_tasks_tenant
         FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
