@@ -27,7 +27,8 @@ class TaskController extends Controller
 
         $events = array_map(fn($t) => [
             'id'    => $t['id'],
-            'title' => htmlspecialchars($t['title'], ENT_QUOTES, 'UTF-8'),
+            'title' => (($t['recurrence_type'] !== 'none' || $t['recurrence_parent_id'] !== null) ? '↻ ' : '')
+                       . htmlspecialchars($t['title'], ENT_QUOTES, 'UTF-8'),
             'start' => $t['due_date'],
             'color' => match ($t['priority']) {
                 'high'   => '#ef4444',
@@ -35,10 +36,12 @@ class TaskController extends Controller
                 default  => '#6366f1',
             },
             'extendedProps' => [
-                'status'      => $t['status'],
-                'priority'    => $t['priority'],
-                'client_id'   => $t['client_id'] ? (int) $t['client_id'] : null,
-                'client_name' => $t['client_name'] ?? null,
+                'status'               => $t['status'],
+                'priority'             => $t['priority'],
+                'client_id'            => $t['client_id'] ? (int) $t['client_id'] : null,
+                'client_name'          => $t['client_name'] ?? null,
+                'recurrence_type'      => $t['recurrence_type'],
+                'recurrence_parent_id' => $t['recurrence_parent_id'] !== null ? (int) $t['recurrence_parent_id'] : null,
             ],
         ], $tasks);
 
@@ -177,14 +180,20 @@ class TaskController extends Controller
 
         $assignedTo = $this->inputPost('assigned_to') ?: $_SESSION['user']['id'];
 
+        $recurrenceType = $this->inputPost('recurrence_type', 'none');
+        if (!in_array($recurrenceType, ['none', 'weekly', 'monthly', 'yearly'], true)) {
+            $recurrenceType = 'none';
+        }
+
         $this->tasks->create([
-            'client_id' => $clientId ?: null,
-            'assigned_to' => $assignedTo,
-            'title' => $title,
-            'description' => $this->input('description'),
-            'due_date' => $dueDate,
-            'priority' => $this->inputPost('priority', 'medium'),
-            'created_by' => $_SESSION['user']['id'],
+            'client_id'       => $clientId ?: null,
+            'assigned_to'     => $assignedTo,
+            'title'           => $title,
+            'description'     => $this->input('description'),
+            'due_date'        => $dueDate,
+            'priority'        => $this->inputPost('priority', 'medium'),
+            'recurrence_type' => $recurrenceType,
+            'created_by'      => $_SESSION['user']['id'],
         ]);
 
         if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
@@ -312,5 +321,38 @@ class TaskController extends Controller
             $this->flash('success', 'Tarefa removida.');
             $this->redirect('/tasks');
         }
+    }
+
+    public function cancelRecurrence(array $params = []): void
+    {
+        $id     = (int) ($params['id'] ?? 0);
+        $role   = $_SESSION['user']['role'] ?? '';
+        $userId = (int) ($_SESSION['user']['id'] ?? 0);
+
+        $task = $this->tasks->findById($id);
+        if (!$task) {
+            $this->json(['success' => false, 'error' => 'Tarefa não encontrada.'], 404);
+            return;
+        }
+
+        if ($role === 'viewer') {
+            $this->json(['success' => false, 'error' => 'Acesso negado.'], 403);
+            return;
+        }
+
+        if ($role === 'seller'
+            && (int) $task['assigned_to'] !== $userId
+            && (int) $task['created_by']  !== $userId
+        ) {
+            $this->json(['success' => false, 'error' => 'Acesso negado.'], 403);
+            return;
+        }
+
+        $parentId = $task['recurrence_parent_id'] !== null
+            ? (int) $task['recurrence_parent_id']
+            : $id;
+
+        $this->tasks->cancelRecurrence($parentId);
+        $this->json(['success' => true, 'csrf_token' => CsrfMiddleware::getToken()]);
     }
 }
