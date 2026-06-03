@@ -98,7 +98,7 @@ class Task extends Model
      */
     public function create(array $data): int
     {
-        $tenantId  = $this->currentTenantId();
+        $tenantId   = $this->currentTenantId();
         $assignedTo = (int) $data['assigned_to'];
 
         $check = $this->db->prepare(
@@ -110,18 +110,24 @@ class Task extends Model
         }
 
         $stmt = $this->db->prepare("
-            INSERT INTO tasks (client_id, assigned_to, title, description, due_date, priority, status, created_by, tenant_id)
-            VALUES (:client_id, :assigned_to, :title, :description, :due_date, :priority, 'pending', :created_by, :tenant_id)
+            INSERT INTO tasks
+                (client_id, assigned_to, title, description, due_date, priority, status,
+                 recurrence_type, recurrence_parent_id, created_by, tenant_id)
+            VALUES
+                (:client_id, :assigned_to, :title, :description, :due_date, :priority, 'pending',
+                 :recurrence_type, :recurrence_parent_id, :created_by, :tenant_id)
         ");
         $stmt->execute([
-            ':client_id'   => !empty($data['client_id']) ? (int) $data['client_id'] : null,
-            ':assigned_to' => $assignedTo,
-            ':title'       => $data['title'],
-            ':description' => $data['description'] ?? null,
-            ':due_date'    => $data['due_date'],
-            ':priority'    => $data['priority'] ?? 'medium',
-            ':created_by'  => (int) $data['created_by'],
-            ':tenant_id'   => $tenantId,
+            ':client_id'             => !empty($data['client_id']) ? (int) $data['client_id'] : null,
+            ':assigned_to'           => $assignedTo,
+            ':title'                 => $data['title'],
+            ':description'           => $data['description'] ?? null,
+            ':due_date'              => $data['due_date'],
+            ':priority'              => $data['priority'] ?? 'medium',
+            ':recurrence_type'       => $data['recurrence_type'] ?? 'none',
+            ':recurrence_parent_id'  => isset($data['recurrence_parent_id']) ? (int) $data['recurrence_parent_id'] : null,
+            ':created_by'            => (int) $data['created_by'],
+            ':tenant_id'             => $tenantId,
         ]);
         return (int) $this->db->lastInsertId();
     }
@@ -213,6 +219,8 @@ class Task extends Model
         $tenantId = $this->currentTenantId();
         $sql = "
             SELECT t.id, t.title, t.due_date, t.priority, t.status, t.client_id,
+                   t.description, t.assigned_to, t.created_by,
+                   t.recurrence_type, t.recurrence_parent_id,
                    c.name AS client_name
             FROM tasks t
             LEFT JOIN clients c ON c.id = t.client_id AND c.tenant_id = :tenant_id_c
@@ -229,7 +237,103 @@ class Task extends Model
         $sql .= " ORDER BY CASE WHEN t.status = 'done' THEN 1 ELSE 0 END ASC, t.due_date ASC";
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
-        return $stmt->fetchAll();
+        $tasks = $stmt->fetchAll();
+
+        $horizon   = (new \DateTime())->modify('+12 months');
+        $generated = false;
+        foreach ($tasks as $task) {
+            if ($task['recurrence_type'] !== 'none' && $task['recurrence_parent_id'] === null) {
+                $this->generateRecurringInstances(
+                    (int) $task['id'],
+                    $task['recurrence_type'],
+                    new \DateTime($task['due_date']),
+                    $horizon,
+                    $task
+                );
+                $generated = true;
+            }
+        }
+
+        if ($generated) {
+            $stmt->closeCursor();
+            $stmt->execute($params);
+            $tasks = $stmt->fetchAll();
+        }
+
+        return $tasks;
+    }
+
+    private function generateRecurringInstances(
+        int $parentId,
+        string $type,
+        \DateTime $parentDate,
+        \DateTime $horizon,
+        array $parentData
+    ): void {
+        $interval = match ($type) {
+            'weekly'  => new \DateInterval('P7D'),
+            'monthly' => new \DateInterval('P1M'),
+            'yearly'  => new \DateInterval('P1Y'),
+            default   => null,
+        };
+        if ($interval === null) return;
+
+        $stmt = $this->db->prepare(
+            "SELECT MAX(due_date) FROM tasks WHERE recurrence_parent_id = :pid"
+        );
+        $stmt->execute([':pid' => $parentId]);
+        $latestDate = $stmt->fetchColumn();
+
+        $next = $latestDate
+            ? (new \DateTime($latestDate))->add($interval)
+            : (clone $parentDate)->add($interval);
+
+        if ($next > $horizon) return;
+
+        $tenantId = $this->currentTenantId();
+        $rows     = [];
+        $params   = [];
+        $i        = 0;
+
+        while ($next <= $horizon) {
+            $rows[] = "(:ci{$i},:at{$i},:ti{$i},:de{$i},:dd{$i},:pr{$i},'pending','none',:pa{$i},:cb{$i},:tn{$i})";
+            $params[":ci{$i}"] = $parentData['client_id'];
+            $params[":at{$i}"] = $parentData['assigned_to'];
+            $params[":ti{$i}"] = $parentData['title'];
+            $params[":de{$i}"] = $parentData['description'] ?? null;
+            $params[":dd{$i}"] = $next->format('Y-m-d H:i:s');
+            $params[":pr{$i}"] = $parentData['priority'];
+            $params[":pa{$i}"] = $parentId;
+            $params[":cb{$i}"] = $parentData['created_by'];
+            $params[":tn{$i}"] = $tenantId;
+            $next->add($interval);
+            $i++;
+        }
+
+        $insert = $this->db->prepare(
+            "INSERT INTO tasks
+                (client_id, assigned_to, title, description, due_date, priority, status,
+                 recurrence_type, recurrence_parent_id, created_by, tenant_id)
+             VALUES " . implode(', ', $rows)
+        );
+        $insert->execute($params);
+    }
+
+    public function cancelRecurrence(int $parentId): void
+    {
+        $tenantId = $this->currentTenantId();
+
+        $stmt = $this->db->prepare(
+            "DELETE FROM tasks WHERE recurrence_parent_id = :pid AND status = 'pending'"
+        );
+        $stmt->execute([':pid' => $parentId]);
+
+        $stmt = $this->db->prepare(
+            "UPDATE tasks SET recurrence_type = 'none'
+             WHERE id = :id
+               AND assigned_to IN (SELECT id FROM users WHERE tenant_id = :tn)"
+        );
+        $stmt->execute([':id' => $parentId, ':tn' => $tenantId]);
     }
 
     /**
