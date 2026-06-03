@@ -243,14 +243,13 @@ class Task extends Model
         $generated = false;
         foreach ($tasks as $task) {
             if ($task['recurrence_type'] !== 'none' && $task['recurrence_parent_id'] === null) {
-                $this->generateRecurringInstances(
+                $generated = $generated || $this->generateRecurringInstances(
                     (int) $task['id'],
                     $task['recurrence_type'],
                     new \DateTime($task['due_date']),
                     $horizon,
                     $task
                 );
-                $generated = true;
             }
         }
 
@@ -269,28 +268,30 @@ class Task extends Model
         \DateTime $parentDate,
         \DateTime $horizon,
         array $parentData
-    ): void {
+    ): bool {
         $interval = match ($type) {
             'weekly'  => new \DateInterval('P7D'),
             'monthly' => new \DateInterval('P1M'),
             'yearly'  => new \DateInterval('P1Y'),
             default   => null,
         };
-        if ($interval === null) return;
+        if ($interval === null) return false;
+
+        $tenantId = $this->currentTenantId();
 
         $stmt = $this->db->prepare(
-            "SELECT MAX(due_date) FROM tasks WHERE recurrence_parent_id = :pid"
+            "SELECT MAX(due_date) FROM tasks
+             WHERE recurrence_parent_id = :pid
+               AND assigned_to IN (SELECT id FROM users WHERE tenant_id = :tn)"
         );
-        $stmt->execute([':pid' => $parentId]);
+        $stmt->execute([':pid' => $parentId, ':tn' => $tenantId]);
         $latestDate = $stmt->fetchColumn();
 
         $next = $latestDate
             ? (new \DateTime($latestDate))->add($interval)
             : (clone $parentDate)->add($interval);
 
-        if ($next > $horizon) return;
-
-        $tenantId = $this->currentTenantId();
+        if ($next > $horizon) return false;
         $rows     = [];
         $params   = [];
         $i        = 0;
@@ -317,6 +318,7 @@ class Task extends Model
              VALUES " . implode(', ', $rows)
         );
         $insert->execute($params);
+        return true;
     }
 
     public function cancelRecurrence(int $parentId): void
@@ -324,9 +326,12 @@ class Task extends Model
         $tenantId = $this->currentTenantId();
 
         $stmt = $this->db->prepare(
-            "DELETE FROM tasks WHERE recurrence_parent_id = :pid AND status = 'pending'"
+            "DELETE FROM tasks
+             WHERE recurrence_parent_id = :pid
+               AND status = 'pending'
+               AND assigned_to IN (SELECT id FROM users WHERE tenant_id = :tn)"
         );
-        $stmt->execute([':pid' => $parentId]);
+        $stmt->execute([':pid' => $parentId, ':tn' => $tenantId]);
 
         $stmt = $this->db->prepare(
             "UPDATE tasks SET recurrence_type = 'none'
