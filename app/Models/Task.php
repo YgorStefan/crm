@@ -243,13 +243,15 @@ class Task extends Model
         $generated = false;
         foreach ($tasks as $task) {
             if ($task['recurrence_type'] !== 'none' && $task['recurrence_parent_id'] === null) {
-                $generated = $generated || $this->generateRecurringInstances(
+                if ($this->generateRecurringInstances(
                     (int) $task['id'],
                     $task['recurrence_type'],
                     new \DateTime($task['due_date']),
                     $horizon,
                     $task
-                );
+                )) {
+                    $generated = true;
+                }
             }
         }
 
