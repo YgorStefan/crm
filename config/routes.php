@@ -47,6 +47,7 @@ $router->get('/tasks', 'TaskController', 'index', ['AuthMiddleware', 'CspMiddlew
 $router->post('/tasks/store', 'TaskController', 'store', ['AuthMiddleware', 'CsrfMiddleware', 'CspMiddleware']);
 $router->post('/tasks/{id}/update', 'TaskController', 'update', ['AuthMiddleware', 'CsrfMiddleware', 'CspMiddleware']);
 $router->post('/tasks/{id}/delete', 'TaskController', 'destroy', ['AuthMiddleware', 'CsrfMiddleware', 'CspMiddleware']);
+$router->post('/tasks/{id}/cancel-recurrence', 'TaskController', 'cancelRecurrence', ['AuthMiddleware', 'CsrfMiddleware', 'CspMiddleware']);
 
 // ---- API AJAX — dados para calendário de tarefas ----
 $router->get('/api/tasks/upcoming', 'TaskController', 'upcoming', ['AuthMiddleware', 'CspMiddleware']);
