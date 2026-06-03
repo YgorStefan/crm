@@ -145,11 +145,31 @@ unset($_jsV);
                     class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
             </div>
 
+            <div id="taskRecurrenceRow">
+                <label class="flex items-center gap-2 cursor-pointer select-none">
+                    <input type="checkbox" id="task_recur_enabled"
+                        class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                    <span class="text-sm font-medium text-gray-700 dark:text-zinc-300">Repetir tarefa</span>
+                </label>
+                <div id="task_recur_select_wrap" class="mt-2 hidden">
+                    <select id="task_recurrence_type"
+                        class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                        <option value="weekly">Semanal</option>
+                        <option value="monthly">Mensal</option>
+                        <option value="yearly">Anual</option>
+                    </select>
+                </div>
+            </div>
+
             <div class="flex justify-between gap-3 pt-2">
                 <div class="flex gap-2" id="taskActionBtns" style="display:none!important">
                     <button id="btnDeleteTask" title="Excluir"
                         class="px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors flex items-center">
                         🗑️
+                    </button>
+                    <button id="btnCancelRecurrence" title="Cancelar série" style="display:none"
+                        class="px-3 py-2 bg-orange-100 hover:bg-orange-200 text-orange-700 rounded-lg text-sm transition-colors whitespace-nowrap">
+                        ↻ Cancelar série
                     </button>
                     <button id="btnToggleDone"
                         class="px-4 py-2 bg-green-100 hover:bg-green-200 text-green-700 rounded-lg text-sm transition-colors">
