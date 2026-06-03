@@ -48,6 +48,7 @@ CLAUDE.md
 
 # --- Scripts de Infra ---
 deploy.sh
+bin/deploy.config.ps1
 
 # --- Router PHP built-in (somente dev local; produção usa Apache + .htaccess) ---
 router.php

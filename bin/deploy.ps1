@@ -34,11 +34,12 @@ param(
 
 $ErrorActionPreference = 'Stop'
 
-# Caminhos / config — ajuste se precisar
-$RemoteUser   = 'REMOTE_USER'
-$RemoteHost   = 'REMOTE_HOST'
-$RemotePort   = 'REMOTE_PORT'
-$RemotePath   = 'REMOTE_PATH'
+# Caminhos / config — lidos de bin/deploy.config.ps1 (gitignored)
+$configFile = Join-Path $PSScriptRoot 'deploy.config.ps1'
+if (-not (Test-Path $configFile)) {
+    Die "Arquivo $configFile não encontrado. Copie bin/deploy.config.example.ps1 e preencha com seus dados."
+}
+. $configFile
 
 function Step($msg) { Write-Host "==> $msg" -ForegroundColor Cyan }
 function Ok($msg)   { Write-Host "    $msg" -ForegroundColor Green }
