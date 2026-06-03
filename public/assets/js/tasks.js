@@ -191,6 +191,21 @@
             document.getElementById('task_recur_enabled').addEventListener('change', e => {
                 document.getElementById('task_recur_select_wrap').classList.toggle('hidden', !e.target.checked);
             });
+            document.getElementById('recurrenceBtn').addEventListener('click', () => {
+                document.getElementById('recurrenceMenu').classList.toggle('hidden');
+            });
+            document.querySelectorAll('.recurrence-opt').forEach(opt => {
+                opt.addEventListener('click', () => {
+                    document.getElementById('task_recurrence_type').value = opt.dataset.value;
+                    document.getElementById('recurrenceBtnLabel').textContent = opt.dataset.label;
+                    document.getElementById('recurrenceMenu').classList.add('hidden');
+                });
+            });
+            document.addEventListener('click', e => {
+                if (!e.target.closest('#recurrenceBtn') && !e.target.closest('#recurrenceMenu')) {
+                    document.getElementById('recurrenceMenu').classList.add('hidden');
+                }
+            });
         }
 
         handleDateClick(dateStr) {
@@ -226,6 +241,9 @@
             document.getElementById('taskRecurrenceRow').style.display = '';
             document.getElementById('task_recur_enabled').checked = false;
             document.getElementById('task_recur_select_wrap').classList.add('hidden');
+            document.getElementById('task_recurrence_type').value = 'weekly';
+            document.getElementById('recurrenceBtnLabel').textContent = 'Semanal';
+            document.getElementById('recurrenceMenu').classList.add('hidden');
             document.getElementById('btnCancelRecurrence').style.display = 'none';
             document.getElementById('modalTask').style.display = 'flex';
         }

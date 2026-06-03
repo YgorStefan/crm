@@ -152,12 +152,23 @@ unset($_jsV);
                     <span class="text-sm font-medium text-gray-700 dark:text-zinc-300">Repetir tarefa</span>
                 </label>
                 <div id="task_recur_select_wrap" class="mt-2 hidden">
-                    <select id="task_recurrence_type"
-                        class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                        <option value="weekly">Semanal</option>
-                        <option value="monthly">Mensal</option>
-                        <option value="yearly">Anual</option>
-                    </select>
+                    <input type="hidden" id="task_recurrence_type" value="weekly">
+                    <div class="relative">
+                        <button type="button" id="recurrenceBtn"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none text-left flex items-center justify-between">
+                            <span id="recurrenceBtnLabel">Semanal</span>
+                            <span class="text-gray-400 text-xs">▲</span>
+                        </button>
+                        <div id="recurrenceMenu"
+                            class="hidden absolute bottom-full left-0 w-full mb-1 bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-lg shadow-lg overflow-hidden z-10">
+                            <button type="button" data-value="weekly" data-label="Semanal"
+                                class="recurrence-opt w-full px-3 py-2 text-sm text-left text-gray-700 dark:text-white hover:bg-indigo-50 dark:hover:bg-zinc-700">Semanal</button>
+                            <button type="button" data-value="monthly" data-label="Mensal"
+                                class="recurrence-opt w-full px-3 py-2 text-sm text-left text-gray-700 dark:text-white hover:bg-indigo-50 dark:hover:bg-zinc-700">Mensal</button>
+                            <button type="button" data-value="yearly" data-label="Anual"
+                                class="recurrence-opt w-full px-3 py-2 text-sm text-left text-gray-700 dark:text-white hover:bg-indigo-50 dark:hover:bg-zinc-700">Anual</button>
+                        </div>
+                    </div>
                 </div>
             </div>
 
