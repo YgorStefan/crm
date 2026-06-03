@@ -187,6 +187,10 @@
                     if (target) target.style.display = 'none';
                 }
             });
+            document.getElementById('btnCancelRecurrence').addEventListener('click', () => this.#cancelRecurrence());
+            document.getElementById('task_recur_enabled').addEventListener('change', e => {
+                document.getElementById('task_recur_select_wrap').classList.toggle('hidden', !e.target.checked);
+            });
         }
 
         handleDateClick(dateStr) {
@@ -219,6 +223,10 @@
             document.getElementById('taskActionBtns').style.display = 'none';
             document.getElementById('btnSaveTask').style.display = this.#userRole === 'viewer' ? 'none' : '';
             document.getElementById('taskClientLink').style.display = 'none';
+            document.getElementById('taskRecurrenceRow').style.display = '';
+            document.getElementById('task_recur_enabled').checked = false;
+            document.getElementById('task_recur_select_wrap').classList.add('hidden');
+            document.getElementById('btnCancelRecurrence').style.display = 'none';
             document.getElementById('modalTask').style.display = 'flex';
         }
 
@@ -240,6 +248,9 @@
                 const canEdit = this.#userRole === 'admin' ||
                     (this.#userRole === 'seller' && (task.assigned_to == this.#userId || task.created_by == this.#userId));
                 document.getElementById('taskActionBtns').style.display = canEdit ? 'flex' : 'none';
+                document.getElementById('taskRecurrenceRow').style.display = 'none';
+                const isRecurring = (task.recurrence_type && task.recurrence_type !== 'none') || !!task.recurrence_parent_id;
+                document.getElementById('btnCancelRecurrence').style.display = canEdit && isRecurring ? '' : 'none';
                 document.getElementById('btnSaveTask').style.display = canEdit ? '' : 'none';
 
                 const btnToggle = document.getElementById('btnToggleDone');
@@ -282,6 +293,10 @@
             });
             const assignedEl = document.getElementById('task_assigned_to');
             if (assignedEl) body.append('assigned_to', assignedEl.value);
+            const recurCheckbox = document.getElementById('task_recur_enabled');
+            if (!taskId && recurCheckbox && recurCheckbox.checked) {
+                body.append('recurrence_type', document.getElementById('task_recurrence_type').value);
+            }
 
             try {
                 const resp = await fetch(url, {
@@ -349,6 +364,33 @@
                 }
             } catch (e) {
                 alert('Erro de rede ao atualizar tarefa.');
+            }
+        }
+
+        async #cancelRecurrence() {
+            const taskId = document.getElementById('task_id').value;
+            if (!taskId) return;
+            if (!window.confirm('Cancelar a série? As ocorrências pendentes serão removidas. As já concluídas permanecem no histórico.')) return;
+            try {
+                const body = new URLSearchParams({ _csrf_token: this.#csrfToken });
+                const resp = await fetch(this.#appUrl + '/tasks/' + taskId + '/cancel-recurrence', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'X-Requested-With': 'XMLHttpRequest',
+                    },
+                    body: body.toString(),
+                });
+                const data = await resp.json();
+                this.#refreshCsrf(data);
+                if (data.success) {
+                    document.getElementById('modalTask').style.display = 'none';
+                    this.#calendar.refetchEvents();
+                } else {
+                    alert(data.error || 'Erro ao cancelar série.');
+                }
+            } catch (e) {
+                alert('Erro de rede ao cancelar série.');
             }
         }
 
