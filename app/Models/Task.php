@@ -293,6 +293,14 @@ class Task extends Model
             ? (new \DateTime($latestDate))->add($interval)
             : (clone $parentDate)->add($interval);
 
+        // On first generation, skip past instances to avoid flooding calendar with overdue rows
+        if (!$latestDate) {
+            $now = new \DateTime();
+            while ($next < $now) {
+                $next->add($interval);
+            }
+        }
+
         if ($next > $horizon) return false;
         $rows     = [];
         $params   = [];
