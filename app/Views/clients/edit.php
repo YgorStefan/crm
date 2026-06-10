@@ -10,7 +10,6 @@ function val(array $client, string $key): string
 {
     return htmlspecialchars($client[$key] ?? '', ENT_QUOTES, 'UTF-8');
 }
-<?php
 $_jsV = static fn(string $f): string => is_file(__DIR__ . '/../../../public/assets/js/' . $f)
     ? (string) filemtime(__DIR__ . '/../../../public/assets/js/' . $f) : '0';
 $pageScripts = '<script nonce="' . CSP_NONCE . '" defer src="' . APP_URL . '/assets/js/client-form.js?v=' . $_jsV('client-form.js') . '"></script>';

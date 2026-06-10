@@ -341,18 +341,44 @@
         }
 
         #initTaskModal() {
-            const modal     = document.getElementById('newTaskModal');
-            const btnOpen   = document.getElementById('btn-open-new-task');
-            const btnClose  = document.getElementById('newTaskClose');
-            const btnCancel = document.getElementById('newTaskCancel');
-            const btnSave   = document.getElementById('newTaskSave');
-            const inpTitle  = document.getElementById('newTask_title');
-            const inpDue    = document.getElementById('newTask_due_date');
-            const selPrio   = document.getElementById('newTask_priority');
-            const selAssign = document.getElementById('newTask_assigned_to');
-            const inpDesc   = document.getElementById('newTask_description');
-            const tasksList = document.getElementById('tasks-list');
+            const modal        = document.getElementById('newTaskModal');
+            const btnOpen      = document.getElementById('btn-open-new-task');
+            const btnClose     = document.getElementById('newTaskClose');
+            const btnCancel    = document.getElementById('newTaskCancel');
+            const btnSave      = document.getElementById('newTaskSave');
+            const inpTitle     = document.getElementById('newTask_title');
+            const inpDue       = document.getElementById('newTask_due_date');
+            const selPrio      = document.getElementById('newTask_priority');
+            const selAssign    = document.getElementById('newTask_assigned_to');
+            const inpDesc      = document.getElementById('newTask_description');
+            const tasksList    = document.getElementById('tasks-list');
+            const recurChk     = document.getElementById('newTask_recur_enabled');
+            const recurWrap    = document.getElementById('newTask_recur_select_wrap');
+            const recurType    = document.getElementById('newTask_recurrence_type');
+            const recurBtn     = document.getElementById('newTask_recurrenceBtn');
+            const recurBtnLbl  = document.getElementById('newTask_recurrenceBtnLabel');
+            const recurMenu    = document.getElementById('newTask_recurrenceMenu');
             if (!btnOpen) return;
+
+            // Recorrência: toggle dropdown
+            recurChk?.addEventListener('change', () => {
+                recurWrap?.classList.toggle('hidden', !recurChk.checked);
+            });
+            recurBtn?.addEventListener('click', () => {
+                recurMenu?.classList.toggle('hidden');
+            });
+            recurMenu?.querySelectorAll('.newTask-recurrence-opt').forEach(opt => {
+                opt.addEventListener('click', () => {
+                    if (recurType) recurType.value = opt.dataset.value;
+                    if (recurBtnLbl) recurBtnLbl.textContent = opt.dataset.label;
+                    recurMenu.classList.add('hidden');
+                });
+            });
+            document.addEventListener('click', e => {
+                if (recurMenu && !recurMenu.classList.contains('hidden') && !recurBtn?.contains(e.target) && !recurMenu.contains(e.target)) {
+                    recurMenu.classList.add('hidden');
+                }
+            });
 
             const pad = n => n < 10 ? '0' + n : '' + n;
             const todayAt8 = () => {
@@ -360,11 +386,16 @@
                 return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T08:00';
             };
             const openModal = () => {
-                if (inpTitle) inpTitle.value = '';
-                if (inpDue)   inpDue.value   = todayAt8();
-                if (selPrio)  selPrio.value  = 'medium';
-                if (inpDesc)  inpDesc.value  = '';
-                if (modal)    modal.style.display = 'flex';
+                if (inpTitle)  inpTitle.value  = '';
+                if (inpDue)    inpDue.value    = todayAt8();
+                if (selPrio)   selPrio.value   = 'medium';
+                if (inpDesc)   inpDesc.value   = '';
+                if (recurChk)  recurChk.checked = false;
+                if (recurWrap) recurWrap.classList.add('hidden');
+                if (recurType) recurType.value  = 'weekly';
+                if (recurBtnLbl) recurBtnLbl.textContent = 'Semanal';
+                if (recurMenu) recurMenu.classList.add('hidden');
+                if (modal)     modal.style.display = 'flex';
                 setTimeout(() => inpTitle?.focus(), 50);
             };
             const closeModal = () => { if (modal) modal.style.display = 'none'; };
@@ -418,12 +449,14 @@
                 btnSave.disabled = true;
                 btnSave.textContent = 'Salvando...';
 
+                const recurEnabled = recurChk?.checked && recurType?.value;
                 const body = new URLSearchParams({
-                    _csrf_token: this.#csrf(),
-                    client_id:   String(this.#clientId),
+                    _csrf_token:    this.#csrf(),
+                    client_id:      String(this.#clientId),
                     title, due_date: due,
-                    priority:    selPrio?.value || 'medium',
-                    description: inpDesc?.value || '',
+                    priority:       selPrio?.value || 'medium',
+                    description:    inpDesc?.value || '',
+                    recurrence_type: recurEnabled ? recurType.value : 'none',
                 });
                 if (selAssign) body.append('assigned_to', selAssign.value);
 

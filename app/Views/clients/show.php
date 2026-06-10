@@ -510,6 +510,33 @@ unset($_jsV);
                         class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
                 </div>
 
+                <div id="newTaskRecurrenceRow">
+                    <label class="flex items-center gap-2 cursor-pointer select-none">
+                        <input type="checkbox" id="newTask_recur_enabled"
+                            class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                        <span class="text-sm font-medium text-gray-700 dark:text-zinc-300">Repetir tarefa</span>
+                    </label>
+                    <div id="newTask_recur_select_wrap" class="mt-2 hidden">
+                        <input type="hidden" id="newTask_recurrence_type" value="weekly">
+                        <div class="relative">
+                            <button type="button" id="newTask_recurrenceBtn"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none text-left flex items-center justify-between">
+                                <span id="newTask_recurrenceBtnLabel">Semanal</span>
+                                <span class="text-gray-400 text-xs">▲</span>
+                            </button>
+                            <div id="newTask_recurrenceMenu"
+                                class="hidden absolute bottom-full left-0 w-full mb-1 bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-lg shadow-lg overflow-hidden z-10">
+                                <button type="button" data-value="weekly" data-label="Semanal"
+                                    class="newTask-recurrence-opt w-full px-3 py-2 text-sm text-left text-gray-700 dark:text-white hover:bg-indigo-50 dark:hover:bg-zinc-700">Semanal</button>
+                                <button type="button" data-value="monthly" data-label="Mensal"
+                                    class="newTask-recurrence-opt w-full px-3 py-2 text-sm text-left text-gray-700 dark:text-white hover:bg-indigo-50 dark:hover:bg-zinc-700">Mensal</button>
+                                <button type="button" data-value="yearly" data-label="Anual"
+                                    class="newTask-recurrence-opt w-full px-3 py-2 text-sm text-left text-gray-700 dark:text-white hover:bg-indigo-50 dark:hover:bg-zinc-700">Anual</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <div class="flex justify-end gap-3 pt-2">
                     <button type="button" id="newTaskCancel"
                         class="px-4 py-2 border border-gray-300 text-gray-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 dark:border-zinc-700 rounded-lg text-sm hover:bg-gray-100 transition-colors">
