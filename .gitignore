@@ -84,6 +84,8 @@ docs/
 # package.json/package-lock.json sao versionados (build do Tailwind + Playwright dev).
 .venv/
 node_modules/
+vendor/
+.phpunit.cache/
 tests/playwright_ui_test.js
 tests/playwright_modal_debug.js
 tests/screenshots/
