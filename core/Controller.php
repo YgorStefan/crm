@@ -120,8 +120,9 @@ abstract class Controller
     }
 
     /**
-     * Retorna valor do $_POST com trim. Sem htmlspecialchars — encoding deve
-     * ser feito nas views (e.g. htmlspecialchars ao exibir, não ao gravar).
+     * Retorna valor do $_POST com trim, sempre como string ('' se ausente).
+     * Nenhum encoding é aplicado aqui — htmlspecialchars deve ser feito nas
+     * views ao exibir, e o PDO com prepared statements protege o banco.
      *
      * @param  string  $key      Nome do campo
      * @param  string  $default  Valor padrão se o campo não existir
@@ -133,16 +134,44 @@ abstract class Controller
     }
 
     /**
-     * Versão de input() que NÃO aplica htmlspecialchars.
-     * Use apenas quando o valor for numérico ou for para inserção no banco
-     * (o PDO com prepared statements já protege contra SQL Injection).
+     * Igual a input(), mas com default null: distingue "campo ausente"
+     * de "campo vazio". Use para campos opcionais que viram NULL no banco
+     * (datas, FKs) ou quando o caller precisa do valor cru.
      *
      * @param  string  $key
-     * @param  mixed   $default
+     * @param  mixed   $default  Retornado sem trim quando o campo não existe
      * @return mixed
      */
     protected function inputPost(string $key, mixed $default = null): mixed
     {
         return isset($_POST[$key]) ? trim((string) $_POST[$key]) : $default;
+    }
+
+    /**
+     * Lê página e itens-por-página da query string, validando contra a lista
+     * de limites permitidos e persistindo a escolha em sessão por módulo
+     * (chave 'per_page_{module}', para a escolha não vazar entre telas).
+     *
+     * @param  string  $module  Identificador do módulo (ex.: 'clients')
+     * @return array{0: int, 1: int, 2: int}  [page, limit, offset]
+     */
+    protected function paginate(string $module): array
+    {
+        $allowedLimits = [15, 25, 50, 100];
+        $sessionKey    = 'per_page_' . $module;
+
+        $page = max(1, (int) ($_GET['page'] ?? 1));
+
+        if (!empty($_GET['per_page'])) {
+            $requestedLimit = (int) $_GET['per_page'];
+            if (in_array($requestedLimit, $allowedLimits, true)) {
+                $_SESSION[$sessionKey] = $requestedLimit;
+            }
+        }
+        $limit = isset($_SESSION[$sessionKey]) && in_array((int) $_SESSION[$sessionKey], $allowedLimits, true)
+            ? (int) $_SESSION[$sessionKey]
+            : 25;
+
+        return [$page, $limit, ($page - 1) * $limit];
     }
 }

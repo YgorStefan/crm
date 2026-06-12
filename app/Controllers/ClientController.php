@@ -43,22 +43,7 @@ class ClientController extends Controller
             'dir'         => $_GET['dir'] ?? 'asc',
         ];
 
-        // Paginação: página atual
-        $page = max(1, (int) ($_GET['page'] ?? 1));
-
-        // Itens por página: valida e persiste em sessão
-        $allowedLimits = [15, 25, 50, 100];
-        if (!empty($_GET['per_page'])) {
-            $requestedLimit = (int) $_GET['per_page'];
-            if (in_array($requestedLimit, $allowedLimits, true)) {
-                $_SESSION['per_page'] = $requestedLimit;
-            }
-        }
-        $limit = isset($_SESSION['per_page']) && in_array((int) $_SESSION['per_page'], $allowedLimits, true)
-            ? (int) $_SESSION['per_page']
-            : 25;
-
-        $offset = ($page - 1) * $limit;
+        [$page, $limit, $offset] = $this->paginate('clients');
 
         $overdueIds = $this->service->getOverdueClientIds();
         $totalCount = $this->clients->countAllWithRelations($filters);

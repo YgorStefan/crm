@@ -19,18 +19,7 @@ class ColdContactController extends Controller
     public function index(array $params = []): void
     {
         // Paginação dos cards mensais
-        $page = max(1, (int) ($_GET['page'] ?? 1));
-        $allowedLimits = [15, 25, 50, 100];
-        if (!empty($_GET['per_page'])) {
-            $requestedLimit = (int) $_GET['per_page'];
-            if (in_array($requestedLimit, $allowedLimits, true)) {
-                $_SESSION['per_page'] = $requestedLimit;
-            }
-        }
-        $limit = isset($_SESSION['per_page']) && in_array((int) $_SESSION['per_page'], $allowedLimits, true)
-            ? (int) $_SESSION['per_page']
-            : 25;
-        $offset = ($page - 1) * $limit;
+        [$page, $limit, $offset] = $this->paginate('cold_contacts');
 
         $totalCount = $this->coldContacts->countFindMonthSummaries();
         $rawSummaries = $this->coldContacts->findMonthSummaries($limit, $offset);
@@ -389,18 +378,7 @@ class ColdContactController extends Controller
         if (!empty($_GET['dia']))              $filters['dia']              = (int) $_GET['dia'];
         if (!empty($_GET['telefone_enviado'])) $filters['telefone_enviado'] = trim($_GET['telefone_enviado']);
 
-        $page          = max(1, (int) ($_GET['page'] ?? 1));
-        $allowedLimits = [15, 25, 50, 100];
-        if (!empty($_GET['per_page'])) {
-            $requestedLimit = (int) $_GET['per_page'];
-            if (in_array($requestedLimit, $allowedLimits, true)) {
-                $_SESSION['per_page'] = $requestedLimit;
-            }
-        }
-        $limit  = isset($_SESSION['per_page']) && in_array((int) $_SESSION['per_page'], $allowedLimits, true)
-            ? (int) $_SESSION['per_page']
-            : 25;
-        $offset = ($page - 1) * $limit;
+        [$page, $limit, $offset] = $this->paginate('cold_contacts');
 
         try {
             $totalCount = $this->coldContacts->countByMonth($yearMonth, $filters);
