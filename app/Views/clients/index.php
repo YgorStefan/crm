@@ -259,52 +259,15 @@ unset($_jsV);
         <form method="POST" action="<?= APP_URL ?>/tasks/store" class="px-6 py-5 space-y-4">
             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
             <input type="hidden" name="client_id" id="qtClientId">
-            <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Título <span class="text-red-500">*</span></label>
-                <input type="text" name="title" required placeholder="O que precisa ser feito?"
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-            </div>
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Prazo <span class="text-red-500">*</span></label>
-                    <input type="datetime-local" name="due_date" id="qtDueDate" required
-                        class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Prioridade</label>
-                    <select name="priority" class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                        <option value="low">Baixa</option>
-                        <option value="medium" selected>Média</option>
-                        <option value="high">Alta</option>
-                    </select>
-                </div>
-            </div>
-            <div id="qtRecurrenceRow">
-                <label class="flex items-center gap-2 cursor-pointer select-none">
-                    <input type="checkbox" id="qt_recur_enabled"
-                        class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                    <span class="text-sm font-medium text-gray-700 dark:text-zinc-300">Repetir tarefa</span>
-                </label>
-                <div id="qt_recur_select_wrap" class="mt-2 hidden">
-                    <input type="hidden" name="recurrence_type" id="qt_recurrence_type" value="none">
-                    <div class="relative">
-                        <button type="button" id="qt_recurrenceBtn"
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none text-left flex items-center justify-between">
-                            <span id="qt_recurrenceBtnLabel">Semanal</span>
-                            <span class="text-gray-400 text-xs">▲</span>
-                        </button>
-                        <div id="qt_recurrenceMenu"
-                            class="hidden absolute bottom-full left-0 w-full mb-1 bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-lg shadow-lg overflow-hidden z-10">
-                            <button type="button" data-value="weekly" data-label="Semanal"
-                                class="qt-recurrence-opt w-full px-3 py-2 text-sm text-left text-gray-700 dark:text-white hover:bg-indigo-50 dark:hover:bg-zinc-700">Semanal</button>
-                            <button type="button" data-value="monthly" data-label="Mensal"
-                                class="qt-recurrence-opt w-full px-3 py-2 text-sm text-left text-gray-700 dark:text-white hover:bg-indigo-50 dark:hover:bg-zinc-700">Mensal</button>
-                            <button type="button" data-value="yearly" data-label="Anual"
-                                class="qt-recurrence-opt w-full px-3 py-2 text-sm text-left text-gray-700 dark:text-white hover:bg-indigo-50 dark:hover:bg-zinc-700">Anual</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <?php
+            $p = 'qt';
+            $showAssigned = false;
+            $showDescription = false;
+            $recurrenceDefault = 'none';
+            require VIEW_PATH . '/components/task-modal-fields.php';
+            // Reseta defaults para não vazarem a outros includes da view
+            unset($showAssigned, $showDescription, $recurrenceDefault);
+            ?>
             <div class="flex gap-3 pt-2">
                 <button type="submit" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white font-medium py-2 rounded-lg text-sm transition-colors">Salvar</button>
                 <button type="button" data-action="close-modal" data-target="modalQuickTask"

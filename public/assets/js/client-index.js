@@ -45,7 +45,7 @@
                     const tomorrow = new Date();
                     tomorrow.setDate(tomorrow.getDate() + 1);
                     tomorrow.setHours(12, 0, 0, 0);
-                    document.getElementById('qtDueDate').value = tomorrow.toISOString().slice(0, 16);
+                    document.getElementById('qt_due_date').value = tomorrow.toISOString().slice(0, 16);
                     // Reset recorrência
                     const chk = document.getElementById('qt_recur_enabled');
                     const wrap = document.getElementById('qt_recur_select_wrap');

@@ -191,19 +191,19 @@
             document.getElementById('task_recur_enabled').addEventListener('change', e => {
                 document.getElementById('task_recur_select_wrap').classList.toggle('hidden', !e.target.checked);
             });
-            document.getElementById('recurrenceBtn').addEventListener('click', () => {
-                document.getElementById('recurrenceMenu').classList.toggle('hidden');
+            document.getElementById('task_recurrenceBtn').addEventListener('click', () => {
+                document.getElementById('task_recurrenceMenu').classList.toggle('hidden');
             });
-            document.querySelectorAll('.recurrence-opt').forEach(opt => {
+            document.querySelectorAll('.task-recurrence-opt').forEach(opt => {
                 opt.addEventListener('click', () => {
                     document.getElementById('task_recurrence_type').value = opt.dataset.value;
-                    document.getElementById('recurrenceBtnLabel').textContent = opt.dataset.label;
-                    document.getElementById('recurrenceMenu').classList.add('hidden');
+                    document.getElementById('task_recurrenceBtnLabel').textContent = opt.dataset.label;
+                    document.getElementById('task_recurrenceMenu').classList.add('hidden');
                 });
             });
             document.addEventListener('click', e => {
-                if (!e.target.closest('#recurrenceBtn') && !e.target.closest('#recurrenceMenu')) {
-                    document.getElementById('recurrenceMenu').classList.add('hidden');
+                if (!e.target.closest('#task_recurrenceBtn') && !e.target.closest('#task_recurrenceMenu')) {
+                    document.getElementById('task_recurrenceMenu').classList.add('hidden');
                 }
             });
         }
@@ -242,8 +242,8 @@
             document.getElementById('task_recur_enabled').checked = false;
             document.getElementById('task_recur_select_wrap').classList.add('hidden');
             document.getElementById('task_recurrence_type').value = 'weekly';
-            document.getElementById('recurrenceBtnLabel').textContent = 'Semanal';
-            document.getElementById('recurrenceMenu').classList.add('hidden');
+            document.getElementById('task_recurrenceBtnLabel').textContent = 'Semanal';
+            document.getElementById('task_recurrenceMenu').classList.add('hidden');
             document.getElementById('btnCancelRecurrence').style.display = 'none';
             document.getElementById('modalTask').style.display = 'flex';
         }

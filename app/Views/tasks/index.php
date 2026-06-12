@@ -99,78 +99,7 @@ unset($_jsV);
                 <a id="taskClientUrl" href="#" class="text-xs text-indigo-600 hover:underline font-medium">Ver cadastro ➜</a>
             </div>
 
-            <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Título <span
-                        class="text-red-500">*</span></label>
-                <input type="text" id="task_title" name="title" required placeholder="O que precisa ser feito?"
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-            </div>
-
-            <div class="grid grid-cols-2 gap-3">
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Prazo <span
-                            class="text-red-500">*</span></label>
-                    <input type="datetime-local" id="task_due_date" name="due_date" required
-                        class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Prioridade</label>
-                    <select id="task_priority" name="priority"
-                        class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                        <option value="low">Baixa</option>
-                        <option value="medium" selected>Média</option>
-                        <option value="high">Alta</option>
-                    </select>
-                </div>
-            </div>
-
-            <?php if (($_SESSION['user']['role'] ?? '') === 'admin'): ?>
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Responsável</label>
-                    <select id="task_assigned_to" name="assigned_to"
-                        class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
-                        <?php foreach ($users as $user): ?>
-                            <option value="<?= $user['id'] ?>" <?= $user['id'] == ($_SESSION['user']['id'] ?? 0) ? 'selected' : '' ?>>
-                                <?= htmlspecialchars($user['name'], ENT_QUOTES, 'UTF-8') ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
-                </div>
-            <?php endif; ?>
-
-            <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Descrição</label>
-                <textarea id="task_description" name="description" rows="2"
-                    placeholder="Detalhes da tarefa (opcional)..."
-                    class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
-            </div>
-
-            <div id="taskRecurrenceRow">
-                <label class="flex items-center gap-2 cursor-pointer select-none">
-                    <input type="checkbox" id="task_recur_enabled"
-                        class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
-                    <span class="text-sm font-medium text-gray-700 dark:text-zinc-300">Repetir tarefa</span>
-                </label>
-                <div id="task_recur_select_wrap" class="mt-2 hidden">
-                    <input type="hidden" id="task_recurrence_type" value="weekly">
-                    <div class="relative">
-                        <button type="button" id="recurrenceBtn"
-                            class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none text-left flex items-center justify-between">
-                            <span id="recurrenceBtnLabel">Semanal</span>
-                            <span class="text-gray-400 text-xs">▲</span>
-                        </button>
-                        <div id="recurrenceMenu"
-                            class="hidden absolute bottom-full left-0 w-full mb-1 bg-white dark:bg-zinc-800 border border-gray-300 dark:border-zinc-700 rounded-lg shadow-lg overflow-hidden z-10">
-                            <button type="button" data-value="weekly" data-label="Semanal"
-                                class="recurrence-opt w-full px-3 py-2 text-sm text-left text-gray-700 dark:text-white hover:bg-indigo-50 dark:hover:bg-zinc-700">Semanal</button>
-                            <button type="button" data-value="monthly" data-label="Mensal"
-                                class="recurrence-opt w-full px-3 py-2 text-sm text-left text-gray-700 dark:text-white hover:bg-indigo-50 dark:hover:bg-zinc-700">Mensal</button>
-                            <button type="button" data-value="yearly" data-label="Anual"
-                                class="recurrence-opt w-full px-3 py-2 text-sm text-left text-gray-700 dark:text-white hover:bg-indigo-50 dark:hover:bg-zinc-700">Anual</button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            <?php $p = 'task'; require VIEW_PATH . '/components/task-modal-fields.php'; ?>
 
             <div class="flex justify-between gap-3 pt-2">
                 <div class="flex gap-2" id="taskActionBtns" style="display:none!important">
