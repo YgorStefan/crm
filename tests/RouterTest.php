@@ -1,5 +1,22 @@
 <?php
 
+// Middlewares fake registrados no namespace que o Router resolve.
+namespace Core\Middleware {
+    class SpyMiddlewareBase
+    {
+        public static array $executionLog = [];
+
+        public function handle(): void
+        {
+            self::$executionLog[] = static::class;
+        }
+    }
+
+    class SpyDefaultMiddleware extends SpyMiddlewareBase {}
+    class SpyRouteMiddleware extends SpyMiddlewareBase {}
+    class SpyGlobalMiddleware extends SpyMiddlewareBase {}
+}
+
 // Controller fake registrado no namespace que o Router resolve.
 namespace App\Controllers {
     class RouterSpyController
@@ -24,6 +41,10 @@ namespace App\Controllers {
 namespace {
 
 use App\Controllers\RouterSpyController;
+use Core\Middleware\SpyDefaultMiddleware;
+use Core\Middleware\SpyGlobalMiddleware;
+use Core\Middleware\SpyMiddlewareBase;
+use Core\Middleware\SpyRouteMiddleware;
 use Core\Router;
 use PHPUnit\Framework\TestCase;
 
@@ -32,6 +53,7 @@ class RouterTest extends TestCase
     protected function setUp(): void
     {
         RouterSpyController::reset();
+        SpyMiddlewareBase::$executionLog = [];
     }
 
     private function dispatch(string $method, string $uri): Router
@@ -98,6 +120,33 @@ class RouterTest extends TestCase
         $router->dispatch();
 
         $this->assertSame(['year_month' => '2026-05'], RouterSpyController::$receivedParams);
+    }
+
+    public function testMiddlewaresExecutamNaOrdemDefaultRotaGlobal(): void
+    {
+        $router = $this->dispatch('GET', '/crm/public/clients');
+        $router->setDefaultMiddlewares(['SpyDefaultMiddleware']);
+        $router->setGlobalMiddlewares(['SpyGlobalMiddleware']);
+        $router->get('/clients', 'RouterSpyController', 'index', ['SpyRouteMiddleware']);
+        $router->dispatch();
+
+        $this->assertSame(
+            [SpyDefaultMiddleware::class, SpyRouteMiddleware::class, SpyGlobalMiddleware::class],
+            SpyMiddlewareBase::$executionLog
+        );
+        $this->assertSame('index', RouterSpyController::$calledAction);
+    }
+
+    public function testRotaPublicaNaoExecutaMiddlewareDefault(): void
+    {
+        $router = $this->dispatch('GET', '/crm/public/login');
+        $router->setDefaultMiddlewares(['SpyDefaultMiddleware']);
+        $router->setGlobalMiddlewares(['SpyGlobalMiddleware']);
+        $router->get('/login', 'RouterSpyController', 'loginForm', [], public: true);
+        $router->dispatch();
+
+        $this->assertSame([SpyGlobalMiddleware::class], SpyMiddlewareBase::$executionLog);
+        $this->assertSame('loginForm', RouterSpyController::$calledAction);
     }
 }
 

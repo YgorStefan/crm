@@ -7,11 +7,35 @@ namespace Core;
 class Router
 {
     // Lista de rotas registradas. Cada entrada é um array com:
-    // [method, pattern, controller, action, middlewares[]]
+    // [method, pattern, controller, action, middlewares[], public]
     private array $routes = [];
 
     // Parâmetros extraídos da URL (ex.: {id} => 5)
     private array $params = [];
+
+    // Executados em TODAS as rotas, por último (ex.: CspMiddleware)
+    private array $globalMiddlewares = [];
+
+    // Executados primeiro em toda rota NÃO-pública (ex.: AuthMiddleware).
+    // Assim uma rota nova não pode "esquecer" a autenticação.
+    private array $defaultMiddlewares = [];
+
+    /**
+     * Define middlewares executados em todas as rotas (após os demais).
+     */
+    public function setGlobalMiddlewares(array $middlewares): void
+    {
+        $this->globalMiddlewares = $middlewares;
+    }
+
+    /**
+     * Define middlewares aplicados por padrão a toda rota não-pública
+     * (antes dos middlewares específicos da rota).
+     */
+    public function setDefaultMiddlewares(array $middlewares): void
+    {
+        $this->defaultMiddlewares = $middlewares;
+    }
 
     /**
      * Registra uma rota para o método GET.
@@ -19,26 +43,27 @@ class Router
      * @param  string    $pattern     Padrão de URL (ex.: '/clients/{id}/edit')
      * @param  string    $controller  Nome da classe Controller (sem namespace)
      * @param  string    $action      Nome do método a chamar
-     * @param  array     $middlewares Lista de classes Middleware a executar antes
+     * @param  array     $middlewares Middlewares específicos da rota (ex.: CsrfMiddleware)
+     * @param  bool      $public      Se true, não aplica os middlewares default (rota sem login)
      */
-    public function get(string $pattern, string $controller, string $action, array $middlewares = []): void
+    public function get(string $pattern, string $controller, string $action, array $middlewares = [], bool $public = false): void
     {
-        $this->addRoute('GET', $pattern, $controller, $action, $middlewares);
+        $this->addRoute('GET', $pattern, $controller, $action, $middlewares, $public);
     }
 
     /**
      * Registra uma rota para o método POST.
      */
-    public function post(string $pattern, string $controller, string $action, array $middlewares = []): void
+    public function post(string $pattern, string $controller, string $action, array $middlewares = [], bool $public = false): void
     {
-        $this->addRoute('POST', $pattern, $controller, $action, $middlewares);
+        $this->addRoute('POST', $pattern, $controller, $action, $middlewares, $public);
     }
 
     /**
      * Armazena a rota no array interno após converter o padrão
      * (com {param}) em uma expressão regular válida.
      */
-    private function addRoute(string $method, string $pattern, string $controller, string $action, array $middlewares): void
+    private function addRoute(string $method, string $pattern, string $controller, string $action, array $middlewares, bool $public = false): void
     {
         // Converte parâmetros de rota como {id} em grupos de captura regex: (\d+) ou ([^/]+)
         // {id}   → captura apenas números
@@ -54,6 +79,7 @@ class Router
             'controller' => $controller,
             'action' => $action,
             'middlewares' => $middlewares,
+            'public' => $public,
         ];
     }
 
@@ -96,8 +122,15 @@ class Router
                     $namedParams[$name] = $matches[$i] ?? null;
                 }
 
-                // Executa middlewares em cadeia (verificação de autenticação, CSRF, etc.)
-                foreach ($route['middlewares'] as $middlewareClass) {
+                // Executa middlewares em cadeia, na ordem:
+                // defaults (Auth, exceto rotas públicas) → específicos da rota
+                // (Csrf, RateLimit) → globais (Csp)
+                $middlewares = array_merge(
+                    $route['public'] ? [] : $this->defaultMiddlewares,
+                    $route['middlewares'],
+                    $this->globalMiddlewares
+                );
+                foreach ($middlewares as $middlewareClass) {
                     $fullClass = 'Core\\Middleware\\' . $middlewareClass;
                     (new $fullClass())->handle();
                 }
