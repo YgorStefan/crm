@@ -36,6 +36,8 @@ class PipelineController extends Controller
      */
     public function move(array $params = []): void
     {
+        $this->requireRole(['admin', 'seller'], json: true);
+
         // Lê o corpo da requisição JSON enviado pelo Fetch API
         $body = json_decode(file_get_contents('php://input'), true);
 

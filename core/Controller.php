@@ -8,6 +8,8 @@
 
 namespace Core;
 
+use Core\Http\ApiResponse;
+
 abstract class Controller
 {
     /**
@@ -92,26 +94,32 @@ abstract class Controller
     }
 
     /**
+     * Detecta requisição AJAX (fetch/XHR) pelo header X-Requested-With
+     * ou pelo Accept de JSON.
+     */
+    protected function isAjax(): bool
+    {
+        return !empty($_SERVER['HTTP_X_REQUESTED_WITH'])
+            || str_contains($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json');
+    }
+
+    /**
      * Verifica se o usuário logado tem o papel exigido.
-     * Para requisições JSON/AJAX: retorna 403 com erro estruturado.
+     * Para requisições JSON/AJAX (ou quando $json = true): responde 403
+     * com o shape de ApiResponse::error e encerra.
      * Para requisições HTML: redireciona para /dashboard com flash message.
      *
      * @param  string|array  $roles  Role(s) permitidos: 'admin' ou ['admin', 'seller']
+     * @param  bool          $json   Força resposta JSON (endpoints só-AJAX)
      */
-    protected function requireRole(string|array $roles): void
+    protected function requireRole(string|array $roles, bool $json = false): void
     {
         $roles    = (array) $roles;
         $userRole = $_SESSION['user']['role'] ?? '';
 
         if (!in_array($userRole, $roles, true)) {
-            $isJson = str_contains($_SERVER['HTTP_ACCEPT'] ?? '', 'application/json')
-                   || !empty($_SERVER['HTTP_X_REQUESTED_WITH']);
-
-            if ($isJson) {
-                $this->json([
-                    'success' => false,
-                    'error'   => ['code' => 'forbidden', 'message' => 'Acesso negado.'],
-                ], 403);
+            if ($json || $this->isAjax()) {
+                $this->json(ApiResponse::error('Acesso negado.'), 403);
             } else {
                 $this->flash('error', 'Acesso negado: você não tem permissão para esta ação.');
                 $this->redirect('/dashboard');

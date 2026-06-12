@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use Core\Controller;
+use Core\Http\ApiResponse;
 use Core\Middleware\CsrfMiddleware;
 use App\Models\Task;
 use App\Models\User;
@@ -57,11 +58,48 @@ class TaskController extends Controller
         $task = $this->tasks->findById($id);
 
         if (!$task) {
-            $this->json(['error' => 'Tarefa nao encontrada'], 404);
+            $this->json(ApiResponse::error('Tarefa não encontrada.'), 404);
             return;
         }
 
         $this->json($task);
+    }
+
+    /**
+     * Autoriza mutação de uma tarefa: viewers nunca podem; sellers só nas
+     * próprias (assigned_to ou created_by); admins sempre podem.
+     * Em caso de negação já emite a resposta (JSON 403 ou flash+redirect)
+     * e retorna false — o caller deve apenas dar return.
+     *
+     * @param  array  $task  Registro da tarefa
+     * @param  bool   $json  Força resposta JSON (endpoints só-AJAX)
+     */
+    private function authorizeTaskMutation(array $task, bool $json = false): bool
+    {
+        $role   = $_SESSION['user']['role'] ?? '';
+        $userId = (int) ($_SESSION['user']['id'] ?? 0);
+
+        $denyMessage = null;
+        if ($role === 'viewer') {
+            $denyMessage = 'Acesso negado: leitores não podem editar tarefas.';
+        } elseif ($role === 'seller'
+            && (int) $task['assigned_to'] !== $userId
+            && (int) $task['created_by'] !== $userId
+        ) {
+            $denyMessage = 'Acesso negado: você só pode editar suas próprias tarefas.';
+        }
+
+        if ($denyMessage === null) {
+            return true;
+        }
+
+        if ($json || $this->isAjax()) {
+            $this->json(ApiResponse::error('Acesso negado.'), 403);
+        } else {
+            $this->flash('error', $denyMessage);
+            $this->redirect('/tasks');
+        }
+        return false;
     }
 
     /**
@@ -159,6 +197,8 @@ class TaskController extends Controller
      */
     public function store(array $params = []): void
     {
+        $this->requireRole(['admin', 'seller']);
+
         $title = $this->input('title');
         $dueDate = $this->inputPost('due_date');
         $clientId = $this->inputPost('client_id');
@@ -196,8 +236,8 @@ class TaskController extends Controller
             'created_by'      => $_SESSION['user']['id'],
         ]);
 
-        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-            $this->json(['success' => true, 'csrf_token' => CsrfMiddleware::getToken()]);
+        if ($this->isAjax()) {
+            $this->json(ApiResponse::success(token: true));
             return;
         }
 
@@ -217,11 +257,6 @@ class TaskController extends Controller
     public function update(array $params = []): void
     {
         $id = (int) ($params['id'] ?? 0);
-        // Check role: viewer and seller authorization
-        $role = $_SESSION['user']['role'] ?? '';
-        $viewer = ($role === 'viewer');
-        $seller = ($role === 'seller');
-        $userId = (int) ($_SESSION['user']['id'] ?? 0);
 
         $data = [];
         if (isset($_POST['status']))
@@ -241,31 +276,15 @@ class TaskController extends Controller
             return;
         }
 
-        if ($viewer) {
-            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-                $this->json(['success' => false, 'error' => 'Acesso negado.'], 403);
-            } else {
-                $this->flash('error', 'Acesso negado: leitores não podem editar tarefas.');
-                $this->redirect('/tasks');
-            }
-            return;
-        }
-
-        if ($seller && (int) $task['assigned_to'] !== $userId && (int) $task['created_by'] !== $userId) {
-            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-                $this->json(['success' => false, 'error' => 'Acesso negado.'], 403);
-            } else {
-                $this->flash('error', 'Acesso negado: você só pode editar suas próprias tarefas.');
-                $this->redirect('/tasks');
-            }
+        if (!$this->authorizeTaskMutation($task)) {
             return;
         }
 
         $this->tasks->update($id, $data);
 
         // Se for requisição AJAX, retorna JSON; senão, redireciona
-        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-            $this->json(['success' => true, 'csrf_token' => CsrfMiddleware::getToken()]);
+        if ($this->isAjax()) {
+            $this->json(ApiResponse::success(token: true));
         } else {
             $this->flash('success', 'Tarefa atualizada!');
             $this->redirect('/tasks');
@@ -281,11 +300,6 @@ class TaskController extends Controller
     public function destroy(array $params = []): void
     {
         $id = (int) ($params['id'] ?? 0);
-        // Check role: viewer and seller authorization
-        $role = $_SESSION['user']['role'] ?? '';
-        $viewer = ($role === 'viewer');
-        $seller = ($role === 'seller');
-        $userId = (int) ($_SESSION['user']['id'] ?? 0);
 
         $task = $this->tasks->findById($id);
         if (!$task) {
@@ -293,30 +307,14 @@ class TaskController extends Controller
             return;
         }
 
-        if ($viewer) {
-            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-                $this->json(['success' => false, 'error' => 'Acesso negado.'], 403);
-            } else {
-                $this->flash('error', 'Acesso negado: leitores não podem editar tarefas.');
-                $this->redirect('/tasks');
-            }
-            return;
-        }
-
-        if ($seller && (int) $task['assigned_to'] !== $userId && (int) $task['created_by'] !== $userId) {
-            if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-                $this->json(['success' => false, 'error' => 'Acesso negado.'], 403);
-            } else {
-                $this->flash('error', 'Acesso negado: você só pode editar suas próprias tarefas.');
-                $this->redirect('/tasks');
-            }
+        if (!$this->authorizeTaskMutation($task)) {
             return;
         }
 
         $this->tasks->delete($id);
 
-        if (!empty($_SERVER['HTTP_X_REQUESTED_WITH'])) {
-            $this->json(['success' => true, 'csrf_token' => CsrfMiddleware::getToken()]);
+        if ($this->isAjax()) {
+            $this->json(ApiResponse::success(token: true));
         } else {
             $this->flash('success', 'Tarefa removida.');
             $this->redirect('/tasks');
@@ -325,26 +323,15 @@ class TaskController extends Controller
 
     public function cancelRecurrence(array $params = []): void
     {
-        $id     = (int) ($params['id'] ?? 0);
-        $role   = $_SESSION['user']['role'] ?? '';
-        $userId = (int) ($_SESSION['user']['id'] ?? 0);
+        $id = (int) ($params['id'] ?? 0);
 
         $task = $this->tasks->findById($id);
         if (!$task) {
-            $this->json(['success' => false, 'error' => 'Tarefa não encontrada.'], 404);
+            $this->json(ApiResponse::error('Tarefa não encontrada.'), 404);
             return;
         }
 
-        if ($role === 'viewer') {
-            $this->json(['success' => false, 'error' => 'Acesso negado.'], 403);
-            return;
-        }
-
-        if ($role === 'seller'
-            && (int) $task['assigned_to'] !== $userId
-            && (int) $task['created_by']  !== $userId
-        ) {
-            $this->json(['success' => false, 'error' => 'Acesso negado.'], 403);
+        if (!$this->authorizeTaskMutation($task, json: true)) {
             return;
         }
 
@@ -353,6 +340,6 @@ class TaskController extends Controller
             : $id;
 
         $this->tasks->cancelRecurrence($parentId);
-        $this->json(['success' => true, 'csrf_token' => CsrfMiddleware::getToken()]);
+        $this->json(ApiResponse::success(token: true));
     }
 }

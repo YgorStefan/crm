@@ -173,10 +173,7 @@ class ColdContactController extends Controller
      */
     public function update(array $params = []): void
     {
-        if (!in_array($_SESSION['user']['role'] ?? '', ['admin', 'seller'], true)) {
-            $this->json(ApiResponse::error('Acesso negado.'), 403);
-            return;
-        }
+        $this->requireRole(['admin', 'seller'], json: true);
 
         $id = (int) ($params['id'] ?? 0);
         if (!$id) {
@@ -224,10 +221,7 @@ class ColdContactController extends Controller
      */
     public function destroy(array $params = []): void
     {
-        if (!in_array($_SESSION['user']['role'] ?? '', ['admin', 'seller'], true)) {
-            $this->json(ApiResponse::error('Acesso negado.'), 403);
-            return;
-        }
+        $this->requireRole(['admin', 'seller'], json: true);
 
         $id = (int) ($params['id'] ?? 0);
         if (!$id) {
@@ -244,10 +238,7 @@ class ColdContactController extends Controller
      */
     public function deleteMonth(array $params = []): void
     {
-        if (!in_array($_SESSION['user']['role'] ?? '', ['admin', 'seller'], true)) {
-            $this->json(ApiResponse::error('Acesso negado.'), 403);
-            return;
-        }
+        $this->requireRole(['admin', 'seller'], json: true);
 
         $yearMonth = trim($params['year_month'] ?? '');
         if (empty($yearMonth) || !preg_match('/^\d{4}-\d{2}$/', $yearMonth)) {
@@ -323,10 +314,7 @@ class ColdContactController extends Controller
      */
     public function bulkUpdate(array $params = []): void
     {
-        if (!in_array($_SESSION['user']['role'] ?? '', ['admin', 'seller'], true)) {
-            $this->json(ApiResponse::error('Acesso negado.'), 403);
-            return;
-        }
+        $this->requireRole(['admin', 'seller'], json: true);
 
         $telefone = trim($_POST['telefone_enviado'] ?? '');
         $dataMsg  = trim($_POST['data_mensagem'] ?? '');

@@ -3,7 +3,7 @@
 namespace App\Controllers;
 
 use Core\Controller;
-use Core\Middleware\CsrfMiddleware;
+use Core\Http\ApiResponse;
 use App\Models\Interaction;
 use App\Models\Client;
 
@@ -16,6 +16,8 @@ class InteractionController extends Controller
 
     public function store(array $params = []): void
     {
+        $this->requireRole(['admin', 'seller']);
+
         $clientId    = (int) ($this->inputPost('client_id') ?? 0);
         $description = trim($_POST['description'] ?? '');
         $occurredAt  = $this->inputPost('occurred_at');
@@ -45,9 +47,10 @@ class InteractionController extends Controller
                 'occurred_at' => $occurredAt,
             ]);
         } catch (\Throwable $e) {
-            // Logar a exceção real evita que erros de schema retornem 500 silenciosos
+            // Loga a exceção real internamente; o usuário recebe mensagem genérica
+            // (detalhes de schema/SQL não devem vazar para o navegador)
             error_log('[InteractionController::store] client_id=' . $clientId . ' exception: ' . $e->getMessage());
-            $this->flash('error', 'Não foi possível registrar a interação. Detalhe técnico: ' . $e->getMessage());
+            $this->flash('error', 'Não foi possível registrar a interação. Tente novamente.');
             $this->redirect('/clients/' . $clientId);
             return;
         }
@@ -58,17 +61,19 @@ class InteractionController extends Controller
 
     public function update(array $params = []): void
     {
+        $this->requireRole(['admin', 'seller'], json: true);
+
         $id = (int) ($params['id'] ?? 0);
 
         if (!$id) {
-            $this->json(['success' => false, 'error' => 'ID inválido.'], 400);
+            $this->json(ApiResponse::error('ID inválido.'), 400);
             return;
         }
 
         // Garante que a interação pertence ao tenant (via override findById)
         $interaction = $this->interactions->findById($id);
         if (!$interaction) {
-            $this->json(['success' => false, 'error' => 'Interação não encontrada.'], 404);
+            $this->json(ApiResponse::error('Interação não encontrada.'), 404);
             return;
         }
 
@@ -78,7 +83,7 @@ class InteractionController extends Controller
 
         $validTypes = ['call', 'email', 'meeting', 'whatsapp', 'note', 'other'];
         if (empty($description) || !in_array($type, $validTypes, true) || empty($occurredAt)) {
-            $this->json(['success' => false, 'error' => 'Campos inválidos.'], 422);
+            $this->json(ApiResponse::error('Campos inválidos.'), 422);
             return;
         }
 
@@ -90,11 +95,13 @@ class InteractionController extends Controller
             'occurred_at' => $occurredAt,
         ]);
 
-        $this->json(['success' => $ok, 'csrf_token' => CsrfMiddleware::getToken()]);
+        $this->json(ApiResponse::success(['success' => $ok], token: true));
     }
 
     public function destroy(array $params = []): void
     {
+        $this->requireRole(['admin', 'seller']);
+
         $id       = (int) ($params['id'] ?? 0);
         $clientId = (int) ($this->inputPost('client_id') ?? 0);
 

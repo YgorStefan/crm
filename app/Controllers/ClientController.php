@@ -99,6 +99,8 @@ class ClientController extends Controller
      */
     public function store(array $params = []): void
     {
+        $this->requireRole(['admin', 'seller']);
+
         // nome e etapa do funil são obrigatórios
         $name = $this->input('name');
         $stageId = $this->inputPost('pipeline_stage_id');
@@ -228,6 +230,8 @@ class ClientController extends Controller
      */
     public function update(array $params = []): void
     {
+        $this->requireRole(['admin', 'seller']);
+
         $id = (int) ($params['id'] ?? 0);
         $name = $this->input('name');
 
@@ -258,6 +262,8 @@ class ClientController extends Controller
      */
     public function destroy(array $params = []): void
     {
+        $this->requireRole(['admin', 'seller']);
+
         $id = (int) ($params['id'] ?? 0);
         $client = $this->clients->findById($id);
         if (!$client) {
@@ -278,6 +284,8 @@ class ClientController extends Controller
      */
     public function storeSale(array $params = []): void
     {
+        $this->requireRole(['admin', 'seller'], json: true);
+
         $clientId = (int) ($params['id'] ?? 0);
         if (!$clientId) {
             $this->json(ApiResponse::error('Cliente inválido.'), 400);
@@ -319,6 +327,8 @@ class ClientController extends Controller
      */
     public function destroySale(array $params = []): void
     {
+        $this->requireRole(['admin', 'seller'], json: true);
+
         $clientId = (int) ($params['id'] ?? 0);
         $saleId   = (int) ($params['sale_id'] ?? 0);
 
@@ -345,6 +355,8 @@ class ClientController extends Controller
      */
     public function markSalePaid(array $params = []): void
     {
+        $this->requireRole(['admin', 'seller'], json: true);
+
         $clientId = (int) ($params['id'] ?? 0);
         $saleId   = (int) ($params['sale_id'] ?? 0);
 
@@ -382,6 +394,8 @@ class ClientController extends Controller
      */
     public function updateNotes(array $params = []): void
     {
+        $this->requireRole(['admin', 'seller'], json: true);
+
         $id = (int) ($params['id'] ?? 0);
         if (!$id) {
             $this->json(ApiResponse::error('Cliente inválido.'), 400);
