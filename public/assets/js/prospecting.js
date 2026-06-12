@@ -9,8 +9,7 @@
 (function () {
     'use strict';
 
-    const APP_URL     = document.querySelector('meta[name="app-url"]')?.content ?? '';
-    const CSRF_TOKEN  = () => document.getElementById('csrfToken')?.value ?? '';
+    const APP_URL = document.querySelector('meta[name="app-url"]')?.content ?? '';
 
     const form         = document.getElementById('prospectingForm');
     const searchBtn    = document.getElementById('searchBtn');
@@ -90,28 +89,15 @@
     // ── Chamada AJAX ───────────────────────────────────────────────
 
     async function fetchPage(term, location, pageToken, onlyWithPhone) {
-        const body = new URLSearchParams({
-            _csrf_token:   CSRF_TOKEN(),
+        const { ok, data } = await CRM.api.post(APP_URL + '/api/prospecting/search', {
             term:          term,
             location:      location,
             pageToken:     pageToken ?? '',
             onlyWithPhone: onlyWithPhone ? 'true' : 'false',
         });
 
-        const res = await fetch(APP_URL + '/api/prospecting/search', {
-            method:  'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-                'Accept':       'application/json',
-                'X-CSRF-Token': CSRF_TOKEN(),
-            },
-            body:    body.toString(),
-        });
-
-        const data = await res.json();
-
-        if (!res.ok || !data.success) {
-            throw new Error(data.error ?? 'Erro desconhecido');
+        if (!ok || !data || !data.success) {
+            throw new Error(data?.error ?? 'Erro desconhecido');
         }
 
         return data; // { places, nextPageToken, total }

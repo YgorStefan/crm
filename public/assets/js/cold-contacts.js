@@ -233,9 +233,8 @@
                 const csvBlob = new Blob([new TextEncoder().encode(csvString)], { type: 'text/csv;charset=utf-8' });
                 const csvFile = new File([csvBlob], file.name.replace(/\.(xls|xlsx)$/i, '.csv'), { type: 'text/csv' });
 
-                const csrf = document.querySelector('meta[name="csrf-token"]')?.content || '';
                 const fd = new FormData();
-                fd.append('_csrf_token', csrf);
+                fd.append('_csrf_token', CRM.csrf.get());
                 fd.append('tipo_lista',       form.querySelector('[name="tipo_lista"]')?.value || '');
                 fd.append('telefone_enviado', form.querySelector('[name="telefone_enviado"]')?.value || '');
                 fd.append('data_mensagem',    form.querySelector('[name="data_mensagem"]')?.value || '');
@@ -276,15 +275,6 @@
             this.#setupExport();
             this.#setupImport();
             this.#initDateGuard();
-        }
-
-        #csrf() {
-            return document.querySelector('meta[name="csrf-token"]')?.content || '';
-        }
-
-        #syncToken(token) {
-            const meta = document.querySelector('meta[name="csrf-token"]');
-            if (meta) meta.setAttribute('content', token);
         }
 
         async #loadTable(page) {
@@ -394,7 +384,6 @@
                 const row = document.querySelector('#contactsTableBody tr[data-id="' + id + '"]');
                 if (!row) return;
                 const fd = new FormData();
-                fd.append('_csrf_token', this.#csrf());
                 fd.append('phone',             row.querySelector('[name="phone"]')?.value || '');
                 fd.append('name',              row.querySelector('[name="name"]')?.value || '');
                 fd.append('telefone_enviado',  row.querySelector('[name="telefone_enviado"]')?.value || '');
@@ -409,21 +398,17 @@
 
         async #saveContact(id, formData) {
             try {
-                const resp = await fetch(this.#appUrl + '/cold-contacts/' + id + '/update', { method: 'POST', body: formData, credentials: 'same-origin' });
-                const data = await resp.json();
-                if (data.success) { if (data.csrf_token) this.#syncToken(data.csrf_token); this.#loadTable(this.#filterState.page); }
-                else alert('Erro ao salvar: ' + (data.error || 'Tente novamente.'));
+                const { data } = await CRM.api.postForm(this.#appUrl + '/cold-contacts/' + id + '/update', formData);
+                if (data && data.success) this.#loadTable(this.#filterState.page);
+                else alert('Erro ao salvar: ' + (data?.error || 'Tente novamente.'));
             } catch (e) { alert('Erro de rede ao salvar.'); }
         }
 
         async #deleteContact(id) {
-            const fd = new FormData();
-            fd.append('_csrf_token', this.#csrf());
             try {
-                const resp = await fetch(this.#appUrl + '/cold-contacts/' + id + '/delete', { method: 'POST', body: fd, credentials: 'same-origin' });
-                const data = await resp.json();
-                if (data.success) { if (data.csrf_token) this.#syncToken(data.csrf_token); this.#loadTable(this.#filterState.page); }
-                else alert('Erro ao excluir: ' + (data.error || 'Tente novamente.'));
+                const { data } = await CRM.api.post(this.#appUrl + '/cold-contacts/' + id + '/delete');
+                if (data && data.success) this.#loadTable(this.#filterState.page);
+                else alert('Erro ao excluir: ' + (data?.error || 'Tente novamente.'));
             } catch (e) { alert('Erro de rede ao excluir.'); }
         }
 
@@ -464,21 +449,15 @@
                     if (!confirm('Excluir todos os contatos de ' + monthLabel + '? Esta ação não pode ser desfeita.')) return;
                     const card = btn.closest('.bg-white.rounded-xl');
                     try {
-                        const resp = await fetch(this.#appUrl + '/cold-contacts/month/' + encodeURIComponent(yearMonth) + '/delete', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-TOKEN': this.#csrf() },
-                            body: '_csrf_token=' + encodeURIComponent(this.#csrf()),
-                            credentials: 'same-origin',
-                        });
-                        let data = null;
-                        try { data = await resp.json(); } catch (_) {}
-                        if (!resp.ok) {
-                            if (resp.status === 403) alert('Sessão expirada ou token inválido. Recarregue a página.');
-                            else alert('Erro ao excluir mês (HTTP ' + resp.status + ').');
+                        const { ok, status, data } = await CRM.api.post(
+                            this.#appUrl + '/cold-contacts/month/' + encodeURIComponent(yearMonth) + '/delete'
+                        );
+                        if (!ok) {
+                            if (status === 403) alert('Sessão expirada ou token inválido. Recarregue a página.');
+                            else alert('Erro ao excluir mês (HTTP ' + status + ').');
                             return;
                         }
                         if (data?.success) {
-                            if (data.csrf_token) this.#syncToken(data.csrf_token);
                             card?.remove();
                         } else {
                             alert('Erro ao excluir: ' + (data?.error || 'Tente novamente.'));
@@ -561,20 +540,17 @@
                 if (!ids.length) return;
 
                 const fd = new FormData();
-                fd.append('_csrf_token', this.#csrf());
                 fd.append('telefone_enviado', tel);
                 fd.append('data_mensagem', dataMsg);
                 ids.forEach(id => fd.append('ids[]', id));
 
                 try {
-                    const resp = await fetch(this.#appUrl + '/cold-contacts/bulk-update', { method: 'POST', body: fd, credentials: 'same-origin' });
-                    const data = await resp.json();
-                    if (data.success) {
-                        if (data.csrf_token) this.#syncToken(data.csrf_token);
+                    const { data } = await CRM.api.postForm(this.#appUrl + '/cold-contacts/bulk-update', fd);
+                    if (data && data.success) {
                         this.#hideBulkBar();
                         this.#loadTable(this.#filterState.page);
                     } else {
-                        alert('Erro: ' + (data.error || 'Tente novamente.'));
+                        alert('Erro: ' + (data?.error || 'Tente novamente.'));
                     }
                 } catch (e) { alert('Erro de rede. Tente novamente.'); }
             });

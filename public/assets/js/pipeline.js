@@ -6,7 +6,6 @@
     const toast = document.getElementById('kanbanToast');
     const moveUrl = board?.dataset.moveUrl;   // URL da rota POST /pipeline/move
     const statsUrl = board?.dataset.statsUrl; // URL da rota GET /api/dashboard/stats
-    const csrfToken = board?.dataset.csrf;    // Token CSRF da sessão (estável, sem rotação)
 
     if (!board) return; // Sai silenciosamente se o board não existir na página
 
@@ -122,22 +121,12 @@
     async function moveClient(clientId, stageId) {
         isMoving = true;
         try {
-            const response = await fetch(moveUrl, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-Token': csrfToken,
-                },
-                body: JSON.stringify({
-                    client_id: clientId,
-                    stage_id: stageId,
-                    _csrf_token: csrfToken,
-                }),
+            const { data } = await CRM.api.postJson(moveUrl, {
+                client_id: clientId,
+                stage_id: stageId,
             });
 
-            const data = await response.json();
-
-            if (data.success) {
+            if (data && data.success) {
                 showToast('✅ Cliente movido com sucesso!', 'success');
                 refreshCharts();
             } else {

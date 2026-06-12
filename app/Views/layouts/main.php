@@ -35,6 +35,7 @@ $assetV = static function (string $rel): string {
     <meta name="user-role" content="<?= htmlspecialchars($_SESSION['user']['role'] ?? '', ENT_QUOTES, 'UTF-8') ?>">
     <meta name="user-id" content="<?= (int)($_SESSION['user']['id'] ?? 0) ?>">
     <!-- Scripts globais com defer: executam em ordem após parse completo -->
+    <script nonce="<?= CSP_NONCE ?>" defer src="<?= $safeAppUrl ?>/assets/js/api.js?v=<?= $assetV('assets/js/api.js') ?>"></script>
     <script nonce="<?= CSP_NONCE ?>" defer src="<?= $safeAppUrl ?>/assets/js/toast.js?v=<?= $assetV('assets/js/toast.js') ?>"></script>
     <script nonce="<?= CSP_NONCE ?>" defer src="<?= $safeAppUrl ?>/assets/js/notifications.js?v=<?= $assetV('assets/js/notifications.js') ?>"></script>
     <script nonce="<?= CSP_NONCE ?>" defer src="<?= $safeAppUrl ?>/assets/js/layout.js?v=<?= $assetV('assets/js/layout.js') ?>"></script>

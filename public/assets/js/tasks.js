@@ -53,7 +53,6 @@
     class TaskCalendarManager {
         #calendarEl;
         #appUrl;
-        #csrfToken;
         #userRole;
         #userId;
         #calendar;
@@ -65,21 +64,12 @@
         constructor(el) {
             this.#calendarEl = el.querySelector('#fc-calendar');
             this.#appUrl     = document.querySelector('meta[name="app-url"]').content;
-            this.#csrfToken  = document.querySelector('meta[name="csrf-token"]').content;
             this.#userRole   = document.querySelector('meta[name="user-role"]').content;
             this.#userId     = parseInt(document.querySelector('meta[name="user-id"]').content, 10);
 
             this.#initCalendar();
             this.#wireFilters();
             this.#wireModalButtons();
-        }
-
-        #refreshCsrf(data) {
-            if (data.csrf_token) {
-                this.#csrfToken = data.csrf_token;
-                const meta = document.querySelector('meta[name="csrf-token"]');
-                if (meta) meta.content = data.csrf_token;
-            }
         }
 
         #passesFilter(ev) {
@@ -303,7 +293,6 @@
                 : this.#appUrl + '/tasks/store';
 
             const body = new URLSearchParams({
-                _csrf_token: this.#csrfToken,
                 title:       document.getElementById('task_title').value,
                 due_date:    document.getElementById('task_due_date').value,
                 priority:    document.getElementById('task_priority').value,
@@ -317,14 +306,8 @@
             }
 
             try {
-                const resp = await fetch(url, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
-                    body: body.toString(),
-                });
-                if (resp.ok) {
-                    const data = await resp.json();
-                    this.#refreshCsrf(data);
+                const { ok } = await CRM.api.post(url, body);
+                if (ok) {
                     document.getElementById('modalTask').style.display = 'none';
                     this.#calendar.refetchEvents();
                 } else {
@@ -340,15 +323,8 @@
             if (!taskId) return;
             if (!window.confirm('Excluir esta tarefa permanentemente?')) return;
             try {
-                const body = new URLSearchParams({ _csrf_token: this.#csrfToken });
-                const resp = await fetch(this.#appUrl + '/tasks/' + taskId + '/delete', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
-                    body: body.toString(),
-                });
-                const data = await resp.json();
-                this.#refreshCsrf(data);
-                if (data.success) {
+                const { data } = await CRM.api.post(this.#appUrl + '/tasks/' + taskId + '/delete');
+                if (data && data.success) {
                     const ev = this.#calendar.getEventById(taskId);
                     if (ev) ev.remove();
                     document.getElementById('modalTask').style.display = 'none';
@@ -366,15 +342,8 @@
             const btn = document.getElementById('btnToggleDone');
             const nextStatus = btn.dataset.nextStatus || 'done';
             try {
-                const body = new URLSearchParams({ _csrf_token: this.#csrfToken, status: nextStatus });
-                const resp = await fetch(this.#appUrl + '/tasks/' + taskId + '/update', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
-                    body: body.toString(),
-                });
-                const data = await resp.json();
-                this.#refreshCsrf(data);
-                if (data.success) {
+                const { data } = await CRM.api.post(this.#appUrl + '/tasks/' + taskId + '/update', { status: nextStatus });
+                if (data && data.success) {
                     document.getElementById('modalTask').style.display = 'none';
                     this.#calendar.refetchEvents();
                 } else {
@@ -390,18 +359,8 @@
             if (!taskId) return;
             if (!window.confirm('Cancelar a série? As ocorrências pendentes serão removidas. As já concluídas permanecem no histórico.')) return;
             try {
-                const body = new URLSearchParams({ _csrf_token: this.#csrfToken });
-                const resp = await fetch(this.#appUrl + '/tasks/' + taskId + '/cancel-recurrence', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded',
-                        'X-Requested-With': 'XMLHttpRequest',
-                    },
-                    body: body.toString(),
-                });
-                const data = await resp.json();
-                this.#refreshCsrf(data);
-                if (data.success) {
+                const { data } = await CRM.api.post(this.#appUrl + '/tasks/' + taskId + '/cancel-recurrence');
+                if (data && data.success) {
                     document.getElementById('modalTask').style.display = 'none';
                     this.#calendar.refetchEvents();
                 } else {

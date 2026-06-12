@@ -29,8 +29,6 @@ unset($_vV, $_jsV);
     <p class="text-sm text-gray-500 dark:text-zinc-400 mb-4">Encontre empresas pelo Google Maps e exporte os contatos para Excel.</p>
 
     <form id="prospectingForm" class="space-y-4">
-        <input type="hidden" id="csrfToken" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
-
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
                 <label for="searchTerm" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">

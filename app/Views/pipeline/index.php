@@ -25,8 +25,7 @@
 <!-- Board Kanban (scroll horizontal) -->
 <div class="pb-4" id="kanbanBoard"
      data-move-url="<?= APP_URL ?>/pipeline/move"
-     data-stats-url="<?= APP_URL ?>/api/dashboard/stats"
-     data-csrf="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
+     data-stats-url="<?= APP_URL ?>/api/dashboard/stats">
     <div class="flex flex-wrap gap-4 items-start">
 
     <?php foreach ($stages as $stage):

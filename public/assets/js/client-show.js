@@ -17,16 +17,6 @@
             this.#initTaskModal();
         }
 
-        #csrf() {
-            return document.querySelector('meta[name="csrf-token"]')?.content || '';
-        }
-
-        #syncToken(token) {
-            const meta = document.querySelector('meta[name="csrf-token"]');
-            if (meta) meta.setAttribute('content', token);
-            document.querySelectorAll('input[name="_csrf_token"]').forEach(el => el.value = token);
-        }
-
         #notify(message, type) {
             window.CRM?.toast?.show(message, type) ?? alert(message);
         }
@@ -81,23 +71,14 @@
                     if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Salvando...'; }
                     if (errorEl) errorEl.style.display = 'none';
 
-                    fetch(this.#appUrl + '/interactions/' + id + '/update', {
-                        method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/x-www-form-urlencoded',
-                            'X-CSRF-Token': this.#csrf(),
-                        },
-                        body: new URLSearchParams({
-                            description: desc,
-                            type: editType?.value || '',
-                            occurred_at: editDate?.value || '',
-                        }).toString(),
+                    CRM.api.post(this.#appUrl + '/interactions/' + id + '/update', {
+                        description: desc,
+                        type: editType?.value || '',
+                        occurred_at: editDate?.value || '',
                     })
-                    .then(r => r.json())
-                    .then(data => {
-                        if (data.csrf_token) this.#syncToken(data.csrf_token);
+                    .then(({ data }) => {
                         if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Salvar'; }
-                        if (!data.success) {
+                        if (!data || !data.success) {
                             if (errorEl) { errorEl.textContent = 'Erro ao salvar.'; errorEl.style.display = ''; }
                             return;
                         }
@@ -157,16 +138,10 @@
             const saveNotes = (notes) => {
                 if (saveBtn) { saveBtn.disabled = true; saveBtn.textContent = 'Salvando...'; }
                 if (errorEl) errorEl.style.display = 'none';
-                return fetch(this.#appUrl + '/clients/' + this.#clientId + '/update-notes', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-CSRF-Token': this.#csrf() },
-                    body: new URLSearchParams({ notes }).toString(),
-                })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.csrf_token) this.#syncToken(data.csrf_token);
+                return CRM.api.post(this.#appUrl + '/clients/' + this.#clientId + '/update-notes', { notes })
+                .then(({ data }) => {
                     if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Salvar'; }
-                    if (!data.success) {
+                    if (!data || !data.success) {
                         if (errorEl) { errorEl.textContent = 'Erro ao salvar nota.'; errorEl.style.display = ''; }
                         return;
                     }
@@ -217,21 +192,14 @@
                 const creditoRaw = (document.getElementById('cota-credito')?.value || '').replace(/\D/g, '');
                 const credito = creditoRaw ? (parseInt(creditoRaw, 10) / 100).toFixed(2) : '0.00';
 
-                fetch(this.#appUrl + '/clients/' + this.#clientId + '/sales', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({
-                        _csrf_token: this.#csrf(),
-                        grupo: document.getElementById('cota-grupo')?.value.trim() || '',
-                        cota:  document.getElementById('cota-cota')?.value.trim() || '',
-                        tipo,
-                        credito_contratado: credito,
-                    }).toString(),
+                CRM.api.post(this.#appUrl + '/clients/' + this.#clientId + '/sales', {
+                    grupo: document.getElementById('cota-grupo')?.value.trim() || '',
+                    cota:  document.getElementById('cota-cota')?.value.trim() || '',
+                    tipo,
+                    credito_contratado: credito,
                 })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.csrf_token) this.#syncToken(data.csrf_token);
-                    if (!data.success) { alert('Erro ao salvar cota.'); return; }
+                .then(({ data }) => {
+                    if (!data || !data.success) { alert('Erro ao salvar cota.'); return; }
                     document.getElementById('cotas-empty')?.remove();
                     const s = data.sale;
                     const creditoFmt = parseFloat(s.credito_contratado || 0)
@@ -281,15 +249,9 @@
                 if (!btn) return;
                 if (!confirm('Remover esta cota?')) return;
                 const saleId = btn.dataset.saleId;
-                fetch(this.#appUrl + '/clients/' + this.#clientId + '/sales/' + saleId + '/delete', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({ _csrf_token: this.#csrf() }).toString(),
-                })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.csrf_token) this.#syncToken(data.csrf_token);
-                    if (!data.success) { alert('Erro ao remover cota.'); return; }
+                CRM.api.post(this.#appUrl + '/clients/' + this.#clientId + '/sales/' + saleId + '/delete')
+                .then(({ data }) => {
+                    if (!data || !data.success) { alert('Erro ao remover cota.'); return; }
                     cotasList.querySelector('[data-sale-id="' + saleId + '"]')?.remove();
                     if (!cotasList.querySelector('[data-sale-id]')) {
                         const p = document.createElement('p');
@@ -313,15 +275,9 @@
                 btn.disabled = true;
                 btn.textContent = 'Salvando...';
                 const saleId = btn.dataset.saleId;
-                fetch(this.#appUrl + '/clients/' + this.#clientId + '/sales/' + saleId + '/paid', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                    body: new URLSearchParams({ _csrf_token: this.#csrf() }).toString(),
-                })
-                .then(r => r.json())
-                .then(data => {
-                    if (data.csrf_token) this.#syncToken(data.csrf_token);
-                    if (!data.success) {
+                CRM.api.post(this.#appUrl + '/clients/' + this.#clientId + '/sales/' + saleId + '/paid')
+                .then(({ data }) => {
+                    if (!data || !data.success) {
                         btn.disabled = false;
                         btn.textContent = 'Marcar como pago';
                         alert('Erro ao registrar pagamento.');
@@ -451,7 +407,6 @@
 
                 const recurEnabled = recurChk?.checked && recurType?.value;
                 const body = new URLSearchParams({
-                    _csrf_token:    this.#csrf(),
                     client_id:      String(this.#clientId),
                     title, due_date: due,
                     priority:       selPrio?.value || 'medium',
@@ -461,15 +416,8 @@
                 if (selAssign) body.append('assigned_to', selAssign.value);
 
                 try {
-                    const resp = await fetch(this.#appUrl + '/tasks/store', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded', 'X-Requested-With': 'XMLHttpRequest' },
-                        body: body.toString(),
-                    });
-                    if (!resp.ok) { this.#notify('Erro ao salvar tarefa.', 'error'); return; }
-                    const data = await resp.json();
-                    if (data?.csrf_token) this.#syncToken(data.csrf_token);
-                    if (!data?.success) { this.#notify('Erro ao salvar tarefa.', 'error'); return; }
+                    const { ok, data } = await CRM.api.post(this.#appUrl + '/tasks/store', body);
+                    if (!ok || !data?.success) { this.#notify('Erro ao salvar tarefa.', 'error'); return; }
                     appendTaskRow({ title, due_date: due, priority: selPrio?.value || 'medium' });
                     closeModal();
                     this.#notify('Tarefa criada com sucesso!', 'success');

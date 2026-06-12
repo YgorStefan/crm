@@ -3,24 +3,14 @@
 
     class PipelineStagesManager {
         #appUrl;
-        #csrfToken;
 
         constructor(container) {
-            this.#appUrl    = document.querySelector('meta[name="app-url"]').content;
-            this.#csrfToken = document.querySelector('meta[name="csrf-token"]').content;
+            this.#appUrl = document.querySelector('meta[name="app-url"]').content;
 
             this.#wireEdit(container);
             this.#wireMove(container);
             this.#wireWonToggle(container);
             this.#wireDelete(container);
-        }
-
-        #refreshCsrf(data) {
-            if (data.csrf_token) {
-                this.#csrfToken = data.csrf_token;
-                const meta = document.querySelector('meta[name="csrf-token"]');
-                if (meta) meta.content = data.csrf_token;
-            }
         }
 
         #wireEdit(container) {
@@ -53,16 +43,9 @@
 
                     if (!name) { alert('O nome da etapa não pode ficar vazio.'); return; }
 
-                    const body = new URLSearchParams({ _csrf_token: this.#csrfToken, name, color });
-                    fetch(this.#appUrl + '/pipeline/stages/' + id + '/update', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body,
-                    })
-                        .then(r => r.json())
-                        .then(data => {
-                            this.#refreshCsrf(data);
-                            if (!data.success) { alert('Erro ao salvar. Tente novamente.'); return; }
+                    CRM.api.post(this.#appUrl + '/pipeline/stages/' + id + '/update', { name, color })
+                        .then(({ data }) => {
+                            if (!data || !data.success) { alert('Erro ao salvar. Tente novamente.'); return; }
                             row.querySelector('.stage-name-text').textContent        = name;
                             row.querySelector('.color-preview').style.backgroundColor = color;
                             row.dataset.stageName  = name;
@@ -89,16 +72,9 @@
                     const id        = row.dataset.stageId;
                     const direction = btn.dataset.direction;
 
-                    const body = new URLSearchParams({ _csrf_token: this.#csrfToken, direction });
-                    fetch(this.#appUrl + '/pipeline/stages/' + id + '/move', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body,
-                    })
-                        .then(r => r.json())
-                        .then(data => {
-                            this.#refreshCsrf(data);
-                            if (!data.success) return;
+                    CRM.api.post(this.#appUrl + '/pipeline/stages/' + id + '/move', { direction })
+                        .then(({ data }) => {
+                            if (!data || !data.success) return;
                             location.reload();
                         })
                         .catch(() => alert('Erro de comunicação. Tente novamente.'));
@@ -114,16 +90,9 @@
                     btn.setAttribute('aria-label', 'Salvando...');
                     btn.disabled = true;
 
-                    const body = new URLSearchParams({ _csrf_token: this.#csrfToken });
-                    fetch(this.#appUrl + '/pipeline/stages/' + id + '/toggle-won', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                        body,
-                    })
-                        .then(r => r.json())
-                        .then(data => {
-                            this.#refreshCsrf(data);
-                            if (!data.success) { alert('Erro ao salvar. Tente novamente.'); return; }
+                    CRM.api.post(this.#appUrl + '/pipeline/stages/' + id + '/toggle-won')
+                        .then(({ data }) => {
+                            if (!data || !data.success) { alert('Erro ao salvar. Tente novamente.'); return; }
 
                             const newState = data.is_won_stage === 1;
                             if (newState) {
