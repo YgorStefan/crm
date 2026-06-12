@@ -8,6 +8,39 @@ class Client extends Model
 {
     protected string $table = 'clients';
 
+    // Colunas graváveis via create()/update(). Campo novo de cliente entra
+    // aqui (e em bindClientParams se precisar de normalização própria).
+    private const COLUMNS = [
+        'name', 'email', 'phone', 'company', 'cnpj_cpf',
+        'address', 'address_number', 'address_complement',
+        'neighborhood', 'city', 'state', 'zip_code',
+        'pipeline_stage_id', 'assigned_to', 'deal_value',
+        'source', 'notes', 'birth_date', 'referido_por', 'closed_at',
+    ];
+
+    /**
+     * Normaliza os dados do formulário para os parâmetros PDO.
+     * Strings vazias viram NULL; numéricos são convertidos.
+     *
+     * @param  array  $data  Dados vindos do controller
+     * @return array  Parâmetros nomeados (':coluna' => valor)
+     */
+    private function bindClientParams(array $data): array
+    {
+        $params = [];
+        foreach (self::COLUMNS as $col) {
+            $value = $data[$col] ?? null;
+            $params[':' . $col] = match ($col) {
+                'name'              => $value,
+                'pipeline_stage_id' => (int) $value,
+                'assigned_to'       => !empty($value) ? (int) $value : null,
+                'deal_value'        => !empty($value) ? self::parseMoney((string) $value) : 0,
+                default             => $value ?: null,
+            };
+        }
+        return $params;
+    }
+
     /**
      * Monta cláusulas WHERE e parâmetros PDO a partir dos filtros da listagem.
      * Reutilizado por countAllWithRelations e findAllWithRelations.
@@ -166,40 +199,15 @@ class Client extends Model
      */
     public function create(array $data): int
     {
+        $cols         = implode(', ', self::COLUMNS);
+        $placeholders = ':' . implode(', :', self::COLUMNS);
+
         $stmt = $this->db->prepare("
-            INSERT INTO clients
-                (tenant_id, name, email, phone, company, cnpj_cpf, address, address_number, address_complement,
-                 neighborhood, city, state,
-                 zip_code, pipeline_stage_id, assigned_to, deal_value, source, notes,
-                 birth_date, referido_por, closed_at)
-            VALUES
-                (:tenant_id, :name, :email, :phone, :company, :cnpj_cpf, :address, :address_number, :address_complement,
-                 :neighborhood, :city, :state,
-                 :zip_code, :pipeline_stage_id, :assigned_to, :deal_value, :source, :notes,
-                 :birth_date, :referido_por, :closed_at)
+            INSERT INTO clients (tenant_id, {$cols})
+            VALUES (:tenant_id, {$placeholders})
         ");
-        $stmt->execute([
+        $stmt->execute($this->bindClientParams($data) + [
             ':tenant_id' => $this->currentTenantId(),
-            ':name' => $data['name'],
-            ':email' => $data['email'] ?: null,
-            ':phone' => $data['phone'] ?: null,
-            ':company' => $data['company'] ?: null,
-            ':cnpj_cpf' => $data['cnpj_cpf'] ?: null,
-            ':address' => $data['address'] ?: null,
-            ':address_number'     => $data['address_number'] ?: null,
-            ':address_complement' => $data['address_complement'] ?: null,
-            ':neighborhood' => $data['neighborhood'] ?: null,
-            ':city' => $data['city'] ?: null,
-            ':state' => $data['state'] ?: null,
-            ':zip_code' => $data['zip_code'] ?: null,
-            ':pipeline_stage_id' => (int) $data['pipeline_stage_id'],
-            ':assigned_to' => !empty($data['assigned_to']) ? (int) $data['assigned_to'] : null,
-            ':deal_value' => !empty($data['deal_value']) ? self::parseMoney($data['deal_value']) : 0,
-            ':source' => $data['source'] ?: null,
-            ':notes' => $data['notes'] ?: null,
-            ':birth_date' => !empty($data['birth_date']) ? $data['birth_date'] : null,
-            ':referido_por' => $data['referido_por'] ?: null,
-            ':closed_at' => !empty($data['closed_at']) ? $data['closed_at'] : null,
         ]);
         return (int) $this->db->lastInsertId();
     }
@@ -209,42 +217,14 @@ class Client extends Model
      */
     public function update(int $id, array $data): bool
     {
+        $set = implode(', ', array_map(fn(string $c): string => "{$c} = :{$c}", self::COLUMNS));
+
         $stmt = $this->db->prepare("
-            UPDATE clients SET
-                name = :name, email = :email, phone = :phone, company = :company,
-                cnpj_cpf = :cnpj_cpf, address = :address,
-                address_number = :address_number, address_complement = :address_complement,
-                neighborhood = :neighborhood,
-                city = :city, state = :state,
-                zip_code = :zip_code, pipeline_stage_id = :pipeline_stage_id,
-                assigned_to = :assigned_to, deal_value = :deal_value,
-                source = :source, notes = :notes,
-                birth_date = :birth_date, referido_por = :referido_por,
-                closed_at = :closed_at
+            UPDATE clients SET {$set}
             WHERE id = :id AND tenant_id = :tenant_id
         ");
-        $stmt->execute([
-            ':name' => $data['name'],
-            ':email' => $data['email'] ?: null,
-            ':phone' => $data['phone'] ?: null,
-            ':company' => $data['company'] ?: null,
-            ':cnpj_cpf' => $data['cnpj_cpf'] ?: null,
-            ':address' => $data['address'] ?: null,
-            ':address_number'     => $data['address_number'] ?: null,
-            ':address_complement' => $data['address_complement'] ?: null,
-            ':neighborhood' => $data['neighborhood'] ?: null,
-            ':city' => $data['city'] ?: null,
-            ':state' => $data['state'] ?: null,
-            ':zip_code' => $data['zip_code'] ?: null,
-            ':pipeline_stage_id' => (int) $data['pipeline_stage_id'],
-            ':assigned_to' => !empty($data['assigned_to']) ? (int) $data['assigned_to'] : null,
-            ':deal_value' => !empty($data['deal_value']) ? self::parseMoney($data['deal_value']) : 0,
-            ':source' => $data['source'] ?: null,
-            ':notes' => $data['notes'] ?: null,
-            ':birth_date' => !empty($data['birth_date']) ? $data['birth_date'] : null,
-            ':referido_por' => $data['referido_por'] ?: null,
-            ':closed_at' => !empty($data['closed_at']) ? $data['closed_at'] : null,
-            ':id' => $id,
+        $stmt->execute($this->bindClientParams($data) + [
+            ':id'        => $id,
             ':tenant_id' => $this->currentTenantId(),
         ]);
         return $stmt->rowCount() > 0;

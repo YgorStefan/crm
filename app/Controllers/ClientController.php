@@ -109,11 +109,38 @@ class ClientController extends Controller
             return;
         }
 
-        $stage = $this->stages->findById((int) $stageId);
+        $data = $this->clientDataFromRequest((int) $stageId);
+
+        if (!empty($data['phone'])) {
+            $existing = $this->clients->findByPhone($data['phone']);
+            if ($existing) {
+                $this->flash('error', 'Já existe um cliente cadastrado com este telefone: ' . htmlspecialchars($existing['name'], ENT_QUOTES, 'UTF-8') . '.');
+                $this->redirect('/clients/create');
+                return;
+            }
+        }
+
+        $id = $this->clients->create($data);
+
+        $this->flash('success', 'Cliente cadastrado com sucesso!');
+        $this->redirect('/clients/' . $id);
+    }
+
+    /**
+     * Monta o array de dados do cliente a partir do $_POST.
+     * Compartilhado por store() e update() — campo novo de cliente entra aqui
+     * uma única vez. closed_at só é aceito se a etapa for de venda fechada.
+     *
+     * @param  int  $stageId  Etapa do funil já validada pelo caller
+     * @return array
+     */
+    private function clientDataFromRequest(int $stageId): array
+    {
+        $stage = $this->stages->findById($stageId);
         $isVendaFechada = $stage && !empty($stage['is_won_stage']);
 
-        $data = [
-            'name' => $name,
+        return [
+            'name' => $this->input('name'),
             'email' => $this->input('email'),
             'phone' => $this->input('phone'),
             'company' => $this->input('company'),
@@ -134,20 +161,6 @@ class ClientController extends Controller
             'referido_por' => $this->input('referido_por'),
             'closed_at' => $isVendaFechada ? ($this->inputPost('closed_at') ?: null) : null,
         ];
-
-        if (!empty($data['phone'])) {
-            $existing = $this->clients->findByPhone($data['phone']);
-            if ($existing) {
-                $this->flash('error', 'Já existe um cliente cadastrado com este telefone: ' . htmlspecialchars($existing['name'], ENT_QUOTES, 'UTF-8') . '.');
-                $this->redirect('/clients/create');
-                return;
-            }
-        }
-
-        $id = $this->clients->create($data);
-
-        $this->flash('success', 'Cliente cadastrado com sucesso!');
-        $this->redirect('/clients/' . $id);
     }
 
     /**
@@ -224,32 +237,7 @@ class ClientController extends Controller
             return;
         }
 
-        $stageId = (int) $this->inputPost('pipeline_stage_id');
-        $stage = $this->stages->findById($stageId);
-        $isVendaFechada = $stage && !empty($stage['is_won_stage']);
-
-        $data = [
-            'name' => $name,
-            'email' => $this->input('email'),
-            'phone' => $this->input('phone'),
-            'company' => $this->input('company'),
-            'cnpj_cpf' => $this->input('cnpj_cpf'),
-            'address' => $this->input('address'),
-            'address_number'     => $this->input('address_number'),
-            'address_complement' => $this->input('address_complement'),
-            'neighborhood' => $this->input('neighborhood'),
-            'city' => $this->input('city'),
-            'state' => $this->input('state'),
-            'zip_code' => $this->input('zip_code'),
-            'pipeline_stage_id' => $stageId,
-            'assigned_to' => $this->inputPost('assigned_to'),
-            'deal_value' => $this->inputPost('deal_value', '0'),
-            'source' => $this->input('source'),
-            'notes' => $this->input('notes'),
-            'birth_date' => $this->inputPost('birth_date'),
-            'referido_por' => $this->input('referido_por'),
-            'closed_at' => $isVendaFechada ? ($this->inputPost('closed_at') ?: null) : null,
-        ];
+        $data = $this->clientDataFromRequest((int) $this->inputPost('pipeline_stage_id'));
 
         $client = $this->clients->findById($id);
         if (!$client) {
