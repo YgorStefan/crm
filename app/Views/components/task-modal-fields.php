@@ -24,7 +24,7 @@ $showDescription   = $showDescription   ?? true;
 $recurrenceDefault = $recurrenceDefault ?? 'weekly';
 ?>
 <div>
-    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Título <span
+    <label for="<?= $p ?>_title" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Título <span
             class="text-red-500">*</span></label>
     <input type="text" id="<?= $p ?>_title" name="title" required placeholder="O que precisa ser feito?"
         class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
@@ -32,13 +32,13 @@ $recurrenceDefault = $recurrenceDefault ?? 'weekly';
 
 <div class="grid grid-cols-2 gap-3">
     <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Prazo <span
+        <label for="<?= $p ?>_due_date" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Prazo <span
                 class="text-red-500">*</span></label>
         <input type="datetime-local" id="<?= $p ?>_due_date" name="due_date" required
             class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
     </div>
     <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Prioridade</label>
+        <label for="<?= $p ?>_priority" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Prioridade</label>
         <select id="<?= $p ?>_priority" name="priority"
             class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             <option value="low">Baixa</option>
@@ -50,7 +50,7 @@ $recurrenceDefault = $recurrenceDefault ?? 'weekly';
 
 <?php if ($showAssigned && (($_SESSION['user']['role'] ?? '') === 'admin')): ?>
     <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Responsável</label>
+        <label for="<?= $p ?>_assigned_to" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Responsável</label>
         <select id="<?= $p ?>_assigned_to" name="assigned_to"
             class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             <?php foreach ($users as $user): ?>
@@ -64,7 +64,7 @@ $recurrenceDefault = $recurrenceDefault ?? 'weekly';
 
 <?php if ($showDescription): ?>
     <div>
-        <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Descrição</label>
+        <label for="<?= $p ?>_description" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Descrição</label>
         <textarea id="<?= $p ?>_description" name="description" rows="2"
             placeholder="Detalhes da tarefa (opcional)..."
             class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>

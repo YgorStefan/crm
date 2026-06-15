@@ -411,18 +411,18 @@ unset($_jsV);
                 <div class="space-y-3">
                     <div class="grid grid-cols-2 gap-3">
                         <div>
-                            <label class="block text-xs font-medium text-gray-600 dark:text-zinc-300 mb-1">Grupo</label>
+                            <label for="cota-grupo" class="block text-xs font-medium text-gray-600 dark:text-zinc-300 mb-1">Grupo</label>
                             <input type="text" id="cota-grupo" data-mask="digits" placeholder="Ex: 0042"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500">
                         </div>
                         <div>
-                            <label class="block text-xs font-medium text-gray-600 dark:text-zinc-300 mb-1">Cota</label>
+                            <label for="cota-cota" class="block text-xs font-medium text-gray-600 dark:text-zinc-300 mb-1">Cota</label>
                             <input type="text" id="cota-cota" data-mask="digits" placeholder="Ex: 128"
                                 class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500">
                         </div>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 dark:text-zinc-300 mb-1">Tipo <span
+                        <label for="cota-tipo" class="block text-xs font-medium text-gray-600 dark:text-zinc-300 mb-1">Tipo <span
                                 class="text-red-500">*</span></label>
                         <select id="cota-tipo"
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">
@@ -433,7 +433,7 @@ unset($_jsV);
                         </select>
                     </div>
                     <div>
-                        <label class="block text-xs font-medium text-gray-600 dark:text-zinc-300 mb-1">Crédito contratado (R$)</label>
+                        <label for="cota-credito" class="block text-xs font-medium text-gray-600 dark:text-zinc-300 mb-1">Crédito contratado (R$)</label>
                         <input type="text" id="cota-credito" data-mask="currency" placeholder="R$ 0,00"
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500">
                     </div>

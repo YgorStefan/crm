@@ -33,38 +33,38 @@ $_canEdit = in_array($_SESSION['user']['role'] ?? '', ['admin', 'seller']) ? '1'
         <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 items-end">
             <!-- Tipo de lista -->
             <div>
-                <label class="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">
+                <label for="import-tipo-lista" class="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">
                     Tipo de lista <span class="text-red-500">*</span>
                 </label>
-                <input type="text" name="tipo_lista" required maxlength="100"
+                <input id="import-tipo-lista" type="text" name="tipo_lista" required maxlength="100"
                     placeholder="Ex: Lista Webinar Jan"
                     class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
 
             <!-- Upload do arquivo -->
             <div>
-                <label class="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">
+                <label for="import-csv-file" class="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">
                     Arquivo CSV/XLSX
                 </label>
-                <input type="file" name="csv_file" accept=".csv,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required
+                <input id="import-csv-file" type="file" name="csv_file" accept=".csv,.xls,.xlsx,text/csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" required
                     class="w-full text-sm text-gray-600 dark:text-zinc-400 file:mr-2 file:py-1.5 file:px-3 file:rounded-md file:border-0 file:text-xs file:font-medium file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100 dark:file:bg-indigo-900/30 dark:file:text-indigo-300">
             </div>
 
             <!-- Telefone enviado -->
             <div>
-                <label class="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">
+                <label for="import-tel-enviado" class="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">
                     Final Tel. Enviado
                 </label>
-                <input type="text" name="telefone_enviado" maxlength="4" placeholder="Ex: 1234"
+                <input id="import-tel-enviado" type="text" name="telefone_enviado" maxlength="4" placeholder="Ex: 1234"
                     class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
 
             <!-- Data Mensagem -->
             <div>
-                <label class="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">
+                <label for="import-data-mensagem" class="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">
                     Data do Envio
                 </label>
-                <input type="date" name="data_mensagem" max="9999-12-31"
+                <input id="import-data-mensagem" type="date" name="data_mensagem" max="9999-12-31"
                     class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
 
@@ -148,17 +148,17 @@ $_canEdit = in_array($_SESSION['user']['role'] ?? '', ['admin', 'seller']) ? '1'
         <!-- Filtros e exportação -->
         <div class="px-6 py-3 border-b border-gray-100 dark:border-zinc-800 flex flex-col sm:flex-row gap-3 items-end flex-shrink-0">
             <div>
-                <label class="block text-xs font-medium text-gray-600 dark:text-zinc-400 mb-1">Filtrar por tipo de lista</label>
+                <label for="filterTipoLista" class="block text-xs font-medium text-gray-600 dark:text-zinc-400 mb-1">Filtrar por tipo de lista</label>
                 <input type="text" id="filterTipoLista" placeholder="Tipo de lista"
                     class="w-36 px-3 py-1.5 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
             <div>
-                <label class="block text-xs font-medium text-gray-600 dark:text-zinc-400 mb-1">Filtrar por dia (1-31)</label>
+                <label for="filterDia" class="block text-xs font-medium text-gray-600 dark:text-zinc-400 mb-1">Filtrar por dia (1-31)</label>
                 <input type="number" id="filterDia" min="1" max="31" placeholder="Dia"
                     class="w-24 px-3 py-1.5 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
             <div>
-                <label class="block text-xs font-medium text-gray-600 dark:text-zinc-400 mb-1">Filtrar por tel. enviado</label>
+                <label for="filterTelEnviado" class="block text-xs font-medium text-gray-600 dark:text-zinc-400 mb-1">Filtrar por tel. enviado</label>
                 <input type="text" id="filterTelEnviado" placeholder="Ex: 1234"
                     class="w-32 px-3 py-1.5 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
@@ -182,12 +182,12 @@ $_canEdit = in_array($_SESSION['user']['role'] ?? '', ['admin', 'seller']) ? '1'
             class="hidden px-6 py-2 bg-indigo-50 dark:bg-indigo-900/20 border-b border-indigo-100 dark:border-indigo-800/40 flex flex-wrap items-center gap-3 flex-shrink-0">
             <span id="bulkCount" class="text-sm font-medium text-indigo-700 dark:text-indigo-300"></span>
 
-            <label class="text-sm text-gray-600 dark:text-zinc-300 font-medium">Tel:</label>
+            <label for="bulkTelEnviado" class="text-sm text-gray-600 dark:text-zinc-300 font-medium">Tel:</label>
             <input type="text" id="bulkTelEnviado" maxlength="4" placeholder="Ex: 1234"
                 title="Deixe em branco para manter, ou preencha para alterar em todos"
                 class="w-20 px-2 py-1 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
 
-            <label class="text-sm text-gray-600 dark:text-zinc-300 font-medium ml-2">Data:</label>
+            <label for="bulkDataMensagem" class="text-sm text-gray-600 dark:text-zinc-300 font-medium ml-2">Data:</label>
             <input type="date" id="bulkDataMensagem" max="9999-12-31"
                 title="Deixe em branco para manter, ou preencha para alterar em todos"
                 class="w-32 px-2 py-1 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
