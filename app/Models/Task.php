@@ -54,9 +54,7 @@ class Task extends Model
             LEFT JOIN clients c ON c.id = t.client_id AND c.tenant_id = :tenant_id_c
             LEFT JOIN users   u ON u.id = t.assigned_to
             LEFT JOIN users  cb ON cb.id = t.created_by
-            WHERE t.assigned_to IN (
-                SELECT id FROM users WHERE tenant_id = :tenant_id_u
-            )
+            WHERE t.tenant_id = :tenant_id_u
         ";
         $params = [':tenant_id_c' => $tenantId, ':tenant_id_u' => $tenantId];
 
@@ -83,7 +81,7 @@ class Task extends Model
             FROM tasks t
             LEFT JOIN users u ON u.id = t.assigned_to
             WHERE t.client_id = :client_id
-              AND t.assigned_to IN (SELECT id FROM users WHERE tenant_id = :tenant_id_u)
+              AND t.tenant_id = :tenant_id_u
             ORDER BY t.due_date ASC
         ");
         $stmt->execute([':client_id' => $clientId, ':tenant_id_u' => $tenantId]);
@@ -142,6 +140,16 @@ class Task extends Model
         $tenantId = $this->currentTenantId();
         $params = [':id' => $id, ':tenant_id_u' => $tenantId];
 
+        if (array_key_exists('assigned_to', $data)) {
+            $check = $this->db->prepare(
+                "SELECT id FROM users WHERE id = :uid AND tenant_id = :tenant_id_u"
+            );
+            $check->execute([':uid' => (int) $data['assigned_to'], ':tenant_id_u' => $tenantId]);
+            if (!$check->fetch()) {
+                throw new \InvalidArgumentException("assigned_to não pertence ao tenant atual.");
+            }
+        }
+
         foreach ($allowed as $field) {
             if (array_key_exists($field, $data)) {
                 $setClauses[] = "{$field} = :{$field}";
@@ -153,7 +161,7 @@ class Task extends Model
             return false;
 
         $sql = "UPDATE tasks SET " . implode(', ', $setClauses) .
-               " WHERE id = :id AND assigned_to IN (SELECT id FROM users WHERE tenant_id = :tenant_id_u)";
+               " WHERE id = :id AND tenant_id = :tenant_id_u";
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
         return $stmt->rowCount() > 0;
@@ -170,7 +178,7 @@ class Task extends Model
         $tenantId = $this->currentTenantId();
         $sql = "SELECT COUNT(*) FROM tasks
                 WHERE status IN ('pending','in_progress')
-                  AND assigned_to IN (SELECT id FROM users WHERE tenant_id = :tenant_id_u)";
+                  AND tenant_id = :tenant_id_u";
         $params = [':tenant_id_u' => $tenantId];
         if ($userId) {
             $sql .= " AND assigned_to = :uid";
@@ -194,9 +202,7 @@ class Task extends Model
             LEFT JOIN users   u ON u.id = t.assigned_to
             WHERE t.due_date < NOW()
               AND t.status IN ('pending','in_progress')
-              AND t.assigned_to IN (
-                  SELECT id FROM users WHERE tenant_id = :tenant_id_u
-              )
+              AND t.tenant_id = :tenant_id_u
         ";
         $params = [':tenant_id_c' => $tenantId, ':tenant_id_u' => $tenantId];
         if ($userId) {
@@ -225,9 +231,7 @@ class Task extends Model
             FROM tasks t
             LEFT JOIN clients c ON c.id = t.client_id AND c.tenant_id = :tenant_id_c
             WHERE t.status NOT IN ('cancelled')
-              AND t.assigned_to IN (
-                  SELECT id FROM users WHERE tenant_id = :tenant_id_u
-              )
+              AND t.tenant_id = :tenant_id_u
         ";
         $params = [':tenant_id_c' => $tenantId, ':tenant_id_u' => $tenantId];
         if (!$isAdmin) {
@@ -284,7 +288,7 @@ class Task extends Model
         $stmt = $this->db->prepare(
             "SELECT MAX(due_date) FROM tasks
              WHERE recurrence_parent_id = :pid
-               AND assigned_to IN (SELECT id FROM users WHERE tenant_id = :tn)"
+               AND tenant_id = :tn"
         );
         $stmt->execute([':pid' => $parentId, ':tn' => $tenantId]);
         $latestDate = $stmt->fetchColumn();
@@ -339,14 +343,14 @@ class Task extends Model
             "DELETE FROM tasks
              WHERE recurrence_parent_id = :pid
                AND status = 'pending'
-               AND assigned_to IN (SELECT id FROM users WHERE tenant_id = :tn)"
+               AND tenant_id = :tn"
         );
         $stmt->execute([':pid' => $parentId, ':tn' => $tenantId]);
 
         $stmt = $this->db->prepare(
             "UPDATE tasks SET recurrence_type = 'none'
              WHERE id = :id
-               AND assigned_to IN (SELECT id FROM users WHERE tenant_id = :tn)"
+               AND tenant_id = :tn"
         );
         $stmt->execute([':id' => $parentId, ':tn' => $tenantId]);
     }
@@ -363,7 +367,7 @@ class Task extends Model
             FROM tasks
             WHERE due_date BETWEEN :from AND :to
               AND status IN ('pending', 'in_progress')
-              AND assigned_to IN (SELECT id FROM users WHERE tenant_id = :tenant_id_u)
+              AND tenant_id = :tenant_id_u
         ";
         $params = [':from' => $from, ':to' => $to, ':tenant_id_u' => $tenantId];
         if (!$isAdmin) {
@@ -386,9 +390,7 @@ class Task extends Model
             FROM tasks t
             LEFT JOIN clients c ON c.id = t.client_id AND c.tenant_id = :tenant_id_c
             WHERE t.id = :id
-              AND t.assigned_to IN (
-                  SELECT id FROM users WHERE tenant_id = :tenant_id_u
-              )
+              AND t.tenant_id = :tenant_id_u
         ");
         $stmt->execute([':id' => $id, ':tenant_id_c' => $tenantId, ':tenant_id_u' => $tenantId]);
         return $stmt->fetch();
