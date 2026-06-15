@@ -64,30 +64,9 @@ class ClientService
         }
 
         $ref      = $this->computeRefMonth();
-        $refStart = new \DateTimeImmutable(sprintf('%04d-%02d-01 00:00:00', $ref['ano'], $ref['mes']));
-        $rows     = $this->sales->findAllForOverdueCheck();
+        $refStart = sprintf('%04d-%02d-01 00:00:00', $ref['ano'], $ref['mes']);
 
-        $overdueSet = [];
-        foreach ($rows as $row) {
-            $clientId = (int) $row['client_id'];
-            if (isset($overdueSet[$clientId])) {
-                continue;
-            }
-
-            $isPaid = false;
-            if (!empty($row['paid_at'])) {
-                $paidDt = new \DateTimeImmutable($row['paid_at']);
-                if ($paidDt >= $refStart && $paidDt <= $hoje) {
-                    $isPaid = true;
-                }
-            }
-
-            if (!$isPaid) {
-                $overdueSet[$clientId] = true;
-            }
-        }
-
-        return array_keys($overdueSet);
+        return $this->sales->findOverdueClientIds($refStart, $hoje->format('Y-m-d H:i:s'));
     }
 
     private function computeRefMonth(): array

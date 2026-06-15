@@ -92,17 +92,29 @@ class ClientSale extends Model
      *
      * @return array
      */
-    public function findAllForOverdueCheck(): array
+    /**
+     * Retorna IDs de clientes com ao menos uma cota nao paga no mes de
+     * referencia (paid_at fora do intervalo [refStart, now]). O filtro roda
+     * em SQL para nao carregar todas as cotas do tenant em PHP.
+     *
+     * @return array<int>
+     */
+    public function findOverdueClientIds(string $refStart, string $now): array
     {
         $stmt = $this->db->prepare("
-            SELECT cs.client_id, cs.paid_at
+            SELECT DISTINCT cs.client_id
             FROM client_sales cs
             INNER JOIN clients c ON c.id = cs.client_id
                 AND c.is_active = 1
                 AND c.tenant_id = :tenant_id
+            WHERE NOT (cs.paid_at IS NOT NULL AND cs.paid_at >= :ref_start AND cs.paid_at <= :now)
         ");
-        $stmt->execute([':tenant_id' => $this->currentTenantId()]);
-        return $stmt->fetchAll();
+        $stmt->execute([
+            ':tenant_id' => $this->currentTenantId(),
+            ':ref_start' => $refStart,
+            ':now'       => $now,
+        ]);
+        return array_map('intval', array_column($stmt->fetchAll(), 'client_id'));
     }
 
 }
