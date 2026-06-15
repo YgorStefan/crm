@@ -82,6 +82,7 @@ class ClientController extends Controller
      */
     public function create(array $params = []): void
     {
+        $this->requireRole(['admin', 'seller']);
         $this->render('clients/create', [
             'pageTitle' => 'Novo Cliente',
             'title' => 'Novo Cliente — ' . APP_NAME,
@@ -204,6 +205,7 @@ class ClientController extends Controller
      */
     public function edit(array $params = []): void
     {
+        $this->requireRole(['admin', 'seller']);
         $id = (int) ($params['id'] ?? 0);
         $client = $this->clients->findById($id);
 
