@@ -153,49 +153,60 @@ class ColdContactController extends Controller
         $lineNum = 0;
 
         $limitReached = false;
-        while (($row = fgetcsv($handle, 0, $separator)) !== false) {
-            $lineNum++;
+        // Importa em transacao unica: ou todos os contatos validos entram,
+        // ou nenhum (evita import parcial se uma insercao falhar no meio).
+        $pdo = \Core\Database::getInstance();
+        $pdo->beginTransaction();
+        try {
+            while (($row = fgetcsv($handle, 0, $separator)) !== false) {
+                $lineNum++;
 
-            // Teto de linhas — protege contra arquivos com volume abusivo.
-            if ($lineNum > self::MAX_CSV_ROWS) {
-                $limitReached = true;
-                break;
+                // Teto de linhas — protege contra arquivos com volume abusivo.
+                if ($lineNum > self::MAX_CSV_ROWS) {
+                    $limitReached = true;
+                    break;
+                }
+
+                // Precisa de ao menos 2 colunas
+                if (count($row) < 2) {
+                    $skipped++;
+                    continue;
+                }
+
+                $name  = trim($row[0] ?? '');
+                $phone = trim($row[1] ?? '');
+
+                // Normaliza encoding: arquivos XLS/XLSX brasileiros frequentemente usam Windows-1252
+                if ($name !== '' && !mb_check_encoding($name, 'UTF-8')) {
+                    $name = mb_convert_encoding($name, 'UTF-8', 'Windows-1252');
+                }
+
+                // Ignora linhas sem dados ou possível header (coluna B sem dígito)
+                if (empty($name) || empty($phone)) {
+                    $skipped++;
+                    continue;
+                }
+
+                // Ignora header textual: se a primeira linha não tem nenhum dígito na coluna B
+                if ($lineNum === 1 && !preg_match('/\d/', $phone)) {
+                    $skipped++;
+                    continue;
+                }
+
+                $this->coldContacts->create([
+                    'phone' => $phone,
+                    'name' => $name,
+                    'tipo_lista' => $tipoLista,
+                    'telefone_enviado' => !empty($telefoneEnviado) ? $telefoneEnviado : null,
+                    'data_mensagem' => $dataNormalizada,
+                ]);
+                $inserted++;
             }
-
-            // Precisa de ao menos 2 colunas
-            if (count($row) < 2) {
-                $skipped++;
-                continue;
-            }
-
-            $name  = trim($row[0] ?? '');
-            $phone = trim($row[1] ?? '');
-
-            // Normaliza encoding: arquivos XLS/XLSX brasileiros frequentemente usam Windows-1252
-            if ($name !== '' && !mb_check_encoding($name, 'UTF-8')) {
-                $name = mb_convert_encoding($name, 'UTF-8', 'Windows-1252');
-            }
-
-            // Ignora linhas sem dados ou possível header (coluna B sem dígito)
-            if (empty($name) || empty($phone)) {
-                $skipped++;
-                continue;
-            }
-
-            // Ignora header textual: se a primeira linha não tem nenhum dígito na coluna B
-            if ($lineNum === 1 && !preg_match('/\d/', $phone)) {
-                $skipped++;
-                continue;
-            }
-
-            $this->coldContacts->create([
-                'phone' => $phone,
-                'name' => $name,
-                'tipo_lista' => $tipoLista,
-                'telefone_enviado' => !empty($telefoneEnviado) ? $telefoneEnviado : null,
-                'data_mensagem' => $dataNormalizada,
-            ]);
-            $inserted++;
+            $pdo->commit();
+        } catch (\Throwable $e) {
+            $pdo->rollBack();
+            fclose($handle);
+            throw $e;
         }
 
         fclose($handle);
