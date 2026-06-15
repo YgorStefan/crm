@@ -243,19 +243,33 @@ class Task extends Model
         $stmt->execute($params);
         $tasks = $stmt->fetchAll();
 
-        $horizon   = (new \DateTime())->modify('+12 months');
+        $recurringParents = array_filter(
+            $tasks,
+            fn($t) => $t['recurrence_type'] !== 'none' && $t['recurrence_parent_id'] === null
+        );
+
         $generated = false;
-        foreach ($tasks as $task) {
-            if ($task['recurrence_type'] !== 'none' && $task['recurrence_parent_id'] === null) {
-                if ($this->generateRecurringInstances(
-                    (int) $task['id'],
-                    $task['recurrence_type'],
-                    new \DateTime($task['due_date']),
-                    $horizon,
-                    $task
-                )) {
-                    $generated = true;
+        if ($recurringParents) {
+            $horizon = (new \DateTime())->modify('+12 months');
+            // Geracao materializa varias linhas: agrupa em transacao para evitar
+            // insercoes parciais caso uma das tarefas-pai falhe no meio.
+            $this->db->beginTransaction();
+            try {
+                foreach ($recurringParents as $task) {
+                    if ($this->generateRecurringInstances(
+                        (int) $task['id'],
+                        $task['recurrence_type'],
+                        new \DateTime($task['due_date']),
+                        $horizon,
+                        $task
+                    )) {
+                        $generated = true;
+                    }
                 }
+                $this->db->commit();
+            } catch (\Throwable $e) {
+                $this->db->rollBack();
+                throw $e;
             }
         }
 
