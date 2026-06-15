@@ -9,6 +9,9 @@ use Core\Http\ApiResponse;
 
 class ColdContactController extends Controller
 {
+    private const MAX_CSV_BYTES = 5 * 1024 * 1024;
+    private const MAX_CSV_ROWS  = 50000;
+
     public function __construct(
         private ColdContact $coldContacts = new ColdContact(),
     ) {}
@@ -101,7 +104,38 @@ class ColdContactController extends Controller
             return;
         }
 
-        $tmpPath = $_FILES['csv_file']['tmp_name'] ?? '';
+        $originalName = $_FILES['csv_file']['name'] ?? '';
+        $fileSize     = (int) ($_FILES['csv_file']['size'] ?? 0);
+        $tmpPath      = $_FILES['csv_file']['tmp_name'] ?? '';
+
+        // Limite de tamanho (5 MB) — evita streaming de arquivos enormes.
+        if ($fileSize > self::MAX_CSV_BYTES) {
+            $this->flash('error', 'Arquivo muito grande. Limite de 5 MB.');
+            $this->redirect('/cold-contacts');
+            return;
+        }
+
+        // Aceita apenas extensao .csv/.txt.
+        $ext = strtolower(pathinfo($originalName, PATHINFO_EXTENSION));
+        if (!in_array($ext, ['csv', 'txt'], true)) {
+            $this->flash('error', 'Formato invalido. Envie um arquivo .csv.');
+            $this->redirect('/cold-contacts');
+            return;
+        }
+
+        // Rejeita conteudo que claramente nao e texto/CSV (ex.: imagens, binarios).
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime  = $finfo ? (string) finfo_file($finfo, $tmpPath) : '';
+        if ($finfo) {
+            finfo_close($finfo);
+        }
+        $allowedMime = ['text/plain', 'text/csv', 'application/csv', 'application/vnd.ms-excel', 'application/octet-stream'];
+        if ($mime !== '' && !in_array($mime, $allowedMime, true)) {
+            $this->flash('error', 'O conteudo do arquivo nao parece ser CSV.');
+            $this->redirect('/cold-contacts');
+            return;
+        }
+
         $handle = fopen($tmpPath, 'r');
         if (!$handle) {
             $this->flash('error', 'Não foi possível ler o arquivo CSV enviado.');
@@ -118,8 +152,15 @@ class ColdContactController extends Controller
         $skipped = 0;
         $lineNum = 0;
 
+        $limitReached = false;
         while (($row = fgetcsv($handle, 0, $separator)) !== false) {
             $lineNum++;
+
+            // Teto de linhas — protege contra arquivos com volume abusivo.
+            if ($lineNum > self::MAX_CSV_ROWS) {
+                $limitReached = true;
+                break;
+            }
 
             // Precisa de ao menos 2 colunas
             if (count($row) < 2) {
@@ -159,7 +200,9 @@ class ColdContactController extends Controller
 
         fclose($handle);
 
-        if ($inserted === 0) {
+        if ($limitReached) {
+            $this->flash('warning', "Limite de " . self::MAX_CSV_ROWS . " linhas atingido. {$inserted} contato(s) importado(s); o restante foi ignorado.");
+        } elseif ($inserted === 0) {
             $this->flash('warning', 'Nenhum contato válido encontrado no CSV. Verifique o formato: coluna A = Nome, coluna B = Telefone.');
         } else {
             $this->flash('success', "{$inserted} contato(s) importado(s) com sucesso da lista \"{$tipoLista}\"." . ($skipped > 0 ? " ({$skipped} linha(s) ignorada(s))" : ''));
