@@ -297,16 +297,28 @@ class ColdContactController extends Controller
 
         foreach ($contacts as $c) {
             fputcsv($out, [
-                trim($c['phone']),
-                trim($c['name']),
-                trim($c['tipo_lista']),
-                trim($c['telefone_enviado'] ?? ''),
+                $this->csvSafe(trim($c['phone'])),
+                $this->csvSafe(trim($c['name'])),
+                $this->csvSafe(trim($c['tipo_lista'])),
+                $this->csvSafe(trim($c['telefone_enviado'] ?? '')),
                 $c['data_mensagem'] ? date('d/m/Y', strtotime($c['data_mensagem'])) : '',
             ], ';');
         }
 
         fclose($out);
         exit;
+    }
+
+    /**
+     * Neutraliza CSV/formula injection: celulas iniciadas por = + - @ (ou
+     * tab/CR) sao executadas como formula pelo Excel. Prefixa com aspa simples.
+     */
+    private function csvSafe(string $value): string
+    {
+        if ($value !== '' && in_array($value[0], ['=', '+', '-', '@', "\t", "\r"], true)) {
+            return "'" . $value;
+        }
+        return $value;
     }
 
     /**
