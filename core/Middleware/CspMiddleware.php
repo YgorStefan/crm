@@ -34,5 +34,16 @@ class CspMiddleware
         header("Content-Security-Policy: " . $csp);
         header('X-Content-Type-Options: nosniff');
         header('Referrer-Policy: strict-origin-when-cross-origin');
+
+        // Emitidos via PHP para nao dependerem de mod_headers no .htaccess
+        // (em hosts sem o modulo as regras la viram no-op silencioso).
+        header('X-Frame-Options: DENY');
+
+        // HSTS apenas sob HTTPS — evita "travar" o acesso em http local/dev.
+        $https = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
+            || (($_SERVER['HTTP_X_FORWARDED_PROTO'] ?? '') === 'https');
+        if ($https) {
+            header('Strict-Transport-Security: max-age=31536000; includeSubDomains');
+        }
     }
 }
