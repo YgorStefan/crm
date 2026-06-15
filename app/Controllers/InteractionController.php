@@ -4,6 +4,7 @@ namespace App\Controllers;
 
 use Core\Controller;
 use Core\Http\ApiResponse;
+use Core\Logger;
 use App\Models\Interaction;
 use App\Models\Client;
 
@@ -49,7 +50,7 @@ class InteractionController extends Controller
         } catch (\Throwable $e) {
             // Loga a exceção real internamente; o usuário recebe mensagem genérica
             // (detalhes de schema/SQL não devem vazar para o navegador)
-            error_log('[InteractionController::store] client_id=' . $clientId . ' exception: ' . $e->getMessage());
+            (new Logger())->error('[InteractionController::store] falha ao registrar interacao', ['client_id' => $clientId, 'exception' => $e->getMessage()]);
             $this->flash('error', 'Não foi possível registrar a interação. Tente novamente.');
             $this->redirect('/clients/' . $clientId);
             return;

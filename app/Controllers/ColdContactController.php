@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use Core\Controller;
+use Core\Logger;
 use Core\Middleware\CsrfMiddleware;
 use App\Models\ColdContact;
 use Core\Http\ApiResponse;
@@ -304,7 +305,7 @@ class ColdContactController extends Controller
             $deleted = $this->coldContacts->deleteByMonth($yearMonth);
             $this->json(ApiResponse::success(['deleted' => $deleted], token: true));
         } catch (\Throwable $e) {
-            error_log('[ColdContact deleteMonth] yearMonth=' . $yearMonth . ' exception: ' . $e->getMessage());
+            (new Logger())->error('[ColdContact deleteMonth] falha ao excluir mes', ['year_month' => $yearMonth, 'exception' => $e->getMessage()]);
             $this->json(ApiResponse::error('Erro ao excluir mês.'), 500);
         }
     }
@@ -448,7 +449,7 @@ class ColdContactController extends Controller
                 ],
             ]);
         } catch (\Throwable $e) {
-            error_log('[ColdContact listJson] yearMonth=' . $yearMonth . ' exception: ' . $e->getMessage() . ' | ' . $e->getTraceAsString());
+            (new Logger())->error('[ColdContact listJson] falha ao listar contatos', ['year_month' => $yearMonth, 'exception' => $e->getMessage(), 'trace' => $e->getTraceAsString()]);
             $this->json(['contacts' => [], 'pagination' => []]);
         }
     }
