@@ -96,4 +96,4 @@ $router->post('/settings/update', 'SettingsController', 'update', ['CsrfMiddlewa
 
 // ---- Prospecção de Leads ----
 $router->get('/prospecting', 'ProspectingController', 'index');
-$router->post('/api/prospecting/search', 'ProspectingController', 'search', ['CsrfMiddleware']);
+$router->post('/api/prospecting/search', 'ProspectingController', 'search', ['ProspectingRateLimitMiddleware', 'CsrfMiddleware']);
