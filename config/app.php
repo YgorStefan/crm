@@ -53,7 +53,7 @@ define('APP_ENV', env('APP_ENV', 'development')); // 'production' em deploy
 
 // --- Sessão ---
 define('SESSION_NAME', env('SESSION_NAME', 'crm_session'));
-define('SESSION_LIFETIME', env('SESSION_LIFETIME', 7200)); // 2 horas em segundos
+define('SESSION_LIFETIME', (int) env('SESSION_LIFETIME', 7200)); // 2 horas em segundos
 
 // --- Segurança ---
 define('MIN_PASSWORD_LENGTH', 8);
