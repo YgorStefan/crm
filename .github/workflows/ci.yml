@@ -84,6 +84,9 @@ jobs:
           DB_CHARSET=${DB_CHARSET}
           EOF
 
+      - name: Criar config/database.php (gitignored — lê credenciais do .env)
+        run: cp config/database.php.example config/database.php
+
       - name: Aguardar MySQL ficar pronto
         run: |
           for i in $(seq 1 30); do
