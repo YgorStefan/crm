@@ -357,17 +357,6 @@ INSERT IGNORE INTO users (id, name, email, password_hash, role, tenant_id, passw
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- ============================================================
--- MIGRAÇÕES INCREMENTAIS
--- Execute manualmente em bancos já existentes (não afeta instalações novas)
--- ============================================================
-
--- v1.1: Data de fechamento de venda na tabela clients
-ALTER TABLE clients
-    ADD COLUMN IF NOT EXISTS closed_at DATE NULL
-    COMMENT 'Data de fechamento da venda (preenchido apenas na etapa Venda Fechada)'
-    AFTER referido_por;
-
--- ============================================================
 -- FIM DO SCHEMA
 -- Tabelas criadas:
 --   1. tenants               → organizações multi-tenant
