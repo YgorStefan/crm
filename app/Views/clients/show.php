@@ -38,10 +38,10 @@ unset($_jsV);
         </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
 
         <!-- Coluna esquerda: dados do cliente -->
-        <div class="lg:col-span-1 space-y-4">
+        <div class="xl:col-span-1 space-y-4">
 
             <!-- Card: informações -->
             <div class="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden">
@@ -120,13 +120,13 @@ unset($_jsV);
             <div class="bg-white dark:bg-zinc-900 shadow-sm border border-gray-100 dark:border-zinc-800 rounded-xl p-4 text-sm text-gray-700 dark:text-zinc-200" id="notes-card">
                 <div class="flex items-center justify-between mb-2">
                     <p class="font-semibold">📝 Nota</p>
-                    <div class="flex gap-3">
+                    <div class="flex gap-1">
                         <button type="button" id="btn-edit-notes"
-                            class="text-gray-500 hover:text-gray-700" title="Editar Nota">
+                            class="w-9 h-9 inline-flex items-center justify-center rounded-md text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:hover:bg-zinc-800" title="Editar Nota">
                             ✏️
                         </button>
                         <button type="button" id="btn-delete-notes"
-                            class="text-red-500 hover:text-red-700" title="Excluir Nota">
+                            class="w-9 h-9 inline-flex items-center justify-center rounded-md text-red-500 hover:text-red-700 hover:bg-red-50 dark:hover:bg-red-900/20" title="Excluir Nota">
                             🗑️
                         </button>
                     </div>
@@ -173,7 +173,7 @@ unset($_jsV);
         </div>
 
         <!-- Coluna direita: histórico + tarefas -->
-        <div class="lg:col-span-2 space-y-6">
+        <div class="xl:col-span-2 space-y-6">
 
             <!-- Registrar interação -->
             <div class="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 overflow-hidden">
@@ -267,7 +267,7 @@ unset($_jsV);
                                     onsubmit="return confirm('Remover esta interação?')">
                                     <input type="hidden" name="_csrf_token"
                                         value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
-                                    <button type="submit" class="text-gray-300 hover:text-red-400 text-sm inter-delete-btn"
+                                    <button type="submit" class="w-9 h-9 inline-flex items-center justify-center rounded-md text-gray-300 hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm inter-delete-btn"
                                         title="Remover">✕</button>
                                 </form>
                             </div>

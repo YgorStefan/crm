@@ -47,6 +47,11 @@ class ProspectingController extends Controller
             return;
         }
 
+        if (mb_strlen($term) > 100 || mb_strlen($location) > 100) {
+            $this->json(ApiResponse::error('Termo de busca e localidade devem ter no máximo 100 caracteres.'), 422);
+            return;
+        }
+
         try {
             $service = new PlacesApiService();
             $service->loadApiKey($tenantId);

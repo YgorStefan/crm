@@ -22,6 +22,12 @@ class InteractionController extends Controller
         $clientId    = (int) ($this->inputPost('client_id') ?? 0);
         $description = trim($_POST['description'] ?? '');
         $occurredAt  = $this->inputPost('occurred_at');
+        $type        = $this->inputPost('type', 'note');
+
+        $validTypes = ['call', 'email', 'meeting', 'whatsapp', 'note', 'other'];
+        if (!in_array($type, $validTypes, true)) {
+            $type = 'note';
+        }
 
         if (!$clientId || empty($description) || empty($occurredAt)) {
             $this->flash('error', 'Preencha todos os campos da interação.');
@@ -43,7 +49,7 @@ class InteractionController extends Controller
             $this->interactions->create([
                 'client_id'   => $clientId,
                 'user_id'     => $_SESSION['user']['id'],
-                'type'        => $this->inputPost('type', 'note'),
+                'type'        => $type,
                 'description' => $description,
                 'occurred_at' => $occurredAt,
             ]);
@@ -106,12 +112,16 @@ class InteractionController extends Controller
         $id       = (int) ($params['id'] ?? 0);
         $clientId = (int) ($this->inputPost('client_id') ?? 0);
 
-        // findById já aplica tenant gate via INNER JOIN clients
+        // findById já aplica o escopo de tenant (Core\Model::findById())
         $inter = $this->interactions->findById($id);
-        if ($inter) {
-            $clientId = $clientId ?: (int) $inter['client_id'];
-            $this->interactions->delete($id);
+        if (!$inter) {
+            $this->flash('error', 'Interação não encontrada.');
+            $this->redirect('/clients/' . $clientId);
+            return;
         }
+
+        $clientId = $clientId ?: (int) $inter['client_id'];
+        $this->interactions->delete($id);
 
         $this->flash('success', 'Interação removida.');
         $this->redirect('/clients/' . $clientId);

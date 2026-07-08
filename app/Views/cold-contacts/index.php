@@ -30,7 +30,7 @@ $_canEdit = in_array($_SESSION['user']['role'] ?? '', ['admin', 'seller']) ? '1'
     <form method="POST" action="<?= APP_URL ?>/cold-contacts/import" enctype="multipart/form-data">
         <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
 
-        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-3 items-end">
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3 items-end">
             <!-- Tipo de lista -->
             <div>
                 <label for="import-tipo-lista" class="block text-xs font-medium text-gray-700 dark:text-zinc-300 mb-1">
@@ -146,7 +146,7 @@ $_canEdit = in_array($_SESSION['user']['role'] ?? '', ['admin', 'seller']) ? '1'
         </div>
 
         <!-- Filtros e exportação -->
-        <div class="px-6 py-3 border-b border-gray-100 dark:border-zinc-800 flex flex-col sm:flex-row gap-3 items-end flex-shrink-0">
+        <div class="px-6 py-3 border-b border-gray-100 dark:border-zinc-800 flex flex-col sm:flex-row sm:flex-wrap gap-3 items-end flex-shrink-0">
             <div>
                 <label for="filterTipoLista" class="block text-xs font-medium text-gray-600 dark:text-zinc-400 mb-1">Filtrar por tipo de lista</label>
                 <input type="text" id="filterTipoLista" placeholder="Tipo de lista"

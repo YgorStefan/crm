@@ -9,107 +9,214 @@
 
     if (!board) return; // Sai silenciosamente se o board não existir na página
 
-    // Cartão que está sendo arrastado no momento
-    let draggedCard = null;
+    // Distância (px) que o ponteiro precisa se mover antes de considerarmos
+    // um arraste real (evita iniciar drag num simples toque/clique).
+    const DRAG_THRESHOLD = 8;
+    // Em touch, espera esse tempo parado antes de "pegar" o cartão — abaixo
+    // disso, o gesto é tratado como rolagem da página (mouse não precisa
+    // disso: o próprio movimento acima do threshold já inicia o drag).
+    const LONG_PRESS_MS = 180;
 
     // Flag para evitar múltiplas requisições simultâneas (race condition CSRF)
     let isMoving = false;
 
-    // EVENTOS NOS CARTÕES
+    // Estado do arraste em andamento (null quando não há nenhum)
+    let drag = null;
 
     /**
-     * Adiciona os event listeners em todos os cartões do board.
+     * Adiciona os event listeners de pointer em todos os cartões do board.
      * Chamada também após mover um cartão (para reanexar nos novos elementos).
      */
     function bindCardEvents() {
         document.querySelectorAll('.kanban-card').forEach(card => {
-            // Remove listeners antigos para evitar duplicação
-            card.removeEventListener('dragstart', onDragStart);
-            card.removeEventListener('dragend', onDragEnd);
-
-            card.addEventListener('dragstart', onDragStart);
-            card.addEventListener('dragend', onDragEnd);
+            card.removeEventListener('pointerdown', onPointerDown);
+            card.addEventListener('pointerdown', onPointerDown);
         });
     }
 
     /**
-     * dragstart: dispara quando o usuário começa a arrastar um cartão.
-     * Guarda a referência do cartão arrastado e aplica estilo visual.
+     * pointerdown: início de um possível arraste (mouse, touch ou pen).
+     * Não inicia o drag imediatamente — só arma o estado e, para touch,
+     * um timer de "long press" — para não conflitar com rolagem/clique normal.
      */
-    function onDragStart(e) {
-        draggedCard = this;
-        // Pequeno delay para que o estado "fantasma" seja renderizado
-        // antes de aplicar a classe de opacidade.
-        setTimeout(() => this.classList.add('dragging'), 0);
-        // Passa o ID do cliente no dataTransfer (método alternativo para
-        // compatibilidade com browsers que bloqueiam acesso ao DOM durante drag)
-        e.dataTransfer.setData('text/plain', this.dataset.clientId);
-        e.dataTransfer.effectAllowed = 'move';
+    function onPointerDown(e) {
+        // Apenas botão principal do mouse; ignora clique direito/meio.
+        if (e.pointerType === 'mouse' && e.button !== 0) return;
+        if (isMoving) return;
+
+        const card = e.currentTarget;
+        const rect = card.getBoundingClientRect();
+
+        drag = {
+            pointerId: e.pointerId,
+            pointerType: e.pointerType,
+            card,
+            startX: e.clientX,
+            startY: e.clientY,
+            offsetX: e.clientX - rect.left,
+            offsetY: e.clientY - rect.top,
+            width: rect.width,
+            height: rect.height,
+            active: false,      // true quando o "pick up" já ocorreu
+            longPressTimer: null,
+            ghost: null,
+            lastZone: null,
+        };
+
+        document.addEventListener('pointermove', onPointerMove);
+        document.addEventListener('pointerup', onPointerUp);
+        document.addEventListener('pointercancel', onPointerUp);
+
+        if (e.pointerType !== 'mouse') {
+            // Touch/pen: só vira drag depois do long-press (dá tempo de
+            // detectar rolagem vertical normal da página).
+            drag.longPressTimer = setTimeout(() => startDrag(e), LONG_PRESS_MS);
+        }
     }
 
     /**
-     * dragend: dispara quando o arrastar termina (com ou sem soltar).
-     * Remove os estilos visuais temporários.
+     * pointermove: decide se promove o estado atual para "arrastando" e,
+     * quando já está arrastando, move o clone flutuante e destaca a coluna
+     * sob o ponteiro.
      */
-    function onDragEnd() {
-        this.classList.remove('dragging');
-        draggedCard = null;
-        // Remove highlight de todas as zonas de drop
-        document.querySelectorAll('.kanban-drop-zone').forEach(z => z.classList.remove('drag-over'));
-    }
+    function onPointerMove(e) {
+        if (!drag || e.pointerId !== drag.pointerId) return;
 
-    document.querySelectorAll('.kanban-drop-zone').forEach(zone => {
+        if (!drag.active) {
+            const dx = e.clientX - drag.startX;
+            const dy = e.clientY - drag.startY;
+            const moved = Math.hypot(dx, dy);
 
-        /**
-         * dragover: mantém a zona "receptiva" ao cartão enquanto
-         * o mouse está sobre ela. Sem preventDefault(), o browser
-         * não permitiria o "drop".
-         */
-        zone.addEventListener('dragover', function (e) {
-            e.preventDefault();
-            e.dataTransfer.dropEffect = 'move';
-            this.classList.add('drag-over');
-        });
-
-        zone.addEventListener('dragleave', function () {
-            this.classList.remove('drag-over');
-        });
-
-        /**
-         * drop: dispara quando o cartão é solto sobre a zona.
-         * Move o elemento no DOM e chama a API para persistir.
-         */
-        zone.addEventListener('drop', function (e) {
-            e.preventDefault();
-            this.classList.remove('drag-over');
-
-            if (!draggedCard || isMoving) return;
-
-            const newStageId = parseInt(this.dataset.stageId, 10);
-            const oldStageId = parseInt(draggedCard.dataset.currentStage, 10);
-            const clientId = parseInt(draggedCard.dataset.clientId, 10);
-
-            // Sem mudança de coluna? Nada a fazer.
-            if (newStageId === oldStageId) return;
-
-            // 1. Move o cartão no DOM (feedback imediato ao usuário)
-            const emptyPlaceholder = this.querySelector('.kanban-empty');
-            if (emptyPlaceholder) emptyPlaceholder.remove(); // remove o "Arraste aqui"
-            this.appendChild(draggedCard);
-            draggedCard.dataset.currentStage = newStageId;
-
-            // 2. Persiste a mudança via AJAX (chamada ANTES da atualização visual
-            // para garantir que erros de DOM não impeçam a persistência)
-            moveClient(clientId, newStageId);
-
-            // 3. Atualiza contadores e totais (não-crítico — se falhar, persistência já ocorreu)
-            try {
-                updateColumnCounters();
-            } catch (counterErr) {
-                console.warn('[Kanban] Falha ao atualizar contadores:', counterErr);
+            if (drag.pointerType === 'mouse') {
+                // Mouse: inicia assim que ultrapassar o threshold, sem espera.
+                if (moved > DRAG_THRESHOLD) startDrag(e);
+                return;
             }
-        });
-    });
+
+            // Touch/pen: se moveu antes do long-press "pegar" o cartão,
+            // é rolagem — cancela o drag e deixa o browser rolar normalmente.
+            if (moved > DRAG_THRESHOLD) {
+                cancelPendingDrag();
+            }
+            return;
+        }
+
+        // Já arrastando: impede rolagem/seleção e atualiza a UI.
+        e.preventDefault();
+        updateGhostPosition(e.clientX, e.clientY);
+        highlightZoneUnderPointer(e.clientX, e.clientY);
+    }
+
+    /**
+     * pointerup / pointercancel: finaliza o arraste (se houve) ou apenas
+     * limpa o estado pendente (permitindo que o clique/tap normal do link
+     * dentro do cartão continue funcionando).
+     */
+    function onPointerUp(e) {
+        if (!drag || e.pointerId !== drag.pointerId) return;
+
+        if (drag.active) {
+            finishDrag(e.clientX, e.clientY);
+        } else {
+            cancelPendingDrag();
+        }
+
+        document.removeEventListener('pointermove', onPointerMove);
+        document.removeEventListener('pointerup', onPointerUp);
+        document.removeEventListener('pointercancel', onPointerUp);
+        drag = null;
+    }
+
+    /** Cancela um drag que ainda não tinha "pegado" o cartão (sem side-effects). */
+    function cancelPendingDrag() {
+        if (!drag) return;
+        if (drag.longPressTimer) clearTimeout(drag.longPressTimer);
+    }
+
+    /**
+     * "Pega" o cartão: cria o clone flutuante que acompanha o ponteiro,
+     * aplica o estado visual de arraste e captura o ponteiro no cartão
+     * original (garante que continuemos recebendo move/up mesmo se o dedo
+     * sair da área do elemento).
+     */
+    function startDrag(e) {
+        if (!drag || drag.active) return;
+        if (drag.longPressTimer) clearTimeout(drag.longPressTimer);
+
+        drag.active = true;
+        drag.card.setPointerCapture(drag.pointerId);
+        drag.card.classList.add('dragging');
+        document.body.classList.add('kanban-dragging-active');
+
+        const ghost = drag.card.cloneNode(true);
+        ghost.classList.add('kanban-drag-ghost');
+        ghost.style.width = drag.width + 'px';
+        ghost.style.height = drag.height + 'px';
+        document.body.appendChild(ghost);
+        drag.ghost = ghost;
+
+        updateGhostPosition(e.clientX, e.clientY);
+        highlightZoneUnderPointer(e.clientX, e.clientY);
+    }
+
+    function updateGhostPosition(x, y) {
+        if (!drag?.ghost) return;
+        drag.ghost.style.left = (x - drag.offsetX) + 'px';
+        drag.ghost.style.top = (y - drag.offsetY) + 'px';
+    }
+
+    /** Encontra a drop-zone sob o ponteiro (ignorando o clone) e a destaca. */
+    function highlightZoneUnderPointer(x, y) {
+        if (drag.ghost) drag.ghost.style.display = 'none';
+        const el = document.elementFromPoint(x, y);
+        if (drag.ghost) drag.ghost.style.display = '';
+
+        const zone = el?.closest('.kanban-drop-zone') || null;
+        if (zone === drag.lastZone) return;
+
+        drag.lastZone?.classList.remove('drag-over');
+        zone?.classList.add('drag-over');
+        drag.lastZone = zone;
+    }
+
+    /**
+     * Solta o cartão: remove o clone/estado visual e, se houver uma
+     * drop-zone válida diferente da etapa atual, move o cartão no DOM e
+     * persiste via AJAX — mesma lógica do antigo handler "drop" HTML5.
+     */
+    function finishDrag(x, y) {
+        const { card, ghost, lastZone } = drag;
+
+        ghost?.remove();
+        card.classList.remove('dragging');
+        document.body.classList.remove('kanban-dragging-active');
+        lastZone?.classList.remove('drag-over');
+
+        if (!lastZone || isMoving) return;
+
+        const newStageId = Number.parseInt(lastZone.dataset.stageId, 10);
+        const oldStageId = Number.parseInt(card.dataset.currentStage, 10);
+        const clientId = Number.parseInt(card.dataset.clientId, 10);
+
+        if (newStageId === oldStageId) return;
+
+        // 1. Move o cartão no DOM (feedback imediato ao usuário)
+        const emptyPlaceholder = lastZone.querySelector('.kanban-empty');
+        if (emptyPlaceholder) emptyPlaceholder.remove(); // remove o "Arraste aqui"
+        lastZone.appendChild(card);
+        card.dataset.currentStage = newStageId;
+
+        // 2. Persiste a mudança via AJAX (chamada ANTES da atualização visual
+        // para garantir que erros de DOM não impeçam a persistência)
+        moveClient(clientId, newStageId);
+
+        // 3. Atualiza contadores e totais (não-crítico — se falhar, persistência já ocorreu)
+        try {
+            updateColumnCounters();
+        } catch (counterErr) {
+            console.warn('[Kanban] Falha ao atualizar contadores:', counterErr);
+        }
+    }
 
     /**
      * Envia a mudança de etapa para o servidor via Fetch API (AJAX).

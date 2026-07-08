@@ -138,6 +138,12 @@
 }
 
 /* ── Kanban drag states ─────────────────────────────────── */
+/* Sem isso, o Chrome assume gesto de rolagem nativa assim que o dedo se
+   move e cancela o pointer (pointercancel) antes do JS conseguir reagir —
+   quebra o drag-and-drop por toque em tablets (ver public/assets/js/pipeline.js). */
+.kanban-card {
+    touch-action: none;
+}
 .dragging {
     opacity: 0.4;
     transform: rotate(2deg);
@@ -145,6 +151,22 @@
 .drag-over {
     outline: 2px dashed #4f46e5;
     outline-offset: 2px;
+}
+/* Clone flutuante que segue o dedo/cursor durante o arraste via Pointer
+   Events (mouse e touch) — ver public/assets/js/pipeline.js. */
+.kanban-drag-ghost {
+    position: fixed;
+    z-index: 9999;
+    pointer-events: none;
+    opacity: 0.9;
+    box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.3), 0 8px 10px -6px rgb(0 0 0 / 0.3);
+    transform: rotate(2deg);
+    touch-action: none;
+}
+/* Enquanto arrasta, evita seleção de texto acidental no board inteiro. */
+.kanban-dragging-active {
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 /* ── Custom Select (substitui <select> nativo) ─────────── */
@@ -332,6 +354,14 @@
 /* ── FullCalendar interaction ──────────────────────────── */
 .fc-event {
     cursor: pointer;
+}
+
+/* Toolbar (prev/next/hoje + título + mês/semana) quebra em telas estreitas
+   (tablet 12.1" em retrato, ~1024px com sidebar) em vez de comprimir os
+   botões ou estourar a largura do card. */
+.fc .fc-toolbar {
+    flex-wrap: wrap;
+    row-gap: 0.5rem;
 }
 
 /* ── FullCalendar header buttons (estilo do app) ────────── */

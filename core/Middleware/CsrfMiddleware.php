@@ -30,12 +30,22 @@ class CsrfMiddleware
             || empty($tokenFromSession)
             || !hash_equals($tokenFromSession, $tokenReceived)
         ) {
-            http_response_code(403);
-            die('Ação bloqueada: token CSRF inválido. Por favor, recarregue a página e tente novamente.');
+            $this->reject('Ação bloqueada: token CSRF inválido. Por favor, recarregue a página e tente novamente.');
         }
 
         // Token mantido estável por toda a sessão (padrão adotado por Laravel, Django, Rails).
         // A rotação por requisição causa race conditions em múltiplos fetch() AJAX simultâneos.
+    }
+
+    /**
+     * Extraído em método próprio (em vez de die() inline) para permitir
+     * testes de integração: em testes, uma subclasse sobrescreve este método
+     * para capturar a rejeição sem encerrar o processo do PHPUnit.
+     */
+    protected function reject(string $message): void
+    {
+        http_response_code(403);
+        die($message);
     }
 
     /**
@@ -49,7 +59,7 @@ class CsrfMiddleware
     }
 
     /**
-     * Garante que exista um token na sessão 
+     * Garante que exista um token na sessão
      * Se já existir um token, não o substitui
      *
      * @return string  O token atual da sessão

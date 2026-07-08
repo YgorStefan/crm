@@ -7,7 +7,8 @@
     "build": "tailwindcss -i ./resources/css/input.css -o ./public/assets/css/tailwind.css",
     "build:prod": "tailwindcss -i ./resources/css/input.css -o ./public/assets/css/tailwind.css --minify",
     "watch": "tailwindcss -i ./resources/css/input.css -o ./public/assets/css/tailwind.css --watch",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "test:e2e": "playwright test"
   },
   "repository": {
     "type": "git",
@@ -22,6 +23,7 @@
   },
   "homepage": "https://github.com/YgorStefan/crm#readme",
   "devDependencies": {
+    "@playwright/test": "^1.61.1",
     "playwright": "^1.60.0",
     "tailwindcss": "^3.4.19"
   }

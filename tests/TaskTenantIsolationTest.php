@@ -40,7 +40,7 @@ class TaskTenantIsolationTest extends TestCase
         $pdo->exec('DROP TABLE IF EXISTS clients');
         $pdo->exec('DROP TABLE IF EXISTS users');
         $pdo->exec('CREATE TABLE users (id INT UNSIGNED PRIMARY KEY, name VARCHAR(100), tenant_id INT UNSIGNED) ENGINE=InnoDB');
-        $pdo->exec('CREATE TABLE clients (id INT UNSIGNED PRIMARY KEY, name VARCHAR(100), tenant_id INT UNSIGNED) ENGINE=InnoDB');
+        $pdo->exec('CREATE TABLE clients (id INT UNSIGNED PRIMARY KEY, name VARCHAR(100), tenant_id INT UNSIGNED, is_active TINYINT(1) DEFAULT 1) ENGINE=InnoDB');
         $pdo->exec(
             'CREATE TABLE tasks (
                 id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,

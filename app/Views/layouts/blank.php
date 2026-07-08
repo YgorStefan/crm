@@ -4,6 +4,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Reforço do CSP via meta: alguns hosts (CDN da Hostinger) sobrescrevem
+         o header Content-Security-Policy no caminho até o navegador. -->
+    <meta http-equiv="Content-Security-Policy" content="<?= htmlspecialchars(\Core\Middleware\CspMiddleware::buildPolicy(CSP_NONCE), ENT_QUOTES, 'UTF-8') ?>">
     <title><?= htmlspecialchars($title ?? APP_NAME, ENT_QUOTES, 'UTF-8') ?></title>
     <?php $safeAppUrl = htmlspecialchars(APP_URL, ENT_QUOTES, 'UTF-8'); ?>
     <!-- Anti-FOUC: aplica dark antes do CSS carregar -->

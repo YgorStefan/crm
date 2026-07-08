@@ -49,6 +49,14 @@ class PipelineController extends Controller
             return;
         }
 
+        // Garante que a etapa de destino pertence ao tenant atual — sem isso,
+        // um client_id válido poderia ser apontado para pipeline_stage_id
+        // de outro tenant (findById() do PipelineStage já é escopado).
+        if (!$this->stages->findById($stageId)) {
+            $this->json(['success' => false, 'message' => 'Etapa inválida.'], 422);
+            return;
+        }
+
         $ok = $this->clients->updateStage($clientId, $stageId);
 
         $this->json(['success' => $ok, 'csrf_token' => CsrfMiddleware::getToken()]);

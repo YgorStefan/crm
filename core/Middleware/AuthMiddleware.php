@@ -32,18 +32,17 @@ class AuthMiddleware
             $_SESSION['redirect_after_login'] = '/' . ltrim($uri, '/');
 
             // Redireciona para a página de login
-            header('Location: ' . APP_URL . '/login');
-            exit;
+            $this->redirect(APP_URL . '/login');
+            return;
         }
 
         // Verifica inatividade por timeout
         $timeout = SESSION_LIFETIME;
         if (isset($_SESSION['last_activity']) && (time() - $_SESSION['last_activity']) > $timeout) {
             // Sessão expirada: destrói tudo e redireciona
-            session_unset();
-            session_destroy();
-            header('Location: ' . APP_URL . '/login?timeout=1');
-            exit;
+            $this->destroySession();
+            $this->redirect(APP_URL . '/login?timeout=1');
+            return;
         }
 
         // Atualiza o timestamp de última atividade
@@ -59,9 +58,30 @@ class AuthMiddleware
                 : $uri;
             $allowed = ['/profile/change-password', '/logout'];
             if (!in_array('/' . ltrim($path, '/'), $allowed, true)) {
-                header('Location: ' . APP_URL . '/profile/change-password');
-                exit;
+                $this->redirect(APP_URL . '/profile/change-password');
             }
         }
+    }
+
+    /**
+     * Extraído em método próprio (em vez de header()+exit inline) para
+     * permitir testes de integração: em testes, uma subclasse sobrescreve
+     * este método para capturar o destino sem encerrar o processo do PHPUnit.
+     */
+    protected function redirect(string $url): void
+    {
+        header('Location: ' . $url);
+        exit;
+    }
+
+    /**
+     * Também extraído (mesmo motivo do redirect() acima): em testes, uma
+     * subclasse sobrescreve este método para não destruir de fato a sessão
+     * real do processo do PHPUnit, que é compartilhada entre os testes.
+     */
+    protected function destroySession(): void
+    {
+        session_unset();
+        session_destroy();
     }
 }

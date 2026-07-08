@@ -13,6 +13,22 @@ class UserController extends Controller
     ) {}
 
     /**
+     * Valida que o avatar é uma URL http(s) bem formada; caso contrário
+     * descarta (retorna null) — evita esquemas como javascript:/data: ou
+     * strings arbitrárias sendo persistidas no campo.
+     */
+    private function validAvatarUrl(string $avatar): ?string
+    {
+        if ($avatar === '') {
+            return null;
+        }
+        if (!filter_var($avatar, FILTER_VALIDATE_URL) || !preg_match('#^https?://#i', $avatar)) {
+            return null;
+        }
+        return $avatar;
+    }
+
+    /**
      * Lista todos os usuários (somente admin).
      */
     public function index(array $params = []): void
@@ -70,14 +86,14 @@ class UserController extends Controller
             return;
         }
 
-        $avatar = trim($_POST['avatar'] ?? '');
+        $avatar = $this->validAvatarUrl(trim($_POST['avatar'] ?? ''));
         $this->users->create([
             'name' => $name,
             'email' => $email,
             // Aplica o hash bcrypt — nunca armazene senhas em texto puro
             'password_hash' => password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]),
             'role' => in_array($role, ['admin', 'seller', 'viewer']) ? $role : 'seller',
-            'avatar' => !empty($avatar) ? $avatar : null,
+            'avatar' => $avatar,
         ]);
 
         $this->flash('success', "Usuário \"{$name}\" criado com sucesso!");
@@ -129,13 +145,12 @@ class UserController extends Controller
         }
 
         $requestedRole = $this->inputPost('role', 'seller');
-        $avatar = trim($_POST['avatar'] ?? '');
         $data = [
             'name' => $this->input('name'),
             'email' => $email,
             'role' => in_array($requestedRole, ['admin', 'seller', 'viewer'], true) ? $requestedRole : 'seller',
             'is_active' => isset($_POST['is_active']) ? 1 : 0,
-            'avatar' => !empty($avatar) ? $avatar : null,
+            'avatar' => $this->validAvatarUrl(trim($_POST['avatar'] ?? '')),
         ];
 
         // Atualiza senha apenas se foi preenchida

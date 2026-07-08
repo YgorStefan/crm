@@ -24,7 +24,12 @@ class TaskController extends Controller
     {
         $userId = (int) ($_SESSION['user']['id'] ?? 0);
         $isAdmin = ($_SESSION['user']['role'] ?? '') === 'admin';
-        $tasks = $this->tasks->findForCalendar($userId, $isAdmin);
+        // FullCalendar envia start/end (janela visível) automaticamente
+        // quando "events" é configurado como URL — antes ignorados, o que
+        // fazia esse endpoint carregar TODAS as tarefas do tenant a cada abertura.
+        $start = $this->parseCalendarDate($_GET['start'] ?? null);
+        $end   = $this->parseCalendarDate($_GET['end'] ?? null);
+        $tasks = $this->tasks->findForCalendar($userId, $isAdmin, $start, $end);
 
         $events = array_map(fn($t) => [
             'id'    => $t['id'],
@@ -50,6 +55,21 @@ class TaskController extends Controller
     }
 
     /**
+     * Converte a data ISO enviada pelo FullCalendar (start/end da janela
+     * visível) para o formato DATETIME do MySQL. Retorna null se ausente
+     * ou inválida (nesse caso a consulta simplesmente não filtra por data).
+     */
+    private function parseCalendarDate(?string $raw): ?string
+    {
+        if (empty($raw)) return null;
+        try {
+            return (new \DateTime($raw))->format('Y-m-d H:i:s');
+        } catch (\Throwable) {
+            return null;
+        }
+    }
+
+    /**
      * Retorna dados de uma tarefa em JSON (para modal de edicao).
      */
     public function getTask(array $params = []): void
@@ -59,6 +79,15 @@ class TaskController extends Controller
 
         if (!$task) {
             $this->json(ApiResponse::error('Tarefa não encontrada.'), 404);
+            return;
+        }
+
+        // Seller só pode ver detalhes das próprias tarefas (mesma regra usada
+        // para editar) — sem isso, GET /api/tasks/{id} vazava tarefas de colegas.
+        $role = $_SESSION['user']['role'] ?? '';
+        $userId = (int) ($_SESSION['user']['id'] ?? 0);
+        if ($role === 'seller' && (int) $task['assigned_to'] !== $userId && (int) $task['created_by'] !== $userId) {
+            $this->json(ApiResponse::error('Acesso negado.'), 403);
             return;
         }
 
@@ -117,8 +146,9 @@ class TaskController extends Controller
 
         $alerts = [];
 
-        // Todas as tarefas atrasadas (sem limite de data)
-        $overdue = $this->tasks->findOverdue($isAdmin ? null : $userId);
+        // Tarefas atrasadas (limitadas — endpoint chamado a cada 60s por
+        // usuário logado; sem LIMIT, cresce sem controle com a base de dados).
+        $overdue = $this->tasks->findOverdue($isAdmin ? null : $userId, 20);
         foreach ($overdue as $t) {
             $due = new \DateTime($t['due_date'], $tz);
             $alerts[] = [
@@ -173,12 +203,15 @@ class TaskController extends Controller
         ];
 
         // Vendedores só veem suas próprias tarefas; admins veem tudo
-        if (($_SESSION['user']['role'] ?? '') === 'seller') {
+        $isAdmin = ($_SESSION['user']['role'] ?? '') === 'admin';
+        if (!$isAdmin) {
             $filters['assigned_to'] = $_SESSION['user']['id'];
         }
 
         $tasks = $this->tasks->findAllWithRelations($filters);
-        $overdue = $this->tasks->findOverdue();
+        // Mesma regra do filtro acima — sem isso, o banner de "atrasadas"
+        // mostrava tarefas de todos os usuários do tenant para um seller.
+        $overdue = $this->tasks->findOverdue($isAdmin ? null : (int) $_SESSION['user']['id']);
         $users = $this->users->findAllActive();
 
         $this->render('tasks/index', [
@@ -212,6 +245,15 @@ class TaskController extends Controller
             } else {
                 $this->redirect('/tasks');
             }
+            return;
+        }
+
+        // client_id é opcional, mas se enviado precisa pertencer ao tenant
+        // atual (Client::findById() já é escopado) — sem isso, uma tarefa
+        // podia ser criada apontando para o cliente de outro tenant.
+        if (!empty($clientId) && !$this->clients->findById((int) $clientId)) {
+            $this->flash('error', 'Cliente inválido.');
+            $this->redirect('/tasks');
             return;
         }
 
@@ -252,6 +294,20 @@ class TaskController extends Controller
     }
 
     /**
+     * Responde a uma validação inválida em update(): JSON para AJAX,
+     * flash + redirect para submissão de formulário normal.
+     */
+    private function rejectTaskUpdate(string $message): void
+    {
+        if ($this->isAjax()) {
+            $this->json(ApiResponse::error($message), 422);
+        } else {
+            $this->flash('error', $message);
+            $this->redirect('/tasks');
+        }
+    }
+
+    /**
      * Atualiza campos de uma tarefa (principalmente o status).
      */
     public function update(array $params = []): void
@@ -259,10 +315,22 @@ class TaskController extends Controller
         $id = (int) ($params['id'] ?? 0);
 
         $data = [];
-        if (isset($_POST['status']))
-            $data['status'] = $this->inputPost('status');
-        if (isset($_POST['priority']))
-            $data['priority'] = $this->inputPost('priority');
+        if (isset($_POST['status'])) {
+            $status = $this->inputPost('status');
+            if (!in_array($status, ['pending', 'in_progress', 'done', 'cancelled'], true)) {
+                $this->rejectTaskUpdate('Status inválido.');
+                return;
+            }
+            $data['status'] = $status;
+        }
+        if (isset($_POST['priority'])) {
+            $priority = $this->inputPost('priority');
+            if (!in_array($priority, ['low', 'medium', 'high'], true)) {
+                $this->rejectTaskUpdate('Prioridade inválida.');
+                return;
+            }
+            $data['priority'] = $priority;
+        }
         if (isset($_POST['title']))
             $data['title'] = $this->input('title');
         if (isset($_POST['due_date']))

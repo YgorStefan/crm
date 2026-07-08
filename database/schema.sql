@@ -31,6 +31,7 @@ CREATE TABLE IF NOT EXISTS tenants (
     slug                VARCHAR(80)         NOT NULL COMMENT 'Identificador estável por tenant (único)',
     is_system_tenant    TINYINT(1)          NOT NULL DEFAULT 0 COMMENT '1 = tenant da instalação com poderes de plataforma',
     payment_cutoff_day  TINYINT UNSIGNED    NOT NULL DEFAULT 20 COMMENT 'Dia do mês (1-28) para início do ciclo de pagamento (FRAG-04)',
+    google_maps_api_key VARCHAR(500)        NULL     DEFAULT NULL COMMENT 'Chave API Google Maps — criptografada AES-256-CBC+IV',
     created_at          TIMESTAMP           NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at          TIMESTAMP           NOT NULL DEFAULT CURRENT_TIMESTAMP
                                             ON UPDATE CURRENT_TIMESTAMP,
@@ -74,6 +75,21 @@ CREATE TABLE IF NOT EXISTS users (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
+-- TABELA: login_attempts
+-- Registra tentativas de login para rate limiting: por IP e,
+-- opcionalmente, por conta (identifier = e-mail tentado).
+-- ============================================================
+CREATE TABLE IF NOT EXISTS login_attempts (
+    id           INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    ip           VARCHAR(45)  NOT NULL,
+    identifier   VARCHAR(150) NULL     COMMENT 'E-mail tentado — permite lockout por conta além de por IP',
+    attempted_at DATETIME     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    INDEX idx_login_attempts_ip_time (ip, attempted_at),
+    INDEX idx_login_attempts_identifier_time (identifier, attempted_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
 -- TABELA: pipeline_stages
 -- Etapas (colunas) do funil de vendas no board Kanban.
 -- O campo `position` define a ordem da esquerda para a direita.
@@ -86,7 +102,8 @@ CREATE TABLE IF NOT EXISTS pipeline_stages (
     tenant_id    INT UNSIGNED        NOT NULL DEFAULT 1         COMMENT 'Isolamento multi-tenant',
     is_won_stage TINYINT(1)          NOT NULL DEFAULT 0         COMMENT '1 = etapa de venda fechada (FRAG-03)',
     created_at   TIMESTAMP           NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    PRIMARY KEY (id)
+    PRIMARY KEY (id),
+    INDEX idx_pipeline_stages_tenant (tenant_id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Etapas padrão do funil (o admin pode adicionar/remover depois)
@@ -151,6 +168,8 @@ CREATE TABLE IF NOT EXISTS clients (
 -- Índices de apoio (além dos criados automaticamente pelas FKs)
 CREATE INDEX idx_clients_stage    ON clients(pipeline_stage_id);
 CREATE INDEX idx_clients_assigned ON clients(assigned_to);
+CREATE INDEX idx_clients_tenant_active ON clients(tenant_id, is_active);
+CREATE INDEX idx_clients_tenant_phone  ON clients(tenant_id, phone);
 
 -- ============================================================
 -- TABELA: client_sales
@@ -171,18 +190,17 @@ CREATE TABLE IF NOT EXISTS client_sales (
     -- nunca é armazenado como string aqui.
     paid_at             TIMESTAMP       NULL     DEFAULT NULL
                                                  COMMENT 'Timestamp da última confirmação de pagamento. NULL = não pago.',
-    tenant_id           INT UNSIGNED    NOT NULL DEFAULT 1 COMMENT 'Isolamento multi-tenant',
     created_at          TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at          TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP
                                         ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    INDEX idx_client_sales_tenant (tenant_id),
-    -- Ao deletar o cliente, todas as suas cotas são removidas (CASCADE)
+    -- Sem coluna tenant_id própria: o isolamento multi-tenant desta tabela
+    -- é feito via JOIN com clients (dono da cota), não por coluna própria —
+    -- ver App\Models\ClientSale (todo método faz INNER JOIN clients ON
+    -- c.tenant_id = :tenant_id). Ao deletar o cliente, as cotas somem (CASCADE).
     CONSTRAINT fk_sale_client
         FOREIGN KEY (client_id) REFERENCES clients(id)
-        ON DELETE CASCADE ON UPDATE CASCADE,
-    CONSTRAINT fk_client_sales_tenant
-        FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+        ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE INDEX idx_sales_client ON client_sales(client_id);
@@ -246,6 +264,11 @@ CREATE TABLE IF NOT EXISTS tasks (
                                 ON UPDATE CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
     INDEX idx_tasks_tenant (tenant_id),
+    INDEX idx_tasks_tenant_status_due (tenant_id, status, due_date),
+    INDEX idx_tasks_recurrence (tenant_id, recurrence_parent_id, due_date),
+    -- Evita duas instâncias de recorrência para o mesmo (tarefa-pai, data) em
+    -- corridas concorrentes; NULL (tarefas não-recorrentes/pais) não colide.
+    UNIQUE KEY uq_tasks_recurrence_instance (recurrence_parent_id, due_date),
     -- Deletar cliente mantém a tarefa mas remove o vínculo (SET NULL)
     CONSTRAINT fk_task_client
         FOREIGN KEY (client_id) REFERENCES clients(id)
@@ -303,6 +326,21 @@ CREATE TABLE IF NOT EXISTS cold_contacts (
 CREATE INDEX idx_cold_imported_at ON cold_contacts(imported_at);
 -- Filtro por celular na modal de edição
 CREATE INDEX idx_cold_phone ON cold_contacts(phone);
+CREATE INDEX idx_cc_tenant_month ON cold_contacts(tenant_id, imported_year_month);
+
+-- ============================================================
+-- TABELA: prospecting_requests
+-- Registra cada chamada a POST /api/prospecting/search por tenant,
+-- para o ProspectingRateLimitMiddleware aplicar janela deslizante
+-- (a Google Places API consumida por esse endpoint é paga).
+-- ============================================================
+CREATE TABLE IF NOT EXISTS prospecting_requests (
+    id           INT UNSIGNED NOT NULL AUTO_INCREMENT,
+    tenant_id    INT UNSIGNED NOT NULL,
+    requested_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    INDEX idx_prospecting_tenant_time (tenant_id, requested_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
 -- DADOS INICIAIS: Usuário Administrador Padrão
@@ -332,12 +370,18 @@ ALTER TABLE clients
 -- ============================================================
 -- FIM DO SCHEMA
 -- Tabelas criadas:
---   1. tenants           → organizações multi-tenant
---   2. users             → autenticação e controle de acesso
---   3. pipeline_stages   → etapas do funil Kanban (6 padrão)
---   4. clients           → cadastro de clientes/leads
---   5. client_sales      → cotas de consórcio por cliente
---   6. interactions      → histórico de contatos
---   7. tasks             → tarefas e follow-ups
---   8. cold_contacts     → contatos frios importados via CSV
+--   1. tenants               → organizações multi-tenant
+--   2. users                 → autenticação e controle de acesso
+--   3. login_attempts        → rate limiting de login (IP + conta)
+--   4. pipeline_stages       → etapas do funil Kanban (6 padrão)
+--   5. clients               → cadastro de clientes/leads
+--   6. client_sales          → cotas de consórcio por cliente
+--   7. interactions          → histórico de contatos
+--   8. tasks                 → tarefas e follow-ups
+--   9. cold_contacts         → contatos frios importados via CSV
+--  10. prospecting_requests  → throttle de prospecção (Google Places API)
+--
+-- Consolidado até a migration 020 (inclusive). Qualquer migration nova
+-- em database/migrations/ deve ser aplicada com `php bin/migrate.php`
+-- após o baseline inicial (`php bin/migrate.php --baseline`).
 -- ============================================================

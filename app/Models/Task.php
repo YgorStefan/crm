@@ -107,6 +107,16 @@ class Task extends Model
             throw new \InvalidArgumentException("assigned_to não pertence ao tenant atual.");
         }
 
+        if (!empty($data['client_id'])) {
+            $checkClient = $this->db->prepare(
+                "SELECT id FROM clients WHERE id = :cid AND tenant_id = :tenant_id_c AND is_active = 1"
+            );
+            $checkClient->execute([':cid' => (int) $data['client_id'], ':tenant_id_c' => $tenantId]);
+            if (!$checkClient->fetch()) {
+                throw new \InvalidArgumentException("client_id não pertence ao tenant atual.");
+            }
+        }
+
         $stmt = $this->db->prepare("
             INSERT INTO tasks
                 (client_id, assigned_to, title, description, due_date, priority, status,
@@ -191,8 +201,12 @@ class Task extends Model
 
     /**
      * Retorna tarefas com prazo vencido e ainda abertas.
+     *
+     * @param  int|null  $limit  null = sem limite (páginas/telas completas);
+     *                           usar um valor no polling de notificações, que
+     *                           roda a cada 60s para cada usuário logado.
      */
-    public function findOverdue(?int $userId = null): array
+    public function findOverdue(?int $userId = null, ?int $limit = null): array
     {
         $tenantId = $this->currentTenantId();
         $sql = "
@@ -210,19 +224,39 @@ class Task extends Model
             $params[':uid'] = $userId;
         }
         $sql .= " ORDER BY t.due_date ASC";
+        if ($limit !== null) {
+            $sql .= " LIMIT :limit";
+        }
 
         $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
+        foreach ($params as $key => $value) {
+            $stmt->bindValue($key, $value);
+        }
+        if ($limit !== null) {
+            $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+        }
+        $stmt->execute();
         return $stmt->fetchAll();
     }
 
     /**
      * Retorna tarefas formatadas para o feed JSON do FullCalendar.
      * Filtra tarefas nao canceladas do usuario (ou todas se admin).
+     *
+     * @param  string|null  $start  Início da janela visível (Y-m-d H:i:s), null = sem limite
+     * @param  string|null  $end    Fim da janela visível (Y-m-d H:i:s), null = sem limite
      */
-    public function findForCalendar(int $userId, bool $isAdmin = false): array
+    public function findForCalendar(int $userId, bool $isAdmin = false, ?string $start = null, ?string $end = null): array
     {
         $tenantId = $this->currentTenantId();
+
+        // A geração de instâncias recorrentes NÃO pode depender da janela
+        // visível: se dependesse, navegar para um mês futuro sem nunca ter
+        // "passado" pelo mês da tarefa-pai deixaria a recorrência sem
+        // materializar. Por isso busca os "moldes" (poucas linhas, leve)
+        // separado da consulta de exibição (que aí sim usa start/end).
+        $this->ensureRecurringInstancesGenerated($tenantId, $userId, $isAdmin);
+
         $sql = "
             SELECT t.id, t.title, t.due_date, t.priority, t.status, t.client_id,
                    t.description, t.assigned_to, t.created_by,
@@ -238,48 +272,66 @@ class Task extends Model
             $sql .= " AND t.assigned_to = :uid";
             $params[':uid'] = $userId;
         }
+        if ($start !== null) {
+            $sql .= " AND t.due_date >= :start";
+            $params[':start'] = $start;
+        }
+        if ($end !== null) {
+            $sql .= " AND t.due_date < :end";
+            $params[':end'] = $end;
+        }
         $sql .= " ORDER BY CASE WHEN t.status = 'done' THEN 1 ELSE 0 END ASC, t.due_date ASC";
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
-        $tasks = $stmt->fetchAll();
+        return $stmt->fetchAll();
+    }
 
-        $recurringParents = array_filter(
-            $tasks,
-            fn($t) => $t['recurrence_type'] !== 'none' && $t['recurrence_parent_id'] === null
-        );
+    /**
+     * Garante que as próximas instâncias de tarefas recorrentes (até 12 meses
+     * à frente) já estão materializadas. Opera só sobre os "moldes"
+     * (recurrence_type != 'none' AND recurrence_parent_id IS NULL), não sobre
+     * todas as tarefas — dataset tipicamente pequeno por tenant.
+     */
+    private function ensureRecurringInstancesGenerated(int $tenantId, int $userId, bool $isAdmin): void
+    {
+        $sql = "
+            SELECT id, client_id, assigned_to, title, description, due_date, priority, created_by, recurrence_type
+            FROM tasks
+            WHERE tenant_id = :tenant_id
+              AND recurrence_type != 'none'
+              AND recurrence_parent_id IS NULL
+              AND status NOT IN ('cancelled')
+        ";
+        $params = [':tenant_id' => $tenantId];
+        if (!$isAdmin) {
+            $sql .= " AND assigned_to = :uid";
+            $params[':uid'] = $userId;
+        }
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        $recurringParents = $stmt->fetchAll();
 
-        $generated = false;
-        if ($recurringParents) {
-            $horizon = (new \DateTime())->modify('+12 months');
-            // Geracao materializa varias linhas: agrupa em transacao para evitar
-            // insercoes parciais caso uma das tarefas-pai falhe no meio.
-            $this->db->beginTransaction();
-            try {
-                foreach ($recurringParents as $task) {
-                    if ($this->generateRecurringInstances(
-                        (int) $task['id'],
-                        $task['recurrence_type'],
-                        new \DateTime($task['due_date']),
-                        $horizon,
-                        $task
-                    )) {
-                        $generated = true;
-                    }
-                }
-                $this->db->commit();
-            } catch (\Throwable $e) {
-                $this->db->rollBack();
-                throw $e;
+        if (!$recurringParents) return;
+
+        $horizon = (new \DateTime())->modify('+12 months');
+        // Geracao materializa varias linhas: agrupa em transacao para evitar
+        // insercoes parciais caso uma das tarefas-pai falhe no meio.
+        $this->db->beginTransaction();
+        try {
+            foreach ($recurringParents as $task) {
+                $this->generateRecurringInstances(
+                    (int) $task['id'],
+                    $task['recurrence_type'],
+                    new \DateTime($task['due_date']),
+                    $horizon,
+                    $task
+                );
             }
+            $this->db->commit();
+        } catch (\Throwable $e) {
+            $this->db->rollBack();
+            throw $e;
         }
-
-        if ($generated) {
-            $stmt->closeCursor();
-            $stmt->execute($params);
-            $tasks = $stmt->fetchAll();
-        }
-
-        return $tasks;
     }
 
     private function generateRecurringInstances(
@@ -339,8 +391,12 @@ class Task extends Model
             $i++;
         }
 
+        // INSERT IGNORE: sob concorrência, duas requisições podem calcular o
+        // mesmo "next" a partir do mesmo MAX(due_date) — a UNIQUE
+        // (recurrence_parent_id, due_date) rejeita o duplicado sem derrubar
+        // a transação inteira.
         $insert = $this->db->prepare(
-            "INSERT INTO tasks
+            "INSERT IGNORE INTO tasks
                 (client_id, assigned_to, title, description, due_date, priority, status,
                  recurrence_type, recurrence_parent_id, created_by, tenant_id)
              VALUES " . implode(', ', $rows)
@@ -390,6 +446,34 @@ class Task extends Model
         }
         $stmt = $this->db->prepare($sql);
         $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * Tarefas pendentes de um usuário com vencimento nos próximos N dias
+     * (widget "Próximas tarefas" do dashboard). Filtro e limite aplicados em
+     * SQL — antes carregava TODAS as pendentes do usuário e filtrava em PHP.
+     */
+    public function findUpcomingForDashboard(int $userId, int $days = 7, int $limit = 10): array
+    {
+        $tenantId = $this->currentTenantId();
+        $stmt = $this->db->prepare("
+            SELECT t.title, t.due_date, t.priority, c.name AS client_name
+            FROM tasks t
+            LEFT JOIN clients c ON c.id = t.client_id AND c.tenant_id = :tenant_id_c
+            WHERE t.tenant_id = :tenant_id_u
+              AND t.status = 'pending'
+              AND t.assigned_to = :uid
+              AND t.due_date <= DATE_ADD(NOW(), INTERVAL :days DAY)
+            ORDER BY t.due_date ASC
+            LIMIT :limit
+        ");
+        $stmt->bindValue(':tenant_id_c', $tenantId, \PDO::PARAM_INT);
+        $stmt->bindValue(':tenant_id_u', $tenantId, \PDO::PARAM_INT);
+        $stmt->bindValue(':uid', $userId, \PDO::PARAM_INT);
+        $stmt->bindValue(':days', $days, \PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+        $stmt->execute();
         return $stmt->fetchAll();
     }
 

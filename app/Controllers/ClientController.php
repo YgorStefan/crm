@@ -104,7 +104,7 @@ class ClientController extends Controller
 
         // nome e etapa do funil são obrigatórios
         $name = $this->input('name');
-        $stageId = $this->inputPost('pipeline_stage_id');
+        $stageId = (int) $this->inputPost('pipeline_stage_id');
 
         if (empty($name) || empty($stageId)) {
             $this->flash('error', 'Nome e Etapa do Funil são obrigatórios.');
@@ -112,12 +112,30 @@ class ClientController extends Controller
             return;
         }
 
-        $data = $this->clientDataFromRequest((int) $stageId);
+        // Garante que a etapa pertence ao tenant atual antes de gravar a FK
+        // (PipelineStage::findById() já é escopado por tenant_id).
+        $stage = $this->stages->findById($stageId);
+        if (!$stage) {
+            $this->flash('error', 'Etapa do funil inválida.');
+            $this->redirect('/clients/create');
+            return;
+        }
+
+        $data = $this->clientDataFromRequest($stageId, $stage);
 
         if (!empty($data['phone'])) {
             $existing = $this->clients->findByPhone($data['phone']);
             if ($existing) {
                 $this->flash('error', 'Já existe um cliente cadastrado com este telefone: ' . htmlspecialchars($existing['name'], ENT_QUOTES, 'UTF-8') . '.');
+                $this->redirect('/clients/create');
+                return;
+            }
+        }
+
+        if (!empty($data['email'])) {
+            $existingEmail = $this->clients->findByEmail($data['email']);
+            if ($existingEmail) {
+                $this->flash('error', 'Já existe um cliente cadastrado com este e-mail: ' . htmlspecialchars($existingEmail['name'], ENT_QUOTES, 'UTF-8') . '.');
                 $this->redirect('/clients/create');
                 return;
             }
@@ -134,13 +152,23 @@ class ClientController extends Controller
      * Compartilhado por store() e update() — campo novo de cliente entra aqui
      * uma única vez. closed_at só é aceito se a etapa for de venda fechada.
      *
-     * @param  int  $stageId  Etapa do funil já validada pelo caller
+     * @param  int    $stageId  Etapa do funil, já validada pelo caller (pertence ao tenant)
+     * @param  array  $stage    Registro da etapa (retornado por PipelineStage::findById())
      * @return array
      */
-    private function clientDataFromRequest(int $stageId): array
+    private function clientDataFromRequest(int $stageId, array $stage): array
     {
-        $stage = $this->stages->findById($stageId);
-        $isVendaFechada = $stage && !empty($stage['is_won_stage']);
+        $isVendaFechada = !empty($stage['is_won_stage']);
+
+        // assigned_to é opcional, mas se enviado precisa apontar para um
+        // usuário do tenant atual — caso contrário a FK ficaria válida
+        // globalmente porém cross-tenant (User::findById() é escopado).
+        $assignedTo = $this->inputPost('assigned_to');
+        if (!empty($assignedTo)) {
+            $assignedTo = $this->users->findById((int) $assignedTo) ? (int) $assignedTo : null;
+        } else {
+            $assignedTo = null;
+        }
 
         return [
             'name' => $this->input('name'),
@@ -156,7 +184,7 @@ class ClientController extends Controller
             'state' => $this->input('state'),
             'zip_code' => $this->input('zip_code'),
             'pipeline_stage_id' => $stageId,
-            'assigned_to' => $this->inputPost('assigned_to'),
+            'assigned_to' => $assignedTo,
             'deal_value' => $this->inputPost('deal_value', '0'),
             'source' => $this->input('source'),
             'notes' => $this->input('notes'),
@@ -243,13 +271,31 @@ class ClientController extends Controller
             return;
         }
 
-        $data = $this->clientDataFromRequest((int) $this->inputPost('pipeline_stage_id'));
-
         $client = $this->clients->findById($id);
         if (!$client) {
             $this->redirect('/clients');
             return;
         }
+
+        $stageId = (int) $this->inputPost('pipeline_stage_id');
+        $stage = $this->stages->findById($stageId);
+        if (!$stage) {
+            $this->flash('error', 'Etapa do funil inválida.');
+            $this->redirect('/clients/' . $id . '/edit');
+            return;
+        }
+
+        $data = $this->clientDataFromRequest($stageId, $stage);
+
+        if (!empty($data['email'])) {
+            $existingEmail = $this->clients->findByEmail($data['email']);
+            if ($existingEmail && (int) $existingEmail['id'] !== $id) {
+                $this->flash('error', 'Já existe um cliente cadastrado com este e-mail: ' . htmlspecialchars($existingEmail['name'], ENT_QUOTES, 'UTF-8') . '.');
+                $this->redirect('/clients/' . $id . '/edit');
+                return;
+            }
+        }
+
         $this->clients->update($id, $data);
 
         $this->flash('success', 'Cliente atualizado com sucesso!');
@@ -289,7 +335,7 @@ class ClientController extends Controller
         $this->requireRole(['admin', 'seller'], json: true);
 
         $clientId = (int) ($params['id'] ?? 0);
-        if (!$clientId) {
+        if (!$clientId || !$this->clients->findById($clientId)) {
             $this->json(ApiResponse::error('Cliente inválido.'), 400);
             return;
         }

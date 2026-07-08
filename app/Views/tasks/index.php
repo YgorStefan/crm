@@ -101,8 +101,8 @@ unset($_jsV);
 
             <?php $p = 'task'; require VIEW_PATH . '/components/task-modal-fields.php'; ?>
 
-            <div class="flex justify-between gap-3 pt-2">
-                <div class="flex gap-2" id="taskActionBtns" style="display:none!important">
+            <div class="flex flex-col sm:flex-row sm:justify-between gap-3 pt-2">
+                <div class="flex flex-wrap gap-2" id="taskActionBtns" style="display:none!important">
                     <button id="btnDeleteTask" title="Excluir"
                         class="px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors flex items-center">
                         🗑️
@@ -116,7 +116,7 @@ unset($_jsV);
                         Concluída
                     </button>
                 </div>
-                <div class="flex gap-3 ml-auto">
+                <div class="flex gap-3 sm:ml-auto">
                     <button type="button" data-action="close-modal" data-target="modalTask"
                         class="px-4 py-2 border border-gray-300 text-gray-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 rounded-lg text-sm hover:bg-gray-100 transition-colors">
                         Cancelar

@@ -50,9 +50,6 @@ CLAUDE.md
 deploy.sh
 bin/deploy.config.ps1
 
-# --- Router PHP built-in (somente dev local; produção usa Apache + .htaccess) ---
-router.php
-
 # --- Tailwind CLI binary (downloaded via scripts/setup_tailwind.php) ---
 .bin/
 
@@ -69,7 +66,6 @@ config/database.php
 # --- Scripts descartáveis de uso único ---
 # (scripts de produção ficam em database/migrations/ e bin/)
 scripts/smoke/
-tests/smoke/
 
 # --- Tailwind source e config (versionados) ---
 # tailwind.config.js e resources/ foram removidos do ignore
@@ -89,3 +85,8 @@ vendor/
 tests/playwright_ui_test.js
 tests/playwright_modal_debug.js
 tests/screenshots/
+
+# --- Relatórios/artefatos gerados por Playwright e k6 (não versionados) ---
+playwright-report/
+test-results/
+tests/load/results/

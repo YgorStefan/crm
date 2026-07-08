@@ -809,6 +809,10 @@ video {
   margin-top: 0.5rem;
 }
 
+.mt-3 {
+  margin-top: 0.75rem;
+}
+
 .mt-4 {
   margin-top: 1rem;
 }
@@ -875,10 +879,6 @@ video {
 
 .h-6 {
   height: 1.5rem;
-}
-
-.h-7 {
-  height: 1.75rem;
 }
 
 .h-8 {
@@ -981,12 +981,8 @@ video {
   width: 14rem;
 }
 
-.w-7 {
-  width: 1.75rem;
-}
-
-.w-72 {
-  width: 18rem;
+.w-64 {
+  width: 16rem;
 }
 
 .w-8 {
@@ -995,6 +991,10 @@ video {
 
 .w-80 {
   width: 20rem;
+}
+
+.w-9 {
+  width: 2.25rem;
 }
 
 .w-full {
@@ -1130,6 +1130,10 @@ video {
 
 .flex-wrap {
   flex-wrap: wrap;
+}
+
+.flex-nowrap {
+  flex-wrap: nowrap;
 }
 
 .items-start {
@@ -2317,6 +2321,14 @@ video {
 
 /* ── Kanban drag states ─────────────────────────────────── */
 
+/* Sem isso, o Chrome assume gesto de rolagem nativa assim que o dedo se
+   move e cancela o pointer (pointercancel) antes do JS conseguir reagir —
+   quebra o drag-and-drop por toque em tablets (ver public/assets/js/pipeline.js). */
+
+.kanban-card {
+  touch-action: none;
+}
+
 .dragging {
   opacity: 0.4;
   transform: rotate(2deg);
@@ -2325,6 +2337,27 @@ video {
 .drag-over {
   outline: 2px dashed #4f46e5;
   outline-offset: 2px;
+}
+
+/* Clone flutuante que segue o dedo/cursor durante o arraste via Pointer
+   Events (mouse e touch) — ver public/assets/js/pipeline.js. */
+
+.kanban-drag-ghost {
+  position: fixed;
+  z-index: 9999;
+  pointer-events: none;
+  opacity: 0.9;
+  box-shadow: 0 10px 25px -5px rgb(0 0 0 / 0.3), 0 8px 10px -6px rgb(0 0 0 / 0.3);
+  transform: rotate(2deg);
+  touch-action: none;
+}
+
+/* Enquanto arrasta, evita seleção de texto acidental no board inteiro. */
+
+.kanban-dragging-active {
+  -moz-user-select: none;
+       user-select: none;
+  -webkit-user-select: none;
 }
 
 /* ── Custom Select (substitui <select> nativo) ─────────── */
@@ -2543,6 +2576,15 @@ video {
 
 .fc-event {
   cursor: pointer;
+}
+
+/* Toolbar (prev/next/hoje + título + mês/semana) quebra em telas estreitas
+   (tablet 12.1" em retrato, ~1024px com sidebar) em vez de comprimir os
+   botões ou estourar a largura do card. */
+
+.fc .fc-toolbar {
+  flex-wrap: wrap;
+  row-gap: 0.5rem;
 }
 
 /* ── FullCalendar header buttons (estilo do app) ────────── */
@@ -3402,6 +3444,10 @@ video {
   background-color: rgb(88 28 135 / 0.4);
 }
 
+.dark\:hover\:bg-red-900\/20:hover:is(.dark *) {
+  background-color: rgb(127 29 29 / 0.2);
+}
+
 .dark\:hover\:bg-red-900\/30:hover:is(.dark *) {
   background-color: rgb(127 29 29 / 0.3);
 }
@@ -3483,6 +3529,10 @@ video {
     margin-right: 1.5rem;
   }
 
+  .sm\:ml-auto {
+    margin-left: auto;
+  }
+
   .sm\:block {
     display: block;
   }
@@ -3497,6 +3547,10 @@ video {
 
   .sm\:flex-row {
     flex-direction: row;
+  }
+
+  .sm\:flex-wrap {
+    flex-wrap: wrap;
   }
 
   .sm\:items-center {
@@ -3545,21 +3599,9 @@ video {
   .md\:grid-cols-4 {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
-
-  .md\:grid-cols-5 {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
 }
 
 @media (min-width: 1024px) {
-  .lg\:col-span-1 {
-    grid-column: span 1 / span 1;
-  }
-
-  .lg\:col-span-2 {
-    grid-column: span 2 / span 2;
-  }
-
   .lg\:ml-16 {
     margin-left: 4rem;
   }
@@ -3596,6 +3638,10 @@ video {
     width: 16rem;
   }
 
+  .lg\:w-72 {
+    width: 18rem;
+  }
+
   .lg\:min-w-0 {
     min-width: 0px;
   }
@@ -3621,17 +3667,37 @@ video {
     flex-direction: row;
   }
 
+  .lg\:flex-wrap {
+    flex-wrap: wrap;
+  }
+
   .lg\:items-center {
     align-items: center;
   }
 }
 
 @media (min-width: 1280px) {
+  .xl\:col-span-1 {
+    grid-column: span 1 / span 1;
+  }
+
+  .xl\:col-span-2 {
+    grid-column: span 2 / span 2;
+  }
+
   .xl\:table-cell {
     display: table-cell;
   }
 
+  .xl\:grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   .xl\:grid-cols-4 {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .xl\:grid-cols-5 {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
   }
 }

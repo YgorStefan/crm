@@ -17,6 +17,10 @@ $router->get('/login', 'AuthController', 'loginForm', [], public: true);
 $router->post('/login', 'AuthController', 'login', ['RateLimitMiddleware', 'CsrfMiddleware'], public: true);
 $router->get('/logout', 'AuthController', 'logout');
 
+// ---- Troca de senha obrigatória (AuthMiddleware libera mesmo com password_must_change) ----
+$router->get('/profile/change-password', 'ProfileController', 'changePasswordForm');
+$router->post('/profile/change-password', 'ProfileController', 'changePassword', ['CsrfMiddleware']);
+
 // ---- Dashboard ----
 $router->get('/dashboard', 'DashboardController', 'index');
 $router->get('/', 'DashboardController', 'index');

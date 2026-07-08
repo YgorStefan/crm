@@ -11,6 +11,9 @@ $assetV = static function (string $rel): string {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- Reforço do CSP via meta: alguns hosts (CDN da Hostinger) sobrescrevem
+         o header Content-Security-Policy no caminho até o navegador. -->
+    <meta http-equiv="Content-Security-Policy" content="<?= htmlspecialchars(\Core\Middleware\CspMiddleware::buildPolicy(CSP_NONCE), ENT_QUOTES, 'UTF-8') ?>">
     <link rel="icon" href="data:,">
     <title><?= htmlspecialchars($title ?? APP_NAME, ENT_QUOTES, 'UTF-8') ?></title>
     <!-- Anti-FOUC: aplica dark class antes do CSS para evitar flash -->
@@ -175,6 +178,10 @@ $assetV = static function (string $rel): string {
                         <?= htmlspecialchars($_SESSION['user']['role'] ?? '', ENT_QUOTES, 'UTF-8') ?>
                     </p>
                 </div>
+                <a href="<?= $safeAppUrl ?>/profile/change-password" title="Trocar senha"
+                    class="sidebar-logout flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-md text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 dark:text-zinc-500 dark:hover:text-indigo-400 dark:hover:bg-indigo-900/40 transition-colors">
+                    🔑
+                </a>
                 <a href="<?= $safeAppUrl ?>/logout" title="Sair"
                     class="sidebar-logout flex-shrink-0 w-8 h-8 flex items-center justify-center rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 dark:text-zinc-500 dark:hover:text-red-400 dark:hover:bg-red-900/40 transition-colors">
                     🏃
@@ -185,7 +192,7 @@ $assetV = static function (string $rel): string {
     <!-- ── / SIDEBAR ───────────────────────────────────────────── -->
 
     <!-- ── MAIN CONTENT ──────────────────────────────────────── -->
-    <div id="mainContent" class="flex-1 flex flex-col w-full overflow-hidden">
+    <div id="mainContent" class="flex-1 flex flex-col w-full overflow-hidden lg:ml-56">
 
         <!-- Topbar -->
         <header class="bg-white dark:bg-zinc-900 border-b border-gray-200 dark:border-zinc-800 px-4 sm:px-6 py-3 flex items-center gap-3 flex-shrink-0 z-10 relative">
@@ -206,7 +213,7 @@ $assetV = static function (string $rel): string {
                 <!-- Notificações -->
                 <div class="relative" id="notification-bell">
                     <button id="btnNotifications"
-                        class="relative text-gray-500 hover:text-indigo-600 dark:text-zinc-400 dark:hover:text-indigo-400 transition-colors p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800"
+                        class="relative text-gray-500 hover:text-indigo-600 dark:text-zinc-400 dark:hover:text-indigo-400 transition-colors w-9 h-9 flex items-center justify-center rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800"
                         title="Notificações">
                         🔔
                         <span id="notifBadge"
@@ -220,7 +227,7 @@ $assetV = static function (string $rel): string {
                         <div class="px-4 py-3 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between">
                             <span class="text-sm font-semibold text-gray-700 dark:text-zinc-200">Notificações</span>
                             <button id="btnClearNotifs"
-                                class="text-gray-500 hover:text-indigo-600 dark:text-zinc-400 dark:hover:text-indigo-400 transition-colors p-1 rounded-md hover:bg-gray-100 dark:hover:bg-zinc-800">
+                                class="text-gray-500 hover:text-indigo-600 dark:text-zinc-400 dark:hover:text-indigo-400 transition-colors w-8 h-8 flex items-center justify-center rounded-md hover:bg-gray-100 dark:hover:bg-zinc-800">
                                 🗑️
                             </button>
                         </div>

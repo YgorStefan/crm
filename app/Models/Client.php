@@ -340,6 +340,21 @@ class Client extends Model
     }
 
     /**
+     * Busca cliente por e-mail. uq_clients_email é UNIQUE global (não por
+     * tenant, mesmo padrão de users.email) — usado para checar duplicidade
+     * antes de INSERT/UPDATE em vez de deixar a constraint estourar como
+     * erro de SQL não tratado.
+     */
+    public function findByEmail(string $email): array|bool
+    {
+        $stmt = $this->db->prepare(
+            "SELECT id, name FROM clients WHERE email = :email AND is_active = 1 LIMIT 1"
+        );
+        $stmt->execute([':email' => $email]);
+        return $stmt->fetch();
+    }
+
+    /**
      * Normaliza valor monetário para float.
      * - Com vírgula (BR): "60.000,00" ou "60000,00" → remove pontos, troca vírgula
      * - Sem vírgula (JS pré-processou): "60000.00" ou "60000" → usa direto

@@ -39,14 +39,8 @@ class DashboardController extends Controller
         // Atividade recente
         $recentInteractions = $this->interactions->findRecent(20);
 
-        // Minhas tarefas próximas (próximos 7 dias)
-        $upcomingTasks = $this->tasks->findAllWithRelations([
-            'status' => 'pending',
-            'assigned_to' => $_SESSION['user']['id'],
-        ]);
-        // Filtra apenas as dos próximos 7 dias
-        $nextWeek = time() + (7 * 24 * 3600);
-        $upcomingTasks = array_filter($upcomingTasks, fn($t) => strtotime($t['due_date']) <= $nextWeek);
+        // Minhas tarefas próximas (próximos 7 dias) — filtro e limite em SQL
+        $upcomingTasks = $this->tasks->findUpcomingForDashboard($_SESSION['user']['id'], 7, 10);
 
         $this->render('dashboard/index', [
             'pageTitle' => 'Dashboard',
@@ -57,7 +51,7 @@ class DashboardController extends Controller
             'overdueTasks' => $overdueTasks,
             'stageData' => $stageData,
             'recentInteractions' => $recentInteractions,
-            'upcomingTasks' => array_values($upcomingTasks),
+            'upcomingTasks' => $upcomingTasks,
         ]);
     }
 

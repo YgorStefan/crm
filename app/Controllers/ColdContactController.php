@@ -109,6 +109,15 @@ class ColdContactController extends Controller
         $fileSize     = (int) ($_FILES['csv_file']['size'] ?? 0);
         $tmpPath      = $_FILES['csv_file']['tmp_name'] ?? '';
 
+        // Confirma que o arquivo veio mesmo de um upload HTTP (padrão OWASP) —
+        // sem isso, um tmp_name forjado poderia apontar para qualquer arquivo
+        // legível pelo processo PHP.
+        if ($tmpPath === '' || !is_uploaded_file($tmpPath)) {
+            $this->flash('error', 'Upload inválido.');
+            $this->redirect('/cold-contacts');
+            return;
+        }
+
         // Limite de tamanho (5 MB) — evita streaming de arquivos enormes.
         if ($fileSize > self::MAX_CSV_BYTES) {
             $this->flash('error', 'Arquivo muito grande. Limite de 5 MB.');
@@ -317,6 +326,11 @@ class ColdContactController extends Controller
      */
     public function export(array $params = []): void
     {
+        // Mesma restrição das demais ações desta tela (import, editar, excluir);
+        // exportar CSV é uma extração em massa de telefones/nomes, não deveria
+        // ficar aberta a "viewer" enquanto todo o resto do controller é restrito.
+        $this->requireRole(['admin', 'seller']);
+
         $yearMonth = trim($_GET['month'] ?? '');
         if (empty($yearMonth) || !preg_match('/^\d{4}-\d{2}$/', $yearMonth)) {
             $this->flash('error', 'Mês inválido para exportação.');

@@ -99,9 +99,14 @@ crm/
 │   ├── helpers.php
 │   └── Middleware/           ← Auth, Csrf, Csp, RateLimit
 ├── database/
-│   ├── schema.sql            ← schema completo consolidado
-│   ├── migrations/           ← migrações incrementais (001-012)
+│   ├── schema.sql            ← schema completo consolidado (até a migration 020)
+│   ├── migrations/           ← migrações incrementais
 │   └── seeders/              ← seeds de pipeline_stages padrão
+├── tests/                    ← PHPUnit (unitário/integração)
+│   ├── bootstrap.php
+│   ├── smoke/                ← E2E Playwright (specs, seed, global-setup)
+│   └── load/                 ← carga k6
+├── .github/workflows/ci.yml  ← pipeline de CI (PHPUnit + Playwright + k6)
 ├── public/                   ← único diretório público (front controller)
 │   ├── index.php
 │   ├── .htaccess             ← mod_rewrite → index.php
@@ -233,6 +238,90 @@ php scripts/build_css.php --minify   # produção
 # Watch mode (npm) — recompila ao salvar
 npm run watch
 ```
+
+---
+
+## Testes e CI
+
+O projeto tem uma esteira de testes em 3 camadas, todas rodadas automaticamente
+no GitHub Actions (`.github/workflows/ci.yml`) a cada push/PR para `main`.
+
+### 1. Unitário / Integração (PHPUnit)
+
+```bash
+composer install
+composer test
+```
+
+Cobre lógica pura (helpers, paginação, parsing) e integração (CSRF, Auth,
+isolamento multi-tenant de `tasks`/`interactions`). Os testes de integração
+que precisam de MySQL criam seu próprio banco descartável (`crm_test`) e usam
+as variáveis `DB_HOST`/`DB_PORT`/`DB_USER`/`DB_PASS` do ambiente — se o MySQL
+não estiver acessível, eles são pulados (`markTestSkipped`) em vez de quebrar
+a suíte.
+
+### 2. E2E (Playwright)
+
+Specs em `tests/smoke/` cobrindo os fluxos críticos: login (+ troca de senha
+obrigatória), CRUD de clientes, drag-and-drop do pipeline (mouse **e** toque
+real via CDP, simulando um tablet), criação/conclusão de tarefa pelo
+calendário, import/export de contatos frios e o painel admin.
+
+```bash
+npm install
+npx playwright install --with-deps chromium
+
+# Suba o servidor dev antes (numa aba separada) OU deixe o Playwright subir
+# automaticamente (playwright.config.ts já aponta pro comando abaixo):
+php -S localhost:8000 -t public router.php
+
+npm run test:e2e
+```
+
+Antes de cada execução, `tests/smoke/global-setup.ts` roda
+`tests/smoke/seed.php`, que garante (de forma idempotente, contra o MySQL
+apontado no `.env`):
+- `admin@crm.local` com a senha padrão do seed e `password_must_change = 1`
+  (usado pelo spec de troca de senha obrigatória);
+- `e2e.seller@crm.local` / `E2eSeller@1234`, sem obrigatoriedade de troca
+  (usado pelos demais specs);
+- um cliente fixo ("Cliente E2E Kanban") posicionado na 1ª etapa do funil,
+  usado pelo spec de drag-and-drop.
+
+> Os specs limpam o rate-limit de login do IP local antes de cada tentativa
+> (`tests/smoke/reset-rate-limit.php`) para não esbarrar no `RateLimitMiddleware`
+> real (5 tentativas/60s por IP) — a lógica de produção não é alterada nem
+> enfraquecida por causa disso.
+
+### 3. Carga / Desempenho (k6)
+
+```bash
+# instale o k6: https://grafana.com/docs/k6/latest/set-up/install-k6/
+php tests/smoke/seed.php   # garante o usuário de teste, se ainda não rodou o Playwright
+k6 run tests/load/k6-smoke.js
+```
+
+Por padrão roda uma carga **leve** (5 VUs / 20s) contra `http://localhost:8000`,
+cobrindo `/dashboard`, `/clients`, `/api/dashboard/stats` e `/pipeline/move`.
+Para uma carga mais pesada contra staging/produção:
+
+```bash
+k6 run -e BASE_URL=https://seudominio.com.br/crm \
+       -e CRM_EMAIL=usuario@empresa.com -e CRM_PASSWORD='sua-senha' \
+       -e VUS=20 -e DURATION=2m tests/load/k6-smoke.js
+```
+
+> O smoke do CI serve como *guard-rail* básico (poucos VUs, curta duração,
+> contra o servidor PHP embutido) — não substitui um teste de carga real
+> contra o ambiente de produção/staging.
+
+### CI (GitHub Actions)
+
+O workflow único (`.github/workflows/ci.yml`) roda em sequência: instala
+PHP 8.2 + Node 20, sobe um serviço MySQL 8, importa `database/schema.sql`,
+roda o PHPUnit, sobe o servidor PHP embutido, roda o Playwright (com relatório
+publicado como artefato) e finalmente o smoke do k6 — falhando o pipeline se
+qualquer etapa falhar.
 
 ---
 

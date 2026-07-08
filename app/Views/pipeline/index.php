@@ -23,10 +23,10 @@
 </div>
 
 <!-- Board Kanban (scroll horizontal) -->
-<div class="pb-4" id="kanbanBoard"
+<div class="pb-4 overflow-x-auto" id="kanbanBoard"
      data-move-url="<?= APP_URL ?>/pipeline/move"
      data-stats-url="<?= APP_URL ?>/api/dashboard/stats">
-    <div class="flex flex-wrap gap-4 items-start">
+    <div class="flex flex-nowrap gap-4 items-start">
 
     <?php foreach ($stages as $stage):
         // Clientes nesta etapa (pode ser array vazio)
@@ -35,7 +35,7 @@
         $totalValue = array_sum(array_column($stageClients, 'deal_value'));
     ?>
     <!-- Coluna da Etapa -->
-    <div class="kanban-column w-72 flex flex-col"
+    <div class="kanban-column w-64 lg:w-72 flex-shrink-0 flex flex-col"
          data-stage-id="<?= $stage['id'] ?>">
 
         <!-- Cabeçalho da coluna -->
@@ -60,7 +60,6 @@
             <?php $hasValue = ($client['deal_value'] ?? 0) > 0; ?>
             <!-- Cartão do cliente (draggable) -->
             <div class="kanban-card bg-white dark:bg-zinc-900 rounded-lg shadow border border-gray-300 dark:border-zinc-700 p-3 cursor-grab hover:shadow-md hover:border-indigo-300 dark:hover:border-indigo-400 dark:hover:bg-zinc-800 transition-all"
-                 draggable="true"
                  data-client-id="<?= $client['id'] ?>"
                  data-current-stage="<?= $client['pipeline_stage_id'] ?>"
                  data-deal-value="<?= (float)($client['deal_value'] ?? 0) ?>">

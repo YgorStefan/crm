@@ -63,7 +63,7 @@ class User extends Model
      */
     public function update(int $id, array $data): bool
     {
-        $fields = ['name', 'email', 'role', 'avatar', 'is_active'];
+        $fields = ['name', 'email', 'role', 'avatar', 'is_active', 'password_must_change'];
         $setClauses = [];
         $params = [':id' => $id];
 

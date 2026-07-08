@@ -10,14 +10,14 @@ unset($_jsV);
 <div data-crm-widget="client-index"
      class="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 p-3 mb-4">
     <form id="filterForm" method="GET" action="<?= APP_URL ?>/clients"
-          class="flex flex-col lg:flex-row lg:items-center gap-2">
+          class="flex flex-col lg:flex-row lg:flex-wrap lg:items-center gap-2">
 
         <div class="flex items-baseline gap-3 lg:mr-2 flex-shrink-0">
             <h3 class="text-xl font-bold text-gray-800 dark:text-white">Clientes</h3>
             <span class="text-xs text-gray-500 dark:text-zinc-400 whitespace-nowrap"><?= isset($pagination) ? (int) $pagination['total_items'] : count($clients) ?> encontrado(s)</span>
         </div>
 
-        <div class="grid grid-cols-2 lg:flex lg:items-center gap-2 flex-1">
+        <div class="grid grid-cols-2 lg:flex lg:flex-wrap lg:items-center gap-2 flex-1">
             <input type="text" name="search" value="<?= htmlspecialchars($filters['search'], ENT_QUOTES, 'UTF-8') ?>"
                    placeholder="Buscar por nome, empresa..."
                    class="col-span-2 lg:flex-none lg:w-64 lg:min-w-0 px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
@@ -169,13 +169,13 @@ unset($_jsV);
                             <!-- Ver -->
                             <a href="<?= APP_URL ?>/clients/<?= $client['id'] ?>"
                                data-tooltip="Ver detalhes"
-                               class="has-tooltip w-7 h-7 flex items-center justify-center rounded-md text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 transition-colors">
+                               class="has-tooltip w-9 h-9 flex items-center justify-center rounded-md text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/40 transition-colors">
                                 👁️
                             </a>
                             <!-- Editar -->
                             <a href="<?= APP_URL ?>/clients/<?= $client['id'] ?>/edit"
                                data-tooltip="Editar"
-                               class="has-tooltip w-7 h-7 flex items-center justify-center rounded-md text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/40 transition-colors">
+                               class="has-tooltip w-9 h-9 flex items-center justify-center rounded-md text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/40 transition-colors">
                                 ✏️
                             </a>
                             <!-- Nova interação -->
@@ -184,7 +184,7 @@ unset($_jsV);
                                 data-client-id="<?= (int)$client['id'] ?>"
                                 data-client-name="<?= htmlspecialchars($client['name'], ENT_QUOTES, 'UTF-8') ?>"
                                 data-tooltip="Nova interação"
-                                class="has-tooltip w-7 h-7 flex items-center justify-center rounded-md text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/40 transition-colors">
+                                class="has-tooltip w-9 h-9 flex items-center justify-center rounded-md text-green-600 dark:text-green-400 hover:bg-green-50 dark:hover:bg-green-900/40 transition-colors">
                                 💬
                             </button>
                             <!-- Nova tarefa -->
@@ -193,7 +193,7 @@ unset($_jsV);
                                 data-client-id="<?= (int)$client['id'] ?>"
                                 data-client-name="<?= htmlspecialchars($client['name'], ENT_QUOTES, 'UTF-8') ?>"
                                 data-tooltip="Nova tarefa"
-                                class="has-tooltip w-7 h-7 flex items-center justify-center rounded-md text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/40 transition-colors">
+                                class="has-tooltip w-9 h-9 flex items-center justify-center rounded-md text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/40 transition-colors">
                                 📅
                             </button>
                         </div>

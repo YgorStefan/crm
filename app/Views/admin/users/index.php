@@ -53,7 +53,7 @@ $roleBadges = ['admin' => 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 d
                 <td class="px-5 py-3 text-center">
                     <a href="<?= APP_URL ?>/admin/users/<?= $user['id'] ?>/edit"
                        data-tooltip="Editar"
-                       class="has-tooltip inline-flex items-center justify-center w-7 h-7 rounded-md text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/40 transition-colors">
+                       class="has-tooltip inline-flex items-center justify-center w-9 h-9 rounded-md text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/40 transition-colors">
                         ✏️
                     </a>
                 </td>

@@ -165,14 +165,15 @@ class ColdContact extends Model
      */
     public function create(array $data): int
     {
-        // imported_year_month deveria ser GENERATED (schema.sql), mas em alguns
-        // bancos provisionados ela ficou como VARCHAR(7) simples e não auto-popula.
-        // Populamos explicitamente para manter o agrupamento mensal funcionando.
+        // imported_year_month é coluna GENERATED (schema.sql + migration 019),
+        // derivada de imported_at pelo próprio banco — não deve ser inserida
+        // explicitamente (MySQL/MariaDB rejeitam INSERT com valor em coluna
+        // GENERATED).
         $stmt = $this->db->prepare("
             INSERT INTO cold_contacts
-                (phone, name, tipo_lista, telefone_enviado, data_mensagem, tenant_id, imported_at, imported_year_month)
+                (phone, name, tipo_lista, telefone_enviado, data_mensagem, tenant_id, imported_at)
             VALUES
-                (:phone, :name, :tipo_lista, :telefone_enviado, :data_mensagem, :tenant_id, NOW(), DATE_FORMAT(NOW(), '%Y-%m'))
+                (:phone, :name, :tipo_lista, :telefone_enviado, :data_mensagem, :tenant_id, NOW())
         ");
         $stmt->execute([
             ':phone'            => $data['phone'],

@@ -10,6 +10,7 @@ define('CORE_PATH', ROOT_PATH . DS . 'core');
 define('VIEW_PATH', APP_PATH . DS . 'Views');
 define('APP_URL', 'http://localhost/crm/public');
 define('APP_NAME', 'CRM Teste');
+define('SESSION_LIFETIME', 7200);
 
 // Mesmo autoloader PSR-4 de core/bootstrap.php
 spl_autoload_register(function (string $className): void {
