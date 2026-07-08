@@ -1,4 +1,13 @@
 <?php
+// Variáveis injetadas pelo Controller::render() via extract($data)
+$client       = $client ?? [];
+$interactions = $interactions ?? [];
+$tasks        = $tasks ?? [];
+$stages       = $stages ?? [];
+$users        = $users ?? [];
+$sales        = $sales ?? [];
+$csrf_token   = $csrf_token ?? '';
+
 $interactionTypes = [
     'call'     => ['label' => 'Ligação',  'icon' => '📞', 'color' => 'blue'],
     'email'    => ['label' => 'E-mail',   'icon' => '📧', 'color' => 'green'],
@@ -94,8 +103,9 @@ unset($_jsV);
                         '👤 Responsável' => $client['assigned_name'],
                     ];
                     foreach ($infos as $label => $value):
-                        if (empty($value))
+                        if (empty($value)) {
                             continue;
+                        }
                         ?>
                         <div class="flex justify-between gap-2">
                             <span class="text-gray-400 dark:text-zinc-500"><?= $label ?></span>
@@ -141,7 +151,7 @@ unset($_jsV);
                 </div>
                 <!-- Estado: edição (oculto) -->
                 <div id="notes-edit" style="display:none">
-                    <textarea id="notes-textarea" rows="4"
+                    <textarea id="notes-textarea" rows="4" aria-label="Editar notas"
                         class="w-full px-2 py-1 border border-gray-300 rounded text-sm text-gray-800 bg-white focus:ring-2 focus:ring-indigo-500 focus:outline-none mb-2 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"><?= htmlspecialchars($client['notes'] ?? '', ENT_QUOTES, 'UTF-8') ?></textarea>
                     <div class="flex gap-2">
                         <button type="button" id="notes-save-btn"
@@ -185,16 +195,16 @@ unset($_jsV);
                         value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
                     <input type="hidden" name="client_id" value="<?= $client['id'] ?>">
                     <div class="grid grid-cols-2 gap-3 mb-3">
-                        <select name="type"
+                        <select name="type" aria-label="Tipo de interação"
                             class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">
                             <?php foreach ($interactionTypes as $key => $info): ?>
                                 <option value="<?= $key ?>"><?= $info['label'] ?></option>
                             <?php endforeach; ?>
                         </select>
-                        <input type="datetime-local" name="occurred_at" value="<?= date('Y-m-d\TH:i') ?>"
+                        <input type="datetime-local" name="occurred_at" value="<?= date('Y-m-d\TH:i') ?>" aria-label="Data e hora da interação"
                             class="px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500">
                     </div>
-                    <textarea name="description" required rows="2" placeholder="Descreva o contato realizado..."
+                    <textarea name="description" required rows="2" placeholder="Descreva o contato realizado..." aria-label="Descrição da interação"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none mb-3 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"></textarea>
                     <button type="submit"
                         class="bg-green-600 hover:bg-green-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
@@ -244,7 +254,7 @@ unset($_jsV);
                                 <!-- Estado: edição (oculto) -->
                                 <div class="flex-1 min-w-0 inter-edit" style="display:none">
                                     <div class="grid grid-cols-2 gap-2 mb-2">
-                                        <select class="inter-edit-type px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white">
+                                        <select class="inter-edit-type px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white" aria-label="Tipo de interação">
                                             <?php foreach ($interactionTypes as $key => $info): ?>
                                                 <option value="<?= $key ?>" <?= $inter['type'] === $key ? 'selected' : '' ?>>
                                                     <?= $info['label'] ?>
@@ -252,9 +262,10 @@ unset($_jsV);
                                             <?php endforeach; ?>
                                         </select>
                                         <input type="datetime-local" class="inter-edit-date px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white"
+                                               aria-label="Data e hora da interação"
                                                value="<?= date('Y-m-d\TH:i', strtotime($inter['occurred_at'])) ?>">
                                     </div>
-                                    <textarea class="inter-edit-desc w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none mb-2 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white" rows="3"><?= htmlspecialchars($inter['description'], ENT_QUOTES, 'UTF-8') ?></textarea>
+                                    <textarea class="inter-edit-desc w-full px-2 py-1 border border-gray-300 rounded text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none mb-2 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white" rows="3" aria-label="Descrição da interação"><?= htmlspecialchars($inter['description'], ENT_QUOTES, 'UTF-8') ?></textarea>
                                     <div class="flex gap-2">
                                         <button type="button" class="inter-save-btn bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-medium px-3 py-1.5 rounded-lg transition-colors">Salvar</button>
                                         <button type="button" class="inter-cancel-btn border border-gray-300 dark:border-zinc-700 text-gray-600 dark:text-zinc-300 text-xs font-medium px-3 py-1.5 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-colors">Cancelar</button>
@@ -466,7 +477,7 @@ unset($_jsV);
                     <span class="text-sm text-indigo-700 dark:text-indigo-300">👥 Cliente: <span class="font-medium"><?= htmlspecialchars($client['name'], ENT_QUOTES, 'UTF-8') ?></span></span>
                 </div>
 
-                <?php $p = 'newTask'; require VIEW_PATH . '/components/task-modal-fields.php'; ?>
+                <?php $p = 'newTask'; require_once VIEW_PATH . '/components/task-modal-fields.php'; ?>
 
                 <div class="flex justify-end gap-3 pt-2">
                     <button type="button" id="newTaskCancel"

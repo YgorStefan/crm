@@ -3,6 +3,12 @@
  * View: admin/index.php — Painel administrativo unificado com 3 abas.
  * Variaveis: $activeTab, $csrf_token, $users (na aba users), $tenant (nas abas org/payment)
  */
+// Variáveis injetadas pelo Controller::render() via extract($data)
+$activeTab  = $activeTab ?? 'users';
+$csrf_token = $csrf_token ?? '';
+$users      = $users ?? [];
+$tenant     = $tenant ?? [];
+
 $tabs = [
     'users'   => 'Usuários',
     'org'     => 'Organização',
@@ -110,14 +116,14 @@ $roleBadges = [
                 </div>
                 <div class="px-5 py-4 space-y-4">
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Nome da Organização</label>
-                        <input type="text" name="tenant_name" required
+                        <label for="org_tenant_name" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Nome da Organização</label>
+                        <input type="text" id="org_tenant_name" name="tenant_name" required
                             value="<?= htmlspecialchars($tenant['name'], ENT_QUOTES, 'UTF-8') ?>"
                             class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                     </div>
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Identificador (slug)</label>
-                        <input type="text" disabled
+                        <label for="org_slug" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Identificador (slug)</label>
+                        <input type="text" id="org_slug" disabled
                             value="<?= htmlspecialchars($tenant['slug'], ENT_QUOTES, 'UTF-8') ?>"
                             class="w-full px-3 py-2 border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 rounded-lg text-sm text-gray-400 dark:text-zinc-500 cursor-not-allowed">
                         <p class="text-xs text-gray-400 dark:text-zinc-600 mt-1">O identificador é definido na criação do tenant e não pode ser alterado.</p>
@@ -148,9 +154,9 @@ $roleBadges = [
                     <p class="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">Configura quando o ciclo mensal de cotas começa.</p>
                 </div>
                 <div class="px-5 py-4">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Dia de corte do ciclo (1–28)</label>
+                    <label for="payment_cutoff_day" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Dia de corte do ciclo (1–28)</label>
                     <div class="flex items-center gap-3">
-                        <input type="number" name="payment_cutoff_day" min="1" max="28" required
+                        <input type="number" id="payment_cutoff_day" name="payment_cutoff_day" min="1" max="28" required
                             value="<?= (int) $tenant['payment_cutoff_day'] ?>"
                             class="w-24 px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                         <span class="text-sm text-gray-500 dark:text-zinc-400">dia do mês</span>

@@ -1,4 +1,8 @@
 <?php
+// Variáveis injetadas pelo Controller::render() via extract($data)
+$summaries  = $summaries ?? [];
+$csrf_token = $csrf_token ?? '';
+
 $_jsV = static fn(string $f): string => is_file(__DIR__ . '/../../../public/assets/js/' . $f)
     ? (string) filemtime(__DIR__ . '/../../../public/assets/js/' . $f) : '0';
 $pageScripts =
@@ -129,7 +133,7 @@ $_canEdit = in_array($_SESSION['user']['role'] ?? '', ['admin', 'seller']) ? '1'
     <?php endif; ?>
 
     <?php if (isset($pagination_cards)): ?>
-    <?php $pagination = $pagination_cards; require VIEW_PATH . '/components/pagination.php'; ?>
+    <?php $pagination = $pagination_cards; require_once VIEW_PATH . '/components/pagination.php'; ?>
     <?php endif; ?>
 </div>
 

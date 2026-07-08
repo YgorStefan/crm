@@ -1,4 +1,5 @@
 <?php
+/** @var bool $has_gmaps_key */
 $_vV = static fn(string $f): string => is_file(__DIR__ . '/../../../public/assets/vendor/' . $f)
     ? (string) filemtime(__DIR__ . '/../../../public/assets/vendor/' . $f) : '0';
 $_jsV = static fn(string $f): string => is_file(__DIR__ . '/../../../public/assets/js/' . $f)

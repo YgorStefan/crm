@@ -19,6 +19,8 @@
  * {$p}_recurrenceMenu e classe {$p}-recurrence-opt — o JS de cada tela
  * referencia esses nomes.
  */
+/** @var string $p */
+/** @var array $users */
 $showAssigned      = $showAssigned      ?? true;
 $showDescription   = $showDescription   ?? true;
 $recurrenceDefault = $recurrenceDefault ?? 'weekly';

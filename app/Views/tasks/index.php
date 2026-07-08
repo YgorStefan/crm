@@ -54,7 +54,7 @@ unset($_jsV);
             <button type="button" class="fc-filter-btn px-3 py-1 text-xs font-medium rounded-md transition-colors" data-filter="done">Concluídas</button>
             <button type="button" class="fc-filter-btn px-3 py-1 text-xs font-medium rounded-md transition-colors" data-filter="overdue">Atrasadas</button>
         </div>
-        <select id="fcPriorityFilter" data-no-custom
+        <select id="fcPriorityFilter" data-no-custom aria-label="Filtrar por prioridade"
             class="px-2 py-1 text-xs border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-md focus:ring-2 focus:ring-indigo-500 focus:outline-none ml-2">
             <option value="all">Qualquer prioridade</option>
             <option value="high">Alta</option>

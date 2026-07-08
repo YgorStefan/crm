@@ -1,4 +1,9 @@
 <?php
+// Variáveis injetadas pelo Controller::render() via extract($data)
+/** @var array $stageData */
+/** @var int $totalClients */
+/** @var int $pendingTasks */
+/** @var array $overdueTasks */
 $totalValue = array_sum(array_column($stageData, 'total_value'));
 $wonStage = array_filter($stageData, fn($s) => !empty($s['is_won_stage']));
 $wonRevenue = array_sum(array_column($wonStage, 'total_value'));

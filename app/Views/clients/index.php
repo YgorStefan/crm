@@ -1,6 +1,14 @@
 <?php
 ?>
 <?php
+// Variáveis injetadas pelo Controller::render() via extract($data)
+$clients    = $clients ?? [];
+$stages     = $stages ?? [];
+$users      = $users ?? [];
+$filters    = $filters ?? [];
+$pagination = $pagination ?? [];
+$csrf_token = $csrf_token ?? '';
+
 $_jsV = static fn(string $f): string => is_file(__DIR__ . '/../../../public/assets/js/' . $f)
     ? (string) filemtime(__DIR__ . '/../../../public/assets/js/' . $f) : '0';
 $pageScripts = '<script nonce="' . CSP_NONCE . '" defer src="' . APP_URL . '/assets/js/client-index.js?v=' . $_jsV('client-index.js') . '"></script>';
@@ -19,10 +27,10 @@ unset($_jsV);
 
         <div class="grid grid-cols-2 lg:flex lg:flex-wrap lg:items-center gap-2 flex-1">
             <input type="text" name="search" value="<?= htmlspecialchars($filters['search'], ENT_QUOTES, 'UTF-8') ?>"
-                   placeholder="Buscar por nome, empresa..."
+                   placeholder="Buscar por nome, empresa..." aria-label="Buscar clientes"
                    class="col-span-2 lg:flex-none lg:w-64 lg:min-w-0 px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
 
-            <select name="stage_id" class="lg:w-36 px-2 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            <select name="stage_id" aria-label="Filtrar por etapa" class="lg:w-36 px-2 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 <option value="">Etapa</option>
                 <?php foreach ($stages as $stage): ?>
                 <option value="<?= $stage['id'] ?>" <?= $filters['stage_id'] == $stage['id'] ? 'selected' : '' ?>>
@@ -31,7 +39,7 @@ unset($_jsV);
                 <?php endforeach; ?>
             </select>
 
-            <select name="assigned_to" class="lg:w-36 px-2 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            <select name="assigned_to" aria-label="Filtrar por responsável" class="lg:w-36 px-2 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 <option value="">Responsável</option>
                 <?php foreach ($users as $user): ?>
                 <option value="<?= $user['id'] ?>" <?= $filters['assigned_to'] == $user['id'] ? 'selected' : '' ?>>
@@ -40,7 +48,7 @@ unset($_jsV);
                 <?php endforeach; ?>
             </select>
 
-            <select name="tipo_venda" class="lg:w-32 px-2 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            <select name="tipo_venda" aria-label="Filtrar por tipo de venda" class="lg:w-32 px-2 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 <option value="">Tipo</option>
                 <option value="Imóvel"  <?= ($filters['tipo_venda'] ?? '') === 'Imóvel'  ? 'selected' : '' ?>>Imóvel</option>
                 <option value="Veículo" <?= ($filters['tipo_venda'] ?? '') === 'Veículo' ? 'selected' : '' ?>>Veículo</option>
@@ -81,7 +89,11 @@ unset($_jsV);
     $sortLink = function (string $col, string $label) use ($filters, $pagination): string {
         $active = ($filters['sort'] === $col);
         $nextDir = ($active && $filters['dir'] === 'asc') ? 'desc' : 'asc';
-        $icon = $active ? ($filters['dir'] === 'asc' ? ' ↑' : ' ↓') : '';
+        if ($active) {
+            $icon = $filters['dir'] === 'asc' ? ' ↑' : ' ↓';
+        } else {
+            $icon = '';
+        }
         $params = array_merge(
             array_diff_key($pagination['query_params'], ['sort' => 1, 'dir' => 1]),
             ['sort' => $col, 'dir' => $nextDir, 'page' => 1]
@@ -207,7 +219,7 @@ unset($_jsV);
 </div>
 
 <?php if (isset($pagination)): ?>
-<?php require VIEW_PATH . '/components/pagination.php'; ?>
+<?php require_once VIEW_PATH . '/components/pagination.php'; ?>
 <?php endif; ?>
 
 <!-- Modal: Nova Interação Rápida -->
@@ -264,7 +276,7 @@ unset($_jsV);
             $showAssigned = false;
             $showDescription = false;
             $recurrenceDefault = 'none';
-            require VIEW_PATH . '/components/task-modal-fields.php';
+            require_once VIEW_PATH . '/components/task-modal-fields.php';
             // Reseta defaults para não vazarem a outros includes da view
             unset($showAssigned, $showDescription, $recurrenceDefault);
             ?>

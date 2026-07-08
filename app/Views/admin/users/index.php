@@ -3,6 +3,9 @@
  * View: admin/users/index.php — Lista de Usuários
  * Variáveis: $users
  */
+// Variáveis injetadas pelo Controller::render() via extract($data)
+$users = $users ?? [];
+
 $roleLabels = ['admin' => 'Admin', 'seller' => 'Vendedor', 'viewer' => 'Leitor'];
 $roleBadges = ['admin' => 'bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300', 'seller' => 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300', 'viewer' => 'bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400'];
 ?>

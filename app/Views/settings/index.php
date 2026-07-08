@@ -1,4 +1,9 @@
-<?php ?>
+<?php
+// Variáveis injetadas pelo Controller::render() via extract($data)
+$tenant        = $tenant ?? [];
+$has_gmaps_key = $has_gmaps_key ?? false;
+$csrf_token    = $csrf_token ?? '';
+?>
 <div class="max-w-2xl mx-auto">
     <div class="flex items-center gap-3 mb-6">
         <h3 class="text-2xl font-bold text-gray-800 dark:text-white">Configurações da Organização</h3>
@@ -15,18 +20,18 @@
             </div>
             <div class="px-5 py-4 space-y-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
+                    <label for="settings_tenant_name" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                         Nome da Organização
                     </label>
-                    <input type="text" name="tenant_name" required
+                    <input type="text" id="settings_tenant_name" name="tenant_name" required
                         value="<?= htmlspecialchars($tenant['name'], ENT_QUOTES, 'UTF-8') ?>"
                         class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
+                    <label for="settings_tenant_slug" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                         Identificador (slug)
                     </label>
-                    <input type="text" disabled
+                    <input type="text" id="settings_tenant_slug" disabled
                         value="<?= htmlspecialchars($tenant['slug'], ENT_QUOTES, 'UTF-8') ?>"
                         class="w-full px-3 py-2 border border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-800/50 rounded-lg text-sm text-gray-400 dark:text-zinc-500 cursor-not-allowed">
                     <p class="text-xs text-gray-400 dark:text-zinc-600 mt-1">
@@ -45,11 +50,11 @@
                 </p>
             </div>
             <div class="px-5 py-4">
-                <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
+                <label for="settings_payment_cutoff_day" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                     Dia de corte do ciclo (1–28)
                 </label>
                 <div class="flex items-center gap-3">
-                    <input type="number" name="payment_cutoff_day" min="1" max="28" required
+                    <input type="number" id="settings_payment_cutoff_day" name="payment_cutoff_day" min="1" max="28" required
                         value="<?= (int) $tenant['payment_cutoff_day'] ?>"
                         class="w-24 px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
                     <span class="text-sm text-gray-500 dark:text-zinc-400">dia do mês</span>
@@ -71,7 +76,7 @@
                 </p>
             </div>
             <div class="px-5 py-4">
-                <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
+                <label for="gmapsKeyInput" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                     Chave API Google Maps
                 </label>
                 <?php if ($has_gmaps_key): ?>

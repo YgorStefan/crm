@@ -1,4 +1,9 @@
 <?php
+// Variáveis injetadas pelo Controller::render() via extract($data)
+$stages     = $stages ?? [];
+$users      = $users ?? [];
+$csrf_token = $csrf_token ?? '';
+
 $_jsV = static fn(string $f): string => is_file(__DIR__ . '/../../../public/assets/js/' . $f)
     ? (string) filemtime(__DIR__ . '/../../../public/assets/js/' . $f) : '0';
 $pageScripts = '<script nonce="' . CSP_NONCE . '" defer src="' . APP_URL . '/assets/js/client-form.js?v=' . $_jsV('client-form.js') . '"></script>';
@@ -23,44 +28,44 @@ unset($_jsV);
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                 <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
+                    <label for="name" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                         Nome <span class="text-red-500">*</span>
                     </label>
-                    <input type="text" name="name" required
+                    <input type="text" id="name" name="name" required
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"
                         placeholder="Nome completo ou razão social">
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">E-mail</label>
-                    <input type="email" name="email"
+                    <label for="email" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">E-mail</label>
+                    <input type="email" id="email" name="email"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"
                         placeholder="contato@empresa.com">
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Telefone / WhatsApp</label>
-                    <input type="text" name="phone"
+                    <label for="phone" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Telefone / WhatsApp</label>
+                    <input type="text" id="phone" name="phone"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"
                         placeholder="(11) 99999-9999">
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Empresa</label>
-                    <input type="text" name="company"
+                    <label for="company" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Empresa</label>
+                    <input type="text" id="company" name="company"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"
                         placeholder="Nome da empresa">
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">CPF / CNPJ</label>
-                    <input type="text" name="cnpj_cpf"
+                    <label for="cnpj_cpf" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">CPF / CNPJ</label>
+                    <input type="text" id="cnpj_cpf" name="cnpj_cpf"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"
                         placeholder="000.000.000-00 ou 00.000.000/0001-00">
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Data de Nascimento</label>
+                    <label for="birth_date" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Data de Nascimento</label>
                     <input type="text" name="birth_date" id="birth_date" maxlength="10"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"
                         placeholder="DD/MM/AAAA">
@@ -73,44 +78,44 @@ unset($_jsV);
             <h4 class="text-sm font-semibold text-gray-500 dark:text-zinc-400 uppercase tracking-wide mb-4">Endereço</h4>
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">CEP <span id="cep_status" class="text-xs text-indigo-500 font-normal"></span></label>
-                    <input type="text" name="zip_code" maxlength="10"
+                    <label for="zip_code" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">CEP <span id="cep_status" class="text-xs text-indigo-500 font-normal"></span></label>
+                    <input type="text" id="zip_code" name="zip_code" maxlength="10"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"
                         placeholder="00000-000">
                 </div>
                 <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Logradouro</label>
-                    <input type="text" name="address"
+                    <label for="address" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Logradouro</label>
+                    <input type="text" id="address" name="address"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"
                         placeholder="Rua, Av., Travessa...">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Número</label>
-                    <input type="text" name="address_number" maxlength="20"
+                    <label for="address_number" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Número</label>
+                    <input type="text" id="address_number" name="address_number" maxlength="20"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"
                         placeholder="123">
                 </div>
                 <div class="md:col-span-4">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Bairro</label>
+                    <label for="neighborhood" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Bairro</label>
                     <input type="text" name="neighborhood" id="neighborhood"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"
                         placeholder="Bairro">
                 </div>
                 <div class="md:col-span-4">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Complemento</label>
-                    <input type="text" name="address_complement" maxlength="100"
+                    <label for="address_complement" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Complemento</label>
+                    <input type="text" id="address_complement" name="address_complement" maxlength="100"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"
                         placeholder="Apto 42, Bloco B...">
                 </div>
                 <div class="md:col-span-3">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Cidade</label>
-                    <input type="text" name="city"
+                    <label for="city" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Cidade</label>
+                    <input type="text" id="city" name="city"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"
                         placeholder="São Paulo">
                 </div>
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">UF</label>
-                    <select name="state"
+                    <label for="state" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">UF</label>
+                    <select id="state" name="state"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500">
                         <option value="">—</option>
                         <?php foreach (['AC', 'AL', 'AP', 'AM', 'BA', 'CE', 'DF', 'ES', 'GO', 'MA', 'MT', 'MS', 'MG', 'PA', 'PB', 'PR', 'PE', 'PI', 'RJ', 'RN', 'RS', 'RO', 'RR', 'SC', 'SP', 'SE', 'TO'] as $uf): ?>
@@ -127,7 +132,7 @@ unset($_jsV);
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
+                    <label for="pipeline_stage_select" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">
                         Etapa do Funil <span class="text-red-500">*</span>
                     </label>
                     <select name="pipeline_stage_id" id="pipeline_stage_select" required
@@ -142,15 +147,15 @@ unset($_jsV);
                 </div>
 
                 <div id="closed_at_wrapper" style="display:none;">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Data de Fechamento</label>
+                    <label for="closed_at" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Data de Fechamento</label>
                     <input type="text" name="closed_at" id="closed_at" maxlength="10"
                         placeholder="DD/MM/AAAA"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500">
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Responsável</label>
-                    <select name="assigned_to"
+                    <label for="assigned_to" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Responsável</label>
+                    <select id="assigned_to" name="assigned_to"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500">
                         <option value="">Sem responsável</option>
                         <?php foreach ($users as $user): ?>
@@ -162,14 +167,14 @@ unset($_jsV);
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Crédito contratado (R$)</label>
-                    <input type="text" name="deal_value" data-mask="currency"
+                    <label for="deal_value" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Crédito contratado (R$)</label>
+                    <input type="text" id="deal_value" name="deal_value" data-mask="currency"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"
                         placeholder="R$ 0,00">
                 </div>
 
                 <div>
-                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Origem do Lead</label>
+                    <label for="source_select" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Origem do Lead</label>
                     <select name="source" id="source_select"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500">
                         <option value="">Desconhecida</option>
@@ -187,15 +192,15 @@ unset($_jsV);
                 </div>
 
                 <div id="indicacao_wrapper" style="display:none;" class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Nome de quem indicou</label>
+                    <label for="referido_por" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Nome de quem indicou</label>
                     <input type="text" name="referido_por" id="referido_por"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"
                         placeholder="Nome da pessoa que indicou">
                 </div>
 
                 <div class="md:col-span-2">
-                    <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Nota</label>
-                    <textarea name="notes" rows="3"
+                    <label for="notes" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Nota</label>
+                    <textarea id="notes" name="notes" rows="3"
                         class="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500"
                         placeholder="Observações gerais sobre este cliente..."></textarea>
                 </div>

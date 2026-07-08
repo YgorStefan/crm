@@ -173,7 +173,7 @@ class PipelineStage extends Model
 
             $this->db->commit();
             return true;
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             $this->db->rollBack();
             return false;
         }
@@ -204,7 +204,7 @@ class PipelineStage extends Model
 
             $this->db->commit();
             return true;
-        } catch (\Throwable $e) {
+        } catch (\Throwable) {
             $this->db->rollBack();
             return false;
         }

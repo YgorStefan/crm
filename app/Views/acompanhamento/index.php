@@ -1,4 +1,11 @@
 <?php
+// Variáveis injetadas pelo Controller::render() via extract($data)
+/** @var array $stages */
+/** @var int $abordados */
+/** @var string $prevMes */
+/** @var string $nextMes */
+/** @var string $mesLabel */
+/** @var bool $isMesAtual */
 $totalClientes = !empty($stages) ? array_sum(array_column($stages, 'total')) : 0;
 $temDados = $totalClientes > 0 || $abordados > 0;
 ?>

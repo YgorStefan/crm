@@ -21,6 +21,7 @@
                 ? document.documentElement.classList.add('dark')
                 : document.documentElement.classList.remove('dark');
             try { localStorage.setItem('theme', isDark ? 'dark' : 'light'); } catch (e) {}
+            document.getElementById('themeToggle')?.setAttribute('aria-checked', String(isDark));
             document.dispatchEvent(new CustomEvent('themeChange', { detail: { dark: isDark } }));
         }
 
@@ -39,6 +40,7 @@
         #initTheme() {
             const toggle = document.getElementById('themeToggle');
             if (!toggle) return;
+            toggle.setAttribute('aria-checked', String(document.documentElement.classList.contains('dark')));
             toggle.addEventListener('click', () =>
                 this.applyTheme(!document.documentElement.classList.contains('dark'))
             );

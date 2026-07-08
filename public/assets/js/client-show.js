@@ -2,12 +2,10 @@
     'use strict';
 
     class ClientShow {
-        #rootEl;
         #clientId;
         #appUrl;
 
         constructor(rootEl) {
-            this.#rootEl   = rootEl;
             this.#clientId = parseInt(rootEl.dataset.clientId, 10);
             this.#appUrl   = (document.querySelector('meta[name="app-url"]')?.content || '').replace(/\/$/, '');
             this.#initInteractions();

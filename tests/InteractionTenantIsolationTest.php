@@ -53,7 +53,6 @@ class InteractionTenantIsolationTest extends TestCase
         $pdo->exec("INSERT INTO clients (id, name, tenant_id) VALUES (10,'Cliente A',1), (20,'Cliente B',2)");
 
         $prop = (new \ReflectionClass(Database::class))->getProperty('instance');
-        $prop->setAccessible(true);
         $prop->setValue(null, $pdo);
 
         self::$pdo = $pdo;
@@ -66,7 +65,6 @@ class InteractionTenantIsolationTest extends TestCase
             self::$pdo->exec('DROP TABLE IF EXISTS clients');
             self::$pdo->exec('DROP TABLE IF EXISTS users');
             $prop = (new \ReflectionClass(Database::class))->getProperty('instance');
-            $prop->setAccessible(true);
             $prop->setValue(null, null);
             self::$pdo = null;
         }

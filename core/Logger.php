@@ -18,7 +18,7 @@ class Logger
 
     public function __construct(?string $logDir = null)
     {
-        $this->logDir = $logDir ?? (defined('BASE_PATH') ? BASE_PATH . '/storage/logs' : dirname(__DIR__) . '/storage/logs');
+        $this->logDir = $logDir ?? dirname(__DIR__) . '/storage/logs';
     }
 
     // ------------------------------------------------------------------

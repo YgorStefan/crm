@@ -136,9 +136,6 @@ class ColdContactController extends Controller
         // Rejeita conteudo que claramente nao e texto/CSV (ex.: imagens, binarios).
         $finfo = finfo_open(FILEINFO_MIME_TYPE);
         $mime  = $finfo ? (string) finfo_file($finfo, $tmpPath) : '';
-        if ($finfo) {
-            finfo_close($finfo);
-        }
         $allowedMime = ['text/plain', 'text/csv', 'application/csv', 'application/vnd.ms-excel', 'application/octet-stream'];
         if ($mime !== '' && !in_array($mime, $allowedMime, true)) {
             $this->flash('error', 'O conteudo do arquivo nao parece ser CSV.');

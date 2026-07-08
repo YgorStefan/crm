@@ -1,4 +1,5 @@
 <?php
+/** @var string $content */
 $safeAppUrl = htmlspecialchars(APP_URL, ENT_QUOTES, 'UTF-8');
 $assetV = static function (string $rel): string {
     $abs = __DIR__ . '/../../../public/' . ltrim($rel, '/');
@@ -29,9 +30,12 @@ $assetV = static function (string $rel): string {
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300..700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="<?= $safeAppUrl ?>/assets/css/tailwind.css?v=<?= $assetV('assets/css/tailwind.css') ?>">
-    <script nonce="<?= CSP_NONCE ?>" src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <script nonce="<?= CSP_NONCE ?>" src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.20/index.global.min.js"></script>
-    <script nonce="<?= CSP_NONCE ?>" src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.20/locales-all.global.min.js"></script>
+    <script nonce="<?= CSP_NONCE ?>" src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"
+        integrity="sha384-e6nUZLBkQ86NJ6TVVKAeSaK8jWa3NhkYWZFomE39AvDbQWeie9PlQqM3pmYW5d1g" crossorigin="anonymous"></script>
+    <script nonce="<?= CSP_NONCE ?>" src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.20/index.global.min.js"
+        integrity="sha384-cdgKlW4XCZfQ8yQFLScLHBujFrHf3sMYBPBjRimt2H/ut44fe4t/PUk3luazptar" crossorigin="anonymous"></script>
+    <script nonce="<?= CSP_NONCE ?>" src="https://cdn.jsdelivr.net/npm/@fullcalendar/core@6.1.20/locales-all.global.min.js"
+        integrity="sha384-Z5jJROVCX/GTtyM3gOeOA56HZgN5Tar/vCkd0t77ahwyWwAY4RzEnlKjTXgkpLQ4" crossorigin="anonymous"></script>
     <!-- Token CSRF e URL base — lidos pelo JS externo -->
     <meta name="csrf-token" content="<?= htmlspecialchars(\Core\Middleware\CsrfMiddleware::getToken(), ENT_QUOTES, 'UTF-8') ?>">
     <meta name="app-url" content="<?= htmlspecialchars(APP_URL, ENT_QUOTES, 'UTF-8') ?>">
@@ -238,7 +242,7 @@ $assetV = static function (string $rel): string {
                 </div>
 
                 <!-- Toggle de tema com sol/lua dentro -->
-                <button id="themeToggle" role="switch"
+                <button id="themeToggle" role="switch" aria-checked="false" aria-label="Alternar tema"
                     class="relative inline-flex w-11 h-6 rounded-full cursor-pointer
                            bg-gray-200 dark:bg-indigo-600
                            transition-colors duration-300

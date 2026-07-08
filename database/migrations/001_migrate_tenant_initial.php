@@ -63,7 +63,7 @@ if ($dbName === '') {
     crm_smoke_emit($steps, 1);
 }
 
-$run = static function (callable $fn) use ($dryRun, $pdo): void {
+$run = static function (callable $fn) use ($dryRun): void {
     if ($dryRun) {
         return;
     }

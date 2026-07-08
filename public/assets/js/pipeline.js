@@ -116,7 +116,7 @@
         if (!drag || e.pointerId !== drag.pointerId) return;
 
         if (drag.active) {
-            finishDrag(e.clientX, e.clientY);
+            finishDrag();
         } else {
             cancelPendingDrag();
         }
@@ -184,7 +184,7 @@
      * drop-zone válida diferente da etapa atual, move o cartão no DOM e
      * persiste via AJAX — mesma lógica do antigo handler "drop" HTML5.
      */
-    function finishDrag(x, y) {
+    function finishDrag() {
         const { card, ghost, lastZone } = drag;
 
         ghost?.remove();

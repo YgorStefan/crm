@@ -8,9 +8,12 @@ declare(strict_types=1);
 require_once dirname(__DIR__) . DIRECTORY_SEPARATOR . 'smoke' . DIRECTORY_SEPARATOR . 'bootstrap.php';
 
 /**
+ * Encerra a verificação emitindo o relatório JSON. Retorna `never`: delega a
+ * crm_smoke_emit(), que sempre finaliza o processo via exit().
+ *
  * @param array<int, array<string, mixed>> $steps
  */
-function verify_finish(array $steps, int $code): void
+function verify_finish(array $steps, int $code): never
 {
     crm_smoke_emit($steps, $code);
 }

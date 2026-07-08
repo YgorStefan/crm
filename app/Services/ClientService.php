@@ -2,15 +2,13 @@
 
 namespace App\Services;
 
-use App\Models\Client;
 use App\Models\ClientSale;
 use Core\Database;
 
 class ClientService
 {
     public function __construct(
-        private Client     $clients = new Client(),
-        private ClientSale $sales   = new ClientSale(),
+        private ClientSale $sales = new ClientSale(),
     ) {}
 
     /**

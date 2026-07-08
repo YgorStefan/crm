@@ -1,13 +1,15 @@
 <?php
-?>
-<?php
+// Variáveis injetadas pelo Controller::render() via extract($data)
+$stages     = $stages ?? [];
+$csrf_token = $csrf_token ?? '';
+
 $_jsV = static fn(string $f): string => is_file(__DIR__ . '/../../../public/assets/js/' . $f)
     ? (string) filemtime(__DIR__ . '/../../../public/assets/js/' . $f) : '0';
 $pageScripts = '<script nonce="' . CSP_NONCE . '" defer src="' . APP_URL . '/assets/js/pipeline-stages.js?v=' . $_jsV('pipeline-stages.js') . '"></script>';
 unset($_jsV);
 ?>
 <style nonce="<?= CSP_NONCE ?>">
-    /* Arredonda o swatch interno do <input type="color"> em todos os browsers */
+    /* Arredonda o swatch interno do campo de cor (type=color) em todos os browsers */
     input[type="color"] {
         padding: 2px;
         background-color: transparent;
@@ -41,13 +43,13 @@ unset($_jsV);
         <form method="POST" action="<?= APP_URL ?>/pipeline/stages/store" class="px-5 py-4 flex gap-3 items-end">
             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
             <div class="flex-1">
-                <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Nome da Etapa</label>
-                <input type="text" name="name" required placeholder="Ex.: Demonstração"
+                <label for="new_stage_name" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Nome da Etapa</label>
+                <input type="text" id="new_stage_name" name="name" required placeholder="Ex.: Demonstração"
                     class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
             <div>
-                <label class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Cor</label>
-                <input type="color" name="color" value="#6366f1"
+                <label for="new_stage_color" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Cor</label>
+                <input type="color" id="new_stage_color" name="color" value="#6366f1"
                     class="w-12 h-10 border border-gray-300 dark:border-zinc-700 rounded-lg cursor-pointer">
             </div>
             <button type="submit"
@@ -87,8 +89,10 @@ unset($_jsV);
                     <div class="edit-mode hidden flex items-center gap-2 flex-1">
                         <input type="text" class="edit-name px-2 py-1 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded text-sm flex-1
                            focus:ring-2 focus:ring-indigo-500 focus:outline-none"
+                            aria-label="Nome da etapa"
                             value="<?= htmlspecialchars($stage['name'], ENT_QUOTES, 'UTF-8') ?>">
                         <input type="color" class="edit-color w-10 h-8 border border-gray-300 dark:border-zinc-700 rounded cursor-pointer"
+                            aria-label="Cor da etapa"
                             value="<?= htmlspecialchars($stage['color'], ENT_QUOTES, 'UTF-8') ?>">
                     </div>
 
