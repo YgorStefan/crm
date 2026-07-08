@@ -105,7 +105,9 @@ jobs:
 
       - name: Subir servidor PHP embutido em background
         run: |
-          PHP_CLI_SERVER_WORKERS=4 nohup php -S localhost:8000 -t public router.php > php-server.log 2>&1 &
+          # Bind explícito em IPv4: "localhost" pode resolver só para ::1 no runner,
+          # e o k6 prefere IPv4 (preferIPv4) — bateria em 127.0.0.1 sem ninguém ouvindo.
+          PHP_CLI_SERVER_WORKERS=4 nohup php -S 127.0.0.1:8000 -t public router.php > php-server.log 2>&1 &
           for i in $(seq 1 30); do
             curl -sf http://localhost:8000/login > /dev/null && break
             sleep 1
