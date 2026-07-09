@@ -9,7 +9,17 @@
         constructor() {
             this.#sidebar = document.getElementById('sidebar');
             this.#mainContent = document.getElementById('mainContent');
-            try { this.#isMini = localStorage.getItem('sidebar') === 'mini'; } catch (e) {}
+            try {
+                const stored = localStorage.getItem('sidebar');
+                if (stored !== null) {
+                    this.#isMini = stored === 'mini';
+                } else {
+                    this.#isMini = window.innerWidth < 1280;
+                }
+            } catch (e) {
+                console.debug('localStorage indisponível no construtor:', e);
+                this.#isMini = window.innerWidth < 1280;
+            }
             this.#initClock();
             this.#initTheme();
             this.#initSidebar();
@@ -20,7 +30,11 @@
             isDark
                 ? document.documentElement.classList.add('dark')
                 : document.documentElement.classList.remove('dark');
-            try { localStorage.setItem('theme', isDark ? 'dark' : 'light'); } catch (e) {}
+            try {
+                localStorage.setItem('theme', isDark ? 'dark' : 'light');
+            } catch (e) {
+                console.debug('Erro ao salvar tema:', e);
+            }
             document.getElementById('themeToggle')?.setAttribute('aria-checked', String(isDark));
             document.dispatchEvent(new CustomEvent('themeChange', { detail: { dark: isDark } }));
         }
@@ -65,7 +79,11 @@
                 m.classList.remove('lg:ml-16');
                 m.classList.add('lg:ml-56');
             }
-            try { localStorage.setItem('sidebar', mini ? 'mini' : 'expanded'); } catch (e) {}
+            try {
+                localStorage.setItem('sidebar', mini ? 'mini' : 'expanded');
+            } catch (e) {
+                console.debug('Erro ao salvar sidebar:', e);
+            }
             setTimeout(() => window.dispatchEvent(new Event('resize')), 320);
         }
 

@@ -416,8 +416,8 @@ unset($_jsV);
     <?php if ($isVendaFechada): ?>
         <!-- Modal: Adicionar cota de consórcio -->
         <div id="cota-modal-overlay" style="display:none;"
-            class="fixed inset-0 bg-gray-900 bg-opacity-60 z-50 flex items-center justify-center">
-            <div class="bg-white dark:bg-zinc-900 rounded-xl shadow-xl p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
+            class="fixed inset-0 bg-gray-900 bg-opacity-60 z-50 flex items-center justify-center p-2 sm:p-4">
+            <div class="bg-white dark:bg-zinc-900 rounded-xl shadow-xl p-4 sm:p-6 w-full max-w-md md:max-w-lg max-h-[95vh] overflow-y-auto">
                 <h5 class="text-base font-semibold text-gray-800 dark:text-white mb-4">Nova Cota de Consórcio</h5>
                 <div class="space-y-3">
                     <div class="grid grid-cols-2 gap-3">
@@ -465,22 +465,22 @@ unset($_jsV);
     <?php endif; ?>
 
     <!-- Modal: Nova Tarefa (mesmo padrão de /tasks) -->
-    <div id="newTaskModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4" style="display:none">
-        <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md sm:max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div class="px-6 py-5 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between">
+    <div id="newTaskModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-2 sm:p-4" style="display:none">
+        <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md sm:max-w-2xl md:max-w-3xl max-h-[95vh] overflow-y-auto">
+            <div class="px-4 py-4 sm:px-6 sm:py-5 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between">
                 <h4 class="text-lg font-bold text-gray-800 dark:text-white">Nova Tarefa</h4>
                 <button type="button" id="newTaskClose"
                     class="text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300 text-2xl">&times;</button>
             </div>
             <!-- Em telas >= sm os campos fluem em 2 colunas (ver modalTask em tasks/index.php). -->
-            <div class="px-6 py-5 space-y-4 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
+            <div class="px-4 py-4 sm:px-6 sm:py-5 space-y-3 sm:space-y-0 sm:grid sm:grid-cols-2 gap-3 sm:gap-4">
                 <div class="sm:col-span-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg px-3 py-2">
                     <span class="text-sm text-indigo-700 dark:text-indigo-300">👥 Cliente: <span class="font-medium"><?= htmlspecialchars($client['name'], ENT_QUOTES, 'UTF-8') ?></span></span>
                 </div>
 
                 <?php $p = 'newTask'; require_once VIEW_PATH . '/components/task-modal-fields.php'; ?>
 
-                <div class="sm:col-span-2 flex justify-end gap-3 pt-2">
+                <div class="sm:col-span-2 flex justify-end gap-3 pt-1 sm:pt-2">
                     <button type="button" id="newTaskCancel"
                         class="px-4 py-2 border border-gray-300 text-gray-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 dark:border-zinc-700 rounded-lg text-sm hover:bg-gray-100 transition-colors">
                         Cancelar

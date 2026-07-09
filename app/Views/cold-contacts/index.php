@@ -139,32 +139,32 @@ $_canEdit = in_array($_SESSION['user']['role'] ?? '', ['admin', 'seller']) ? '1'
 
 <!-- Modal de listagem de contatos -->
 <div id="modalColdContacts"
-    class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center p-4">
-    <div class="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col">
+    class="hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-50 flex items-center justify-center p-2 sm:p-4">
+    <div class="bg-white dark:bg-zinc-900 rounded-xl shadow-2xl w-full md:max-w-[96vw] md:max-h-[96vh] xl:max-w-5xl xl:max-h-[90vh] flex flex-col">
 
         <!-- Header da modal -->
-        <div class="px-6 py-4 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between flex-shrink-0">
+        <div class="px-4 py-3 sm:px-6 sm:py-4 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between flex-shrink-0">
             <h4 id="modalTitle" class="font-semibold text-gray-800 dark:text-white text-lg">Contatos do mês</h4>
             <button id="btnCloseModal"
                 class="text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 text-2xl font-bold leading-none">&times;</button>
         </div>
 
         <!-- Filtros e exportação -->
-        <div class="px-6 py-3 border-b border-gray-100 dark:border-zinc-800 flex flex-col sm:flex-row sm:flex-wrap gap-3 items-end flex-shrink-0">
+        <div class="px-4 py-2 sm:px-6 sm:py-3 border-b border-gray-100 dark:border-zinc-800 flex flex-col sm:flex-row sm:flex-wrap gap-2 sm:gap-3 items-end flex-shrink-0">
             <div>
                 <label for="filterTipoLista" class="block text-xs font-medium text-gray-600 dark:text-zinc-400 mb-1">Filtrar por tipo de lista</label>
                 <input type="text" id="filterTipoLista" placeholder="Tipo de lista"
-                    class="w-36 px-3 py-1.5 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    class="w-28 sm:w-36 px-3 py-1.5 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
             <div>
                 <label for="filterDia" class="block text-xs font-medium text-gray-600 dark:text-zinc-400 mb-1">Filtrar por dia (1-31)</label>
                 <input type="number" id="filterDia" min="1" max="31" placeholder="Dia"
-                    class="w-24 px-3 py-1.5 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    class="w-16 sm:w-24 px-3 py-1.5 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
             <div>
                 <label for="filterTelEnviado" class="block text-xs font-medium text-gray-600 dark:text-zinc-400 mb-1">Filtrar por tel. enviado</label>
                 <input type="text" id="filterTelEnviado" placeholder="Ex: 1234"
-                    class="w-32 px-3 py-1.5 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                    class="w-24 sm:w-32 px-3 py-1.5 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white dark:placeholder-zinc-500 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
             </div>
             <button id="btnApplyFilter"
                 class="bg-indigo-600 hover:bg-indigo-700 text-white font-medium px-4 py-1.5 rounded-lg text-sm transition-colors">
@@ -183,7 +183,7 @@ $_canEdit = in_array($_SESSION['user']['role'] ?? '', ['admin', 'seller']) ? '1'
 
         <!-- Barra de ação em lote -->
         <div id="bulkBar"
-            class="hidden px-6 py-2 bg-indigo-50 dark:bg-indigo-900/20 border-b border-indigo-100 dark:border-indigo-800/40 flex flex-wrap items-center gap-3 flex-shrink-0">
+            class="hidden px-4 py-1.5 sm:px-6 sm:py-2 bg-indigo-50 dark:bg-indigo-900/20 border-b border-indigo-100 dark:border-indigo-800/40 flex flex-wrap items-center gap-2 sm:gap-3 flex-shrink-0">
             <span id="bulkCount" class="text-sm font-medium text-indigo-700 dark:text-indigo-300"></span>
 
             <label for="bulkTelEnviado" class="text-sm text-gray-600 dark:text-zinc-300 font-medium">Tel:</label>
@@ -206,12 +206,12 @@ $_canEdit = in_array($_SESSION['user']['role'] ?? '', ['admin', 'seller']) ? '1'
         </div>
 
         <!-- Corpo da modal: tabela de contatos -->
-        <div id="modalBody" class="flex-1 overflow-y-auto overflow-x-auto px-6 py-4">
+        <div id="modalBody" class="flex-1 overflow-y-auto overflow-x-auto px-4 py-3 sm:px-6 sm:py-4">
             <p class="text-gray-400 dark:text-zinc-500 text-sm text-center">Carregando...</p>
         </div>
 
         <!-- Footer da modal: total visível -->
-        <div class="px-6 py-3 border-t border-gray-100 dark:border-zinc-800 flex-shrink-0">
+        <div class="px-4 py-2 sm:px-6 sm:py-3 border-t border-gray-100 dark:border-zinc-800 flex-shrink-0">
             <p id="modalTotal" class="text-xs text-gray-500 dark:text-zinc-400"></p>
         </div>
     </div>
