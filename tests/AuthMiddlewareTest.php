@@ -45,6 +45,19 @@ class AuthMiddlewareTest extends TestCase
         $this->assertSame('/clients', $_SESSION['redirect_after_login']);
     }
 
+    public function testNaoSalvaRotaDeApiComoRedirectPosLogin(): void
+    {
+        // Fetches de background (ex.: notifications.js) que chegam deslogados
+        // não podem poisonar o redirect pós-login com uma URL de JSON.
+        $_SERVER['REQUEST_URI'] = '/api/tasks/upcoming';
+
+        $middleware = new TestableAuthMiddleware();
+        $middleware->handle();
+
+        $this->assertSame(APP_URL . '/login', $middleware->redirectedTo);
+        $this->assertArrayNotHasKey('redirect_after_login', $_SESSION);
+    }
+
     public function testPermiteAcessoComSessaoValida(): void
     {
         $_SESSION['user'] = ['id' => 1, 'name' => 'Ana'];

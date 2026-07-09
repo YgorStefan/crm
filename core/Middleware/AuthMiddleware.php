@@ -29,7 +29,13 @@ class AuthMiddleware
             if ($basePath !== '' && str_starts_with($uri, $basePath)) {
                 $uri = substr($uri, strlen($basePath));
             }
-            $_SESSION['redirect_after_login'] = '/' . ltrim($uri, '/');
+            $path = '/' . ltrim($uri, '/');
+            // Rotas de API não são destino pós-login: fetches de background
+            // deslogados (ex.: notifications.js) poisonariam o redirect e o
+            // usuário cairia num JSON cru após o próximo login.
+            if (!str_starts_with($path, '/api/')) {
+                $_SESSION['redirect_after_login'] = $path;
+            }
 
             // Redireciona para a página de login
             $this->redirect(APP_URL . '/login');
