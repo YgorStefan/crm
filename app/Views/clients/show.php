@@ -417,7 +417,7 @@ unset($_jsV);
         <!-- Modal: Adicionar cota de consórcio -->
         <div id="cota-modal-overlay" style="display:none;"
             class="fixed inset-0 bg-gray-900 bg-opacity-60 z-50 flex items-center justify-center">
-            <div class="bg-white dark:bg-zinc-900 rounded-xl shadow-xl p-6 max-w-md w-full mx-4">
+            <div class="bg-white dark:bg-zinc-900 rounded-xl shadow-xl p-6 max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto">
                 <h5 class="text-base font-semibold text-gray-800 dark:text-white mb-4">Nova Cota de Consórcio</h5>
                 <div class="space-y-3">
                     <div class="grid grid-cols-2 gap-3">
@@ -466,7 +466,7 @@ unset($_jsV);
 
     <!-- Modal: Nova Tarefa (mesmo padrão de /tasks) -->
     <div id="newTaskModal" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4" style="display:none">
-        <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div class="px-6 py-5 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between">
                 <h4 class="text-lg font-bold text-gray-800 dark:text-white">Nova Tarefa</h4>
                 <button type="button" id="newTaskClose"

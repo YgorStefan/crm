@@ -85,7 +85,7 @@ unset($_jsV);
 
 <!-- Modal: Criacao e Edicao de Tarefa -->
 <div id="modalTask" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4" style="display:none">
-    <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+    <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
         <div class="px-6 py-5 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between">
             <h4 id="modalTaskTitle" class="text-lg font-bold text-gray-800 dark:text-white">Nova Tarefa</h4>
             <button data-action="close-modal" data-target="modalTask"

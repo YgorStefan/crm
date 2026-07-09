@@ -475,7 +475,16 @@
         }
 
         #setupFilters() {
-            const apply = () => { this.#filterState.page = 1; this.#loadTable(1); };
+            // Lê os inputs ANTES de recarregar: com dois listeners separados,
+            // o primeiro clique filtrava com o estado antigo (vazio) e só o
+            // segundo aplicava os valores digitados.
+            const apply = () => {
+                this.#filterState.tipoLista       = document.getElementById('filterTipoLista')?.value.trim() || '';
+                this.#filterState.dia             = document.getElementById('filterDia')?.value.trim() || '';
+                this.#filterState.telefoneEnviado = document.getElementById('filterTelEnviado')?.value.trim() || '';
+                this.#filterState.page = 1;
+                this.#loadTable(1);
+            };
             const clear = () => {
                 this.#filterState.reset();
                 this.#resetFilterInputs();
@@ -487,19 +496,8 @@
 
             ['filterTipoLista', 'filterDia', 'filterTelEnviado'].forEach(id => {
                 document.getElementById(id)?.addEventListener('keydown', e => {
-                    if (e.key === 'Enter') {
-                        this.#filterState.tipoLista       = document.getElementById('filterTipoLista')?.value.trim() || '';
-                        this.#filterState.dia             = document.getElementById('filterDia')?.value.trim() || '';
-                        this.#filterState.telefoneEnviado = document.getElementById('filterTelEnviado')?.value.trim() || '';
-                        apply();
-                    }
+                    if (e.key === 'Enter') apply();
                 });
-            });
-
-            document.getElementById('btnApplyFilter')?.addEventListener('click', () => {
-                this.#filterState.tipoLista       = document.getElementById('filterTipoLista')?.value.trim() || '';
-                this.#filterState.dia             = document.getElementById('filterDia')?.value.trim() || '';
-                this.#filterState.telefoneEnviado = document.getElementById('filterTelEnviado')?.value.trim() || '';
             });
         }
 
