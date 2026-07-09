@@ -85,23 +85,25 @@ unset($_jsV);
 
 <!-- Modal: Criacao e Edicao de Tarefa -->
 <div id="modalTask" class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4" style="display:none">
-    <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+    <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md sm:max-w-2xl max-h-[90vh] overflow-y-auto">
         <div class="px-6 py-5 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between">
             <h4 id="modalTaskTitle" class="text-lg font-bold text-gray-800 dark:text-white">Nova Tarefa</h4>
             <button data-action="close-modal" data-target="modalTask"
                 class="text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300 text-2xl">&times;</button>
         </div>
-        <div class="px-6 py-5 space-y-4">
+        <!-- Em telas >= sm os campos fluem em 2 colunas: modal mais larga e baixa
+             cabe inteira em tablets no modo paisagem, sem depender de scroll. -->
+        <div class="px-6 py-5 space-y-4 sm:space-y-0 sm:grid sm:grid-cols-2 sm:gap-4">
             <input type="hidden" id="task_id" value="">
 
-            <div id="taskClientLink" style="display:none" class="bg-indigo-50 dark:bg-indigo-900/30 rounded-lg px-3 py-2 flex items-center justify-between">
+            <div id="taskClientLink" style="display:none" class="sm:col-span-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg px-3 py-2 flex items-center justify-between">
                 <span class="text-sm text-indigo-700 dark:text-indigo-300">👥 Cliente: <span id="taskClientName" class="font-medium"></span></span>
                 <a id="taskClientUrl" href="#" class="text-xs text-indigo-600 hover:underline font-medium">Ver cadastro ➜</a>
             </div>
 
             <?php $p = 'task'; require VIEW_PATH . '/components/task-modal-fields.php'; ?>
 
-            <div class="flex flex-col sm:flex-row sm:justify-between gap-3 pt-2">
+            <div class="sm:col-span-2 flex flex-col sm:flex-row sm:justify-between gap-3 pt-2">
                 <div class="flex flex-wrap gap-2" id="taskActionBtns" style="display:none!important">
                     <button id="btnDeleteTask" title="Excluir"
                         class="px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 rounded-lg transition-colors flex items-center">

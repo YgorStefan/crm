@@ -25,14 +25,14 @@ $showAssigned      = $showAssigned      ?? true;
 $showDescription   = $showDescription   ?? true;
 $recurrenceDefault = $recurrenceDefault ?? 'weekly';
 ?>
-<div>
+<div class="sm:col-span-2">
     <label for="<?= $p ?>_title" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Título <span
             class="text-red-500">*</span></label>
     <input type="text" id="<?= $p ?>_title" name="title" required placeholder="O que precisa ser feito?"
         class="w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
 </div>
 
-<div class="grid grid-cols-2 gap-3">
+<div class="grid grid-cols-2 gap-3 sm:col-span-2 sm:gap-4">
     <div>
         <label for="<?= $p ?>_due_date" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Prazo <span
                 class="text-red-500">*</span></label>
@@ -73,7 +73,7 @@ $recurrenceDefault = $recurrenceDefault ?? 'weekly';
     </div>
 <?php endif; ?>
 
-<div id="<?= $p ?>RecurrenceRow">
+<div id="<?= $p ?>RecurrenceRow" class="sm:col-span-2">
     <label class="flex items-center gap-2 cursor-pointer select-none">
         <input type="checkbox" id="<?= $p ?>_recur_enabled"
             class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
