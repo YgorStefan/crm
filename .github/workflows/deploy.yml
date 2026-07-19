@@ -1,0 +1,18 @@
+name: Deploy
+on:
+  push:
+    branches: [main, master]
+concurrency:
+  group: deploy-crm
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Deploy via SSH
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: /opt/apps/oracle/scripts/deploy.sh crm
