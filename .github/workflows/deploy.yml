@@ -15,4 +15,7 @@ jobs:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          script: /opt/apps/oracle/scripts/deploy.sh crm
+          # atualiza o scaffold antes: garante que o deploy.sh executado é o da main do oracle
+          script: |
+            git -C /opt/apps/oracle pull --ff-only
+            /opt/apps/oracle/scripts/deploy.sh crm
