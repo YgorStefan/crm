@@ -59,6 +59,12 @@ jobs:
       - name: Instalar dependências PHP (composer)
         run: composer install --no-interaction --prefer-dist --no-progress
 
+      # Cedo de propósito: é o passo mais barato do job e não precisa de banco,
+      # navegador nem CSS compilado — falha de tipo aparece em segundos em vez
+      # de depois de subir MySQL e Playwright.
+      - name: Análise estática (PHPStan)
+        run: composer analyse
+
       - name: Instalar dependências Node (npm)
         run: npm ci
 

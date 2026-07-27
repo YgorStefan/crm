@@ -1,0 +1,55 @@
+parameters:
+	ignoreErrors:
+		-
+			message: '#^Strict comparison using \=\=\= between non\-falsy\-string and '''' will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: bin/migrate.php
+
+		-
+			message: '#^Property Core\\Router\:\:\$params is never read, only written\.$#'
+			identifier: property.onlyWritten
+			count: 1
+			path: core/Router.php
+
+		-
+			message: '#^If condition is always false\.$#'
+			identifier: if.alwaysFalse
+			count: 1
+			path: database/migrations/001_migrate_tenant_initial.php
+
+		-
+			message: '#^Negated boolean expression is always true\.$#'
+			identifier: booleanNot.alwaysTrue
+			count: 1
+			path: database/migrations/001_migrate_tenant_initial.php
+
+		-
+			message: '#^Ternary operator condition is always false\.$#'
+			identifier: ternary.alwaysFalse
+			count: 5
+			path: database/migrations/001_migrate_tenant_initial.php
+
+		-
+			message: '#^PHPDoc tag @var does not specify variable name\.$#'
+			identifier: varTag.noVariable
+			count: 1
+			path: database/smoke/bootstrap.php
+
+		-
+			message: '#^Offset ''tailwindcss\-linux…''\|''tailwindcss\-macos…''\|''tailwindcss\-windows…'' on array\{''tailwindcss\-windows\-x64\.exe''\: ''67f1c5e3f5a03406a7b…'', tailwindcss\-linux\-x64\: ''7d24f7fa191d2193b78…'', tailwindcss\-linux\-arm64\: ''69b1378b8133192d7d2…'', tailwindcss\-macos\-x64\: ''6cbdad74be776c087ff…'', tailwindcss\-macos\-arm64\: ''a1d0c7985759accca0b…''\} on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.offset
+			count: 1
+			path: scripts/setup_tailwind.php
+
+		-
+			message: '#^Strict comparison using \=\=\= between ''67f1c5e3f5a03406a7b…''\|''69b1378b8133192d7d2…''\|''6cbdad74be776c087ff…''\|''7d24f7fa191d2193b78…''\|''a1d0c7985759accca0b…'' and null will always evaluate to false\.$#'
+			identifier: identical.alwaysFalse
+			count: 1
+			path: scripts/setup_tailwind.php
+
+		-
+			message: '#^Variable \$expected on left side of \?\? always exists and is not nullable\.$#'
+			identifier: nullCoalesce.variable
+			count: 1
+			path: scripts/setup_tailwind.php

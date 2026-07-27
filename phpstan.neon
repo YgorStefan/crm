@@ -1,0 +1,57 @@
+# Divida tecnica parkeada em 26/07/2026: 13 achados reais que ja existiam
+# quando a analise entrou no projeto (condicao morta em 001_migrate_tenant_
+# initial.php, propriedade so escrita no Router, comparacoes impossiveis no
+# setup_tailwind.php). Ficam no phpstan-baseline.neon para nao bloquear, mas
+# codigo NOVO e cobrado no nivel cheio. Consertou um? Rode
+# `composer analyse:baseline` para o baseline encolher junto.
+includes:
+    - phpstan-baseline.neon
+
+parameters:
+    level: 5
+
+    paths:
+        - app/Controllers
+        - app/Models
+        - app/Services
+        - core
+        - bin
+        - database
+        - scripts
+        - router.php
+
+    # app/Views fica de fora de proposito: sao templates PHP+HTML com variaveis
+    # vindas do escopo de quem inclui, o que so gera "variable.undefined".
+    #
+    # O autoloader PSR-4 e proprio (core/bootstrap.php), nao do Composer, entao
+    # o PHPStan so enxerga as classes varrendo estes diretorios na mao.
+    scanDirectories:
+        - app
+        - core
+
+    bootstrapFiles:
+        - phpstan-constants.php
+
+    # Mudam por ambiente (vem do .env). Sem isto o PHPStan usa o valor literal
+    # do phpstan-constants.php e acusa "sempre falso" em codigo correto, como
+    # o APP_ENV === 'production' do core/bootstrap.php.
+    dynamicConstantNames:
+        - APP_URL
+        - APP_NAME
+        - APP_ENV
+        - SESSION_NAME
+        - SESSION_LIFETIME
+
+    # config/database.php e gitignored (.gitignore:64) e nasce do .example no
+    # deploy e no CI. Quem so analisa nao tem o arquivo, entao o aviso fala do
+    # ambiente, nao do codigo.
+    ignoreErrors:
+        -
+            identifier: require.fileNotFound
+            message: '#config[\\/]database\.php#'
+
+    # Preciso porque a regra acima so casa quando o arquivo e reanalisado; com
+    # o cache quente ela fica sem uso e viraria erro "pattern was not matched",
+    # deixando o resultado dependente do cache em vez do codigo.
+    reportUnmatchedIgnoredErrors: false
+
