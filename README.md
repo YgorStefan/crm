@@ -237,6 +237,9 @@ php scripts/build_css.php --minify   # produção
 
 # Watch mode (npm) — recompila ao salvar
 npm run watch
+
+# Análise estática (PHPStan) — mesmo comando que o CI roda
+composer analyse
 ```
 
 ---
@@ -314,6 +317,52 @@ k6 run -e BASE_URL=https://seudominio.com.br/crm \
 > O smoke do CI serve como *guard-rail* básico (poucos VUs, curta duração,
 > contra o servidor PHP embutido) — não substitui um teste de carga real
 > contra o ambiente de produção/staging.
+
+### 4. Análise estática (PHPStan)
+
+```bash
+composer analyse
+```
+
+Nível 5 sobre `app/Controllers`, `app/Models`, `app/Services`, `core/`, `bin/`,
+`database/`, `scripts/` e `router.php`. `app/Views` fica de fora de propósito:
+são templates PHP+HTML cujas variáveis vêm do escopo de quem inclui, então só
+gerariam ruído.
+
+No CI é o **primeiro** passo do job — não depende de MySQL, navegador nem CSS
+compilado, então erro de tipo aparece em segundos em vez de depois de subir a
+esteira inteira.
+
+> ⚠️ O `--memory-limit=1G` no script do `composer.json` não é enfeite: com os
+> 128M padrão do PHP a análise **aborta no meio e reporta zero erro**, com cara
+> de aprovada. Não tire.
+
+Como o autoloader PSR-4 é próprio (`core/bootstrap.php`) e as constantes globais
+nascem de `define()` com valor de `env()`, o PHPStan não as descobre sozinho —
+daí o `phpstan-constants.php`, que existe **só para a análise** e nunca é
+carregado pela aplicação.
+
+#### Dívida técnica parkeada em 26/07/2026
+
+Quando a análise entrou no projeto, estes 13 achados já existiam. Ficam em
+`phpstan-baseline.neon` para não travar o CI, mas **código novo é cobrado no
+nível cheio**. Consertou algum? `composer analyse:baseline` encolhe o baseline
+junto.
+
+| Onde | O quê |
+|---|---|
+| `database/migrations/001_migrate_tenant_initial.php` | 7 condições que nunca executam (`if` e ternários sempre falsos) |
+| `scripts/setup_tailwind.php` | 3 comparações impossíveis entre hashes |
+| `core/Router.php:14` | `$params` é escrita e nunca lida |
+| `bin/migrate.php:139` | `=== ''` contra string que nunca é vazia |
+| `database/smoke/bootstrap.php:24` | `@var` sem nome de variável |
+
+Nenhum foi corrigido: é lógica do projeto, e a das migrations pode ser
+intencional.
+
+> Formatação (`composer format`, Pint) está instalada mas **não adotada** — no
+> preset PER ela reescreveria 65 dos 97 arquivos. É um commit à parte, quando
+> valer a pena bancar o `git blame`.
 
 ### CI (GitHub Actions)
 
