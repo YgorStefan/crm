@@ -1,21 +1,41 @@
+# Deploy automático: push na main/master → a VM puxa e reconstrói o app.
+# COPIE este arquivo para  .github/workflows/deploy.yml  DENTRO do repositório do app
+# e troque <APP> pelo nome do serviço no docker-compose (ufapaguei, crm, portfolio, ...).
+#
+# Segredos a cadastrar no repo ANTES do push deste arquivo (o próprio push publica):
+#   DEPLOY_HOST:        IP público da VM
+#   DEPLOY_USER:        usuário SSH (ubuntu)
+#   DEPLOY_SSH_KEY:     chave PRIVADA própria deste app (a pública entra no authorized_keys da VM
+#                       presa ao deploy-gate.sh deste app)
+#   DEPLOY_KNOWN_HOSTS: as chaves de host da VM, uma por linha, no formato "<IP> <tipo> <chave>"
+#
+# Passo a passo em  oracle/provisioning/05-cicd.md
 name: Deploy
 on:
   push:
     branches: [main, master]
 concurrency:
-  group: deploy-crm
+  group: deploy-crm          # evita dois deploys do mesmo app ao mesmo tempo
   cancel-in-progress: false
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     steps:
       - name: Deploy via SSH
-        uses: appleboy/ssh-action@v1.2.2
-        with:
-          host: ${{ secrets.DEPLOY_HOST }}
-          username: ${{ secrets.DEPLOY_USER }}
-          key: ${{ secrets.DEPLOY_SSH_KEY }}
-          # atualiza o scaffold antes: garante que o deploy.sh executado é o da main do oracle
-          script: |
-            git -C /opt/apps/oracle pull --ff-only
-            /opt/apps/oracle/scripts/deploy.sh crm
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        # ssh do proprio runner, sem action de terceiro. na vm a chave cai no deploy-gate.sh, que ignora
+        # o comando abaixo; ele fica certo pro caso de a trava sair um dia.
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$DEPLOY_SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key
+          printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          ssh -i ~/.ssh/deploy_key -o IdentitiesOnly=yes -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes -o ServerAliveInterval=30 \
+            "$DEPLOY_USER@$DEPLOY_HOST" \
+            'set -e; git -C /opt/apps/oracle pull --ff-only; /opt/apps/oracle/scripts/deploy.sh crm'
