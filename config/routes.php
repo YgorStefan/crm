@@ -70,6 +70,17 @@ $router->get('/api/tasks/upcoming', 'TaskController', 'upcoming');
 $router->get('/api/tasks/calendar', 'TaskController', 'calendarFeed');
 $router->get('/api/tasks/{id}', 'TaskController', 'getTask');
 
+// ---- Google Agenda ----
+$router->get('/google/connect', 'GoogleController', 'connect');
+// o google volta sem o cookie samesite strict da sessao, entao esta rota e
+// publica e so repassa a query ao finish, que ja chega com o cookie.
+$router->get('/google/callback', 'GoogleController', 'callback', [], public: true);
+$router->get('/google/callback/finish', 'GoogleController', 'finish');
+$router->post('/google/disconnect', 'GoogleController', 'disconnect', ['CsrfMiddleware']);
+// {google_id} e nao {id}, porque o {id} so casa digitos e o id do google tem letras.
+$router->post('/api/google/events/{google_id}/update', 'GoogleController', 'updateEvent', ['CsrfMiddleware']);
+$router->post('/api/google/events/{google_id}/delete', 'GoogleController', 'deleteEvent', ['CsrfMiddleware']);
+
 // ---- API AJAX — dados para gráficos do dashboard ----
 $router->get('/api/dashboard/stats', 'DashboardController', 'stats');
 

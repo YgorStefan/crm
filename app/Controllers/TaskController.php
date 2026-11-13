@@ -4,13 +4,24 @@ namespace App\Controllers;
 
 use Core\Controller;
 use Core\Http\ApiResponse;
+use Core\Logger;
 use Core\Middleware\CsrfMiddleware;
+use App\Models\GoogleAccount;
 use App\Models\Task;
 use App\Models\User;
 use App\Models\Client;
+use App\Services\Google\GoogleCalendarSync;
+use App\Services\Google\GoogleConfig;
 
 class TaskController extends Controller
 {
+    private const GOOGLE_EVENT_COLOR = '#64748b';
+    // o fullcalendar manda a janela com o offset do navegador, e sem ele a
+    // lista do google pediria horarios deslocados.
+    private const FEED_INSTANT_PATTERN = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})\z/';
+
+    private ?GoogleCalendarSync $sync = null;
+
     public function __construct(
         private Task   $tasks   = new Task(),
         private Client $clients = new Client(),
@@ -23,7 +34,53 @@ class TaskController extends Controller
     public function calendarFeed(array $params = []): void
     {
         $userId = (int) ($_SESSION['user']['id'] ?? 0);
-        $isAdmin = ($_SESSION['user']['role'] ?? '') === 'admin';
+        $role = (string) ($_SESSION['user']['role'] ?? '');
+        $isAdmin = $role === 'admin';
+
+        $googleStatus = null;
+        // a spec manda qualquer falha nao prevista do lado do google cair no
+        // feed de sempre, com o aviso de degradado.
+        try {
+            $connection = self::googleBarState(
+                GoogleConfig::fromEnv()->isConfigured(),
+                $role,
+                static fn (): array|false => (new GoogleAccount())->findForUser($userId),
+            )['connection'];
+            $window = self::parseFeedWindow($_GET['start'] ?? null, $_GET['end'] ?? null);
+
+            if ($connection === 'active' && $window !== null) {
+                $sync = $this->sync();
+                // o google pode levar segundos, e a sessao aberta seguraria as
+                // outras requisicoes deste usuario ate o feed terminar.
+                session_write_close();
+                $result = $sync->window($userId, $isAdmin, $window[0], $window[1], ($_GET['team'] ?? '') === '1');
+
+                header('X-CRM-Google-Status: ' . $result['status']);
+                $this->json([
+                    ...array_map(self::calendarTaskEvent(...), $result['tasks']),
+                    ...array_map(self::calendarTeamEvent(...), $result['team']),
+                    ...array_map(self::calendarGoogleEvent(...), $result['foreign']),
+                ]);
+                return;
+            }
+
+            // a conta revogada nao chama o google, mas a tela precisa do pedido de reconexao.
+            if ($connection === 'revoked') {
+                $googleStatus = 'reconnect';
+            }
+        } catch (\Throwable $e) {
+            (new Logger())->error('[TaskController] feed do calendario sem o google', [
+                'user_id'   => $userId,
+                'exception' => $e::class,
+                'message'   => $e->getMessage(),
+            ]);
+            $googleStatus = 'degraded';
+        }
+
+        if ($googleStatus !== null) {
+            header('X-CRM-Google-Status: ' . $googleStatus);
+        }
+
         // FullCalendar envia start/end (janela visível) automaticamente
         // quando "events" é configurado como URL — antes ignorados, o que
         // fazia esse endpoint carregar TODAS as tarefas do tenant a cada abertura.
@@ -31,27 +88,124 @@ class TaskController extends Controller
         $end   = $this->parseCalendarDate($_GET['end'] ?? null);
         $tasks = $this->tasks->findForCalendar($userId, $isAdmin, $start, $end);
 
-        $events = array_map(fn($t) => [
-            'id'    => $t['id'],
-            'title' => (($t['recurrence_type'] !== 'none' || $t['recurrence_parent_id'] !== null) ? '↻ ' : '')
-                       . htmlspecialchars($t['title'], ENT_QUOTES, 'UTF-8'),
-            'start' => $t['due_date'],
-            'color' => match ($t['priority']) {
+        $this->json(array_map(self::calendarTaskEvent(...), $tasks));
+    }
+
+    /**
+     * @param array<string, mixed> $task linha do Task::findForCalendar
+     * @return array<string, mixed>
+     */
+    public static function calendarTaskEvent(array $task): array
+    {
+        return [
+            'id'    => $task['id'],
+            'title' => (($task['recurrence_type'] !== 'none' || $task['recurrence_parent_id'] !== null) ? '↻ ' : '')
+                       . htmlspecialchars($task['title'], ENT_QUOTES, 'UTF-8'),
+            'start' => $task['due_date'],
+            'color' => match ($task['priority']) {
                 'high'   => '#ef4444',
                 'medium' => '#f59e0b',
                 default  => '#6366f1',
             },
             'extendedProps' => [
-                'status'               => $t['status'],
-                'priority'             => $t['priority'],
-                'client_id'            => $t['client_id'] ? (int) $t['client_id'] : null,
-                'client_name'          => $t['client_name'] ?? null,
-                'recurrence_type'      => $t['recurrence_type'],
-                'recurrence_parent_id' => $t['recurrence_parent_id'] !== null ? (int) $t['recurrence_parent_id'] : null,
+                'status'               => $task['status'],
+                'priority'             => $task['priority'],
+                'client_id'            => $task['client_id'] ? (int) $task['client_id'] : null,
+                'client_name'          => $task['client_name'] ?? null,
+                'recurrence_type'      => $task['recurrence_type'],
+                'recurrence_parent_id' => $task['recurrence_parent_id'] !== null ? (int) $task['recurrence_parent_id'] : null,
             ],
-        ], $tasks);
+        ];
+    }
 
-        $this->json($events);
+    /**
+     * @param array<string, mixed> $task linha do Task::findTeamForCalendar
+     * @return array<string, mixed>
+     */
+    public static function calendarTeamEvent(array $task): array
+    {
+        $event = self::calendarTaskEvent($task);
+        $event['extendedProps']['assigned_name'] = $task['assigned_name'] ?? null;
+
+        return $event;
+    }
+
+    /**
+     * o titulo vai sem escape porque a tela o poe como texto.
+     *
+     * @param array<string, mixed> $item item foreign do GoogleCalendarSync::window
+     * @return array<string, mixed>
+     */
+    public static function calendarGoogleEvent(array $item): array
+    {
+        $allDay = $item['all_day'] === true;
+        $event  = [
+            'id'    => $item['id'],
+            'title' => $item['title'],
+            'start' => $item['start'],
+            'end'   => $item['end'],
+            'color' => self::GOOGLE_EVENT_COLOR,
+        ];
+        if ($allDay) {
+            $event['allDay'] = true;
+        }
+        $event['extendedProps'] = [
+            'source'      => 'google',
+            'google_id'   => $item['google_id'],
+            'can_edit'    => $item['can_edit'] === true,
+            'recurring'   => $item['recurring'] === true,
+            'html_link'   => $item['html_link'],
+            'description' => $item['description'],
+            'all_day'     => $allDay,
+        ];
+
+        return $event;
+    }
+
+    /** @return array{0:\DateTimeImmutable,1:\DateTimeImmutable}|null */
+    public static function parseFeedWindow(mixed $start, mixed $end): ?array
+    {
+        $from = self::parseFeedInstant($start);
+        $to   = self::parseFeedInstant($end);
+
+        return $from !== null && $to !== null && $to > $from ? [$from, $to] : null;
+    }
+
+    private static function parseFeedInstant(mixed $raw): ?\DateTimeImmutable
+    {
+        if (!is_string($raw) || preg_match(self::FEED_INSTANT_PATTERN, $raw) !== 1) {
+            return null;
+        }
+        try {
+            $at = new \DateTimeImmutable($raw);
+        } catch (\Exception) {
+            return null;
+        }
+        // o php aceita o dia 31 de fevereiro e o empurra para marco com um aviso.
+        $errors = \DateTimeImmutable::getLastErrors();
+
+        return $errors === false || $errors['warning_count'] === 0 ? $at : null;
+    }
+
+    private function sync(): GoogleCalendarSync
+    {
+        return $this->sync ??= GoogleCalendarSync::default();
+    }
+
+    private function drainAfterSave(): void
+    {
+        // a tarefa ja foi gravada, e um erro aqui levaria a pessoa a salvar de novo.
+        try {
+            if (GoogleConfig::fromEnv()->isConfigured()) {
+                $this->sync()->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE, (int) ($_SESSION['user']['id'] ?? 0));
+            }
+        } catch (\Throwable $e) {
+            (new Logger())->error('[TaskController] envio ao google depois de salvar', [
+                'user_id'   => (int) ($_SESSION['user']['id'] ?? 0),
+                'exception' => $e::class,
+                'message'   => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
@@ -346,6 +500,8 @@ class TaskController extends Controller
             return;
         }
 
+        $this->drainAfterSave();
+
         if ($this->isAjax()) {
             $this->json(ApiResponse::success(token: true));
             return;
@@ -460,6 +616,8 @@ class TaskController extends Controller
             return;
         }
 
+        $this->drainAfterSave();
+
         // Se for requisição AJAX, retorna JSON; senão, redireciona
         if ($this->isAjax()) {
             $this->json(ApiResponse::success(token: true));
@@ -490,6 +648,7 @@ class TaskController extends Controller
         }
 
         $this->tasks->delete($id);
+        $this->drainAfterSave();
 
         if ($this->isAjax()) {
             $this->json(ApiResponse::success(token: true));
@@ -518,6 +677,7 @@ class TaskController extends Controller
             : $id;
 
         $this->tasks->cancelRecurrence($parentId);
+        $this->drainAfterSave();
         $this->json(ApiResponse::success(token: true));
     }
 }

@@ -3,8 +3,12 @@
 namespace App\Controllers;
 
 use Core\Controller;
+use Core\Logger;
 use Core\Middleware\CsrfMiddleware;
 use App\Models\User;
+use App\Services\Google\CurlTransport;
+use App\Services\Google\GoogleAuth;
+use App\Services\Google\GoogleConfig;
 
 class UserController extends Controller
 {
@@ -171,8 +175,27 @@ class UserController extends Controller
         }
 
         $this->users->update($id, ['is_active' => 0]);
+        $this->disconnectGoogle($id);
 
         $this->flash('success', 'Usuário desativado com sucesso.');
         $this->redirect('/admin/users');
+    }
+
+    // usuario desativado nao deixa credencial do google guardada. a desativacao
+    // ja foi gravada, entao a falha aqui so fica registrada.
+    private function disconnectGoogle(int $userId): void
+    {
+        try {
+            $config = GoogleConfig::fromEnv();
+            if ($config->isConfigured()) {
+                (new GoogleAuth($config, new CurlTransport()))->disconnect($userId);
+            }
+        } catch (\Throwable $e) {
+            (new Logger())->error('[UserController] desconectar o google do usuario desativado', [
+                'user_id'   => $userId,
+                'exception' => $e::class,
+                'message'   => $e->getMessage(),
+            ]);
+        }
     }
 }
