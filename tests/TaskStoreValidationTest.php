@@ -4,10 +4,6 @@ use App\Controllers\TaskController;
 use Core\Database;
 use PHPUnit\Framework\TestCase;
 
-/**
- * Para o fluxo de store() onde o exit de json() e redirect() pararia o
- * processo: o teste so precisa saber o que o controller respondeu.
- */
 class StoreRespondeu extends \RuntimeException
 {
     public function __construct(
@@ -19,6 +15,8 @@ class StoreRespondeu extends \RuntimeException
     }
 }
 
+// json() e redirect() terminam em exit, que derrubaria o processo do phpunit; aqui eles lancam
+// StoreRespondeu, que para o fluxo de store() no mesmo ponto em que o exit pararia e entrega a resposta ao teste.
 class CapturingTaskController extends TaskController
 {
     protected function json(mixed $data, int $status = 200): void
@@ -32,12 +30,6 @@ class CapturingTaskController extends TaskController
     }
 }
 
-/**
- * store() deve responder 422 (ajax) ou flash + redirect (formulario) quando
- * Task::create recusa o responsavel ou o cliente, em vez de deixar a
- * InvalidArgumentException subir e virar 500. Usa o crm_test descartavel,
- * como o TaskTenantIsolationTest; sem MySQL acessivel o teste e pulado.
- */
 class TaskStoreValidationTest extends TestCase
 {
     private static ?\PDO $pdo = null;

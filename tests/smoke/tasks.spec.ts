@@ -1,11 +1,11 @@
 import { test, expect, type Page } from '@playwright/test';
 import { login } from './helpers';
 
+// o chamador avanca o calendario um mes antes, o que evita colidir com tarefas de outros specs criadas no mes atual.
 /**
- * Clica num dia do mês seguinte (o chamador avança o calendário antes, para
- * evitar colidir com tarefas de outros specs criadas no mês atual). Se o dia já
- * tiver evento, o próprio modal de conflito oferece "Criar novo", que abre o
- * modal de nova tarefa normalmente para a mesma data.
+ * Clica num dia do mês seguinte. Se o dia já tiver evento, o próprio modal de
+ * conflito oferece "Criar novo", que abre o modal de nova tarefa normalmente
+ * para a mesma data.
  */
 async function openNewTaskModalOnDay(page: Page, day = 10): Promise<string> {
     const now = new Date();
