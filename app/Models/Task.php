@@ -456,17 +456,21 @@ class Task extends Model
      */
     private function ensureRecurringInstancesGenerated(int $tenantId, int $userId, bool $isAdmin): void
     {
+        // molde de responsavel inativo fica de fora, entao a serie para de gerar
+        // ocorrencias e volta sozinha quando um admin a passa para alguem ativo.
         $sql = "
-            SELECT id, client_id, assigned_to, title, description, due_date, priority, created_by, recurrence_type
-            FROM tasks
-            WHERE tenant_id = :tenant_id
-              AND recurrence_type != 'none'
-              AND recurrence_parent_id IS NULL
-              AND status NOT IN ('cancelled')
+            SELECT t.id, t.client_id, t.assigned_to, t.title, t.description, t.due_date,
+                   t.priority, t.created_by, t.recurrence_type
+            FROM tasks t
+            JOIN users u ON u.id = t.assigned_to AND u.tenant_id = :tenant_id_u AND u.is_active = 1
+            WHERE t.tenant_id = :tenant_id
+              AND t.recurrence_type != 'none'
+              AND t.recurrence_parent_id IS NULL
+              AND t.status NOT IN ('cancelled')
         ";
-        $params = [':tenant_id' => $tenantId];
+        $params = [':tenant_id' => $tenantId, ':tenant_id_u' => $tenantId];
         if (!$isAdmin) {
-            $sql .= " AND assigned_to = :uid";
+            $sql .= " AND t.assigned_to = :uid";
             $params[':uid'] = $userId;
         }
         $stmt = $this->db->prepare($sql);
