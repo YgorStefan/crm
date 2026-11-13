@@ -235,7 +235,8 @@ $googleTeam       = $googleEnabled && $googleConnection === 'active' && ($_SESSI
                 Este evento se repete. O que você mudar aqui vale só para esta ocorrência.
             </p>
             <p id="googleEventReadOnly" class="hidden rounded-lg bg-gray-100 dark:bg-zinc-800 px-3 py-2 text-sm text-gray-700 dark:text-zinc-300">
-                Só quem organizou o evento pode alterá-lo. Para mudar alguma coisa, abra no Google.
+                Só quem organizou o evento pode alterá-lo.
+                <span data-google-readonly-link>Para mudar alguma coisa, abra no Google.</span>
             </p>
 
             <div>

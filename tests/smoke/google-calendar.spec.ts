@@ -390,6 +390,19 @@ test.describe('Calendário / eventos e avisos do Google com feed falso', () => {
         await expect(page.locator('#btnDeleteGoogleEvent')).toBeHidden();
         await expect(page.locator('#btnCloseGoogleEvent')).toHaveText('Fechar');
         await expect(page.locator('#googleEventLink')).toBeVisible();
+        await expect(page.locator('#googleEventReadOnly')).toContainText('abra no Google', { useInnerText: true });
+    });
+
+    test('somente leitura sem link válido não manda abrir no Google', async ({ page }) => {
+        await mockFeed(page, [googleEvent({ props: { can_edit: false, html_link: 'javascript:alert(1)' } })]);
+        await openTasks(page);
+
+        await page.getByText('Reunião E2E do Google').click();
+        await expect(page.locator('#googleEventReadOnly')).toBeVisible();
+        await expect(page.locator('#googleEventReadOnly')).toContainText('Só quem organizou o evento pode alterá-lo.');
+        await expect(page.locator('#googleEventReadOnly')).not.toContainText('abra no Google', { useInnerText: true });
+        await expect(page.locator('#googleEventLink')).toBeHidden();
+        await expect(page.locator('#googleEventLink')).not.toHaveAttribute('href', /.*/);
     });
 
     test('o modal de evento editável depois de um somente leitura volta a editar', async ({ page }) => {

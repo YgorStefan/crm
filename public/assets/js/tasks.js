@@ -385,13 +385,15 @@
 
             const link = document.getElementById('googleEventLink');
             const href = String(props.html_link || '');
-            if (href.startsWith('https://')) {
+            const hasLink = href.startsWith('https://');
+            if (hasLink) {
                 link.href = href;
                 link.style.display = '';
             } else {
                 link.removeAttribute('href');
                 link.style.display = 'none';
             }
+            document.querySelector('#googleEventReadOnly [data-google-readonly-link]').classList.toggle('hidden', !hasLink);
 
             this.#showGoogleError('');
             document.getElementById('modalGoogleEvent').style.display = 'flex';
