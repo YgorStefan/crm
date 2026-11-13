@@ -25,6 +25,14 @@ test.describe('Contatos Frios', () => {
         await expect(page.getByText('Importações por mês')).toBeVisible();
     });
 
+    test('a biblioteca de planilha da CDN carrega e passa na checagem de integridade', async ({ page }) => {
+        // o import de xls e xlsx depende desta biblioteca, e os testes de csv
+        // passam mesmo quando o navegador recusa o script.
+        await expect
+            .poll(() => page.evaluate(() => (window as unknown as { XLSX?: { version: string } }).XLSX?.version))
+            .toBe('0.20.3');
+    });
+
     test('exporta a lista de contatos frios em CSV', async ({ page }) => {
         // Garante que existe pelo menos um mês importado para exportar.
         const listName = `Lista E2E Export ${Date.now()}`;
