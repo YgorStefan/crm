@@ -259,6 +259,13 @@ CREATE TABLE IF NOT EXISTS tasks (
     recurrence_parent_id INT UNSIGNED NULL COMMENT 'FK para tasks.id — NULL = task-pai ou não recorrente',
     created_by  INT UNSIGNED    NOT NULL COMMENT 'Usuário que criou a tarefa',
     tenant_id   INT UNSIGNED    NOT NULL DEFAULT 1 COMMENT 'Isolamento multi-tenant',
+    -- google_sync_pending e um contador: marcar soma 1, e o envio so zera se o
+    -- valor nao mudou desde a leitura, para nao perder edicao feita no meio.
+    google_event_id     VARCHAR(255)    NULL,
+    google_owner_id     INT UNSIGNED    NULL,
+    google_etag         VARCHAR(100)    NULL,
+    google_duration_min INT UNSIGNED    NULL,
+    google_sync_pending INT UNSIGNED    NOT NULL DEFAULT 1,
     created_at  TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at  TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP
                                 ON UPDATE CURRENT_TIMESTAMP,
@@ -266,6 +273,8 @@ CREATE TABLE IF NOT EXISTS tasks (
     INDEX idx_tasks_tenant (tenant_id),
     INDEX idx_tasks_tenant_status_due (tenant_id, status, due_date),
     INDEX idx_tasks_recurrence (tenant_id, recurrence_parent_id, due_date),
+    INDEX idx_tasks_google_queue (tenant_id, google_sync_pending, assigned_to, due_date),
+    INDEX idx_tasks_google_event (tenant_id, google_event_id),
     -- Evita duas instâncias de recorrência para o mesmo (tarefa-pai, data) em
     -- corridas concorrentes; NULL (tarefas não-recorrentes/pais) não colide.
     UNIQUE KEY uq_tasks_recurrence_instance (recurrence_parent_id, due_date),
@@ -343,6 +352,47 @@ CREATE TABLE IF NOT EXISTS prospecting_requests (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================
+-- TABELA: google_accounts
+-- refresh_token e access_token ficam cifrados com a APP_KEY, entao
+-- trocar a chave derruba todas as conexoes com o google agenda.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS google_accounts (
+    user_id                 INT UNSIGNED NOT NULL,
+    tenant_id               INT UNSIGNED NOT NULL,
+    google_email            VARCHAR(255) NOT NULL,
+    google_sub              VARCHAR(255) NOT NULL,
+    refresh_token           TEXT         NULL,
+    access_token            TEXT         NULL,
+    access_token_expires_at DATETIME     NULL,
+    status                  ENUM('active','revoked','disconnected') NOT NULL DEFAULT 'active',
+    drain_until             DATETIME     NULL,
+    connected_at            TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at              TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+                                         ON UPDATE CURRENT_TIMESTAMP,
+    PRIMARY KEY (user_id),
+    INDEX idx_google_accounts_tenant (tenant_id),
+    CONSTRAINT fk_google_accounts_user
+        FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_google_accounts_tenant
+        FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
+-- TABELA: google_event_deletions
+-- fila de remocoes no google agenda: guarda o id do evento antes de a
+-- tarefa sumir do banco, porque depois dela apagada nao ha de onde ler.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS google_event_deletions (
+    id              INT UNSIGNED  NOT NULL AUTO_INCREMENT,
+    tenant_id       INT UNSIGNED  NOT NULL,
+    user_id         INT UNSIGNED  NOT NULL,
+    google_event_id VARCHAR(1024) NOT NULL,
+    created_at      TIMESTAMP     NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (id),
+    INDEX idx_google_event_deletions_tenant_user (tenant_id, user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================
 -- DADOS INICIAIS: Usuário Administrador Padrão
 -- Senha padrão: Admin@1234
 -- Hash: password_hash('Admin@1234', PASSWORD_BCRYPT, ['cost' => 12])
@@ -369,8 +419,10 @@ SET FOREIGN_KEY_CHECKS = 1;
 --   8. tasks                 → tarefas e follow-ups
 --   9. cold_contacts         → contatos frios importados via CSV
 --  10. prospecting_requests  → throttle de prospecção (Google Places API)
+--  11. google_accounts       → conexão de cada usuário com o Google Agenda
+--  12. google_event_deletions → fila de remoções de eventos no Google Agenda
 --
--- Consolidado até a migration 020 (inclusive). Qualquer migration nova
+-- Consolidado até a migration 021 (inclusive). Qualquer migration nova
 -- em database/migrations/ deve ser aplicada com `php bin/migrate.php`
 -- após o baseline inicial (`php bin/migrate.php --baseline`).
 -- ============================================================

@@ -3,6 +3,19 @@
 // Não carrega config/app.php (evita .env e sessão de produção); define
 // apenas as constantes que o código sob teste usa.
 
+date_default_timezone_set('America/Sao_Paulo');
+
+// copia do env() de config/app.php, que este arquivo nao carrega, sem a leitura
+// de $_SERVER: os testes configuram pelo $_ENV ou pelo ambiente do processo.
+function env(string $key, mixed $default = null): mixed
+{
+    if (isset($_ENV[$key]) && $_ENV[$key] !== '') {
+        return $_ENV[$key];
+    }
+    $val = getenv($key);
+    return ($val !== false && $val !== '') ? $val : $default;
+}
+
 define('DS', DIRECTORY_SEPARATOR);
 define('ROOT_PATH', dirname(__DIR__));
 define('APP_PATH', ROOT_PATH . DS . 'app');

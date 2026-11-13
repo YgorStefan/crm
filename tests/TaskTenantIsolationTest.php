@@ -47,7 +47,10 @@ class TaskTenantIsolationTest extends TestCase
                 client_id INT UNSIGNED NULL, assigned_to INT UNSIGNED, title VARCHAR(200),
                 description TEXT NULL, due_date DATETIME, priority VARCHAR(20), status VARCHAR(20),
                 recurrence_type VARCHAR(20) DEFAULT "none", recurrence_parent_id INT UNSIGNED NULL,
-                created_by INT UNSIGNED, tenant_id INT UNSIGNED
+                created_by INT UNSIGNED, tenant_id INT UNSIGNED,
+                google_event_id VARCHAR(255) NULL, google_owner_id INT UNSIGNED NULL,
+                google_etag VARCHAR(100) NULL, google_duration_min INT UNSIGNED NULL,
+                google_sync_pending INT UNSIGNED NOT NULL DEFAULT 1
             ) ENGINE=InnoDB'
         );
 
