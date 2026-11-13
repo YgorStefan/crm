@@ -40,8 +40,9 @@ test.describe('Clientes', () => {
         await expect(page).toHaveURL(/\/clients\/\d+$/);
         await expect(page.getByRole('heading', { name: uniqueName })).toBeVisible();
 
-        await page.goto('/clients');
-        await expect(page.getByText(uniqueName)).toBeVisible();
+        // a listagem pagina de 25 em 25 por nome, entao sem a busca o cliente novo cai na pagina 2 quando o banco ja tem sobras de outras rodadas.
+        await page.goto('/clients?search=' + encodeURIComponent(uniqueName));
+        await expect(page.getByRole('link', { name: uniqueName, exact: true })).toBeVisible();
     });
 
     test('a busca do cep preenche a uf no valor e no rótulo exibido do select', async ({ page }) => {

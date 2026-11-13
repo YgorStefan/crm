@@ -117,4 +117,28 @@ foreach ($e2eTaskIds as $taskId) {
     $taskModel->delete((int) $taskId);
 }
 
+// 5) o spec de clientes cria "Cliente E2E <timestamp>" e so um dos testes o remove, e por soft
+//    delete; as sobras ativas de runs anteriores enchem a listagem paginada e o cliente novo
+//    cai na pagina 2. o padrao exige so digitos depois do prefixo para nao pegar o "Cliente
+//    E2E Kanban" fixo do passo 3. a tarefa vinculada passa pelo task::delete pelo mesmo motivo
+//    do passo 4, ja que a fk de tasks.client_id so zera o vinculo e deixaria a tarefa solta
+//    na agenda; interacoes e cotas saem sozinhas pelo cascade da fk.
+$e2eClientIds = $pdo->query("
+    SELECT id FROM clients
+    WHERE tenant_id = 1 AND name REGEXP '^Cliente E2E [0-9]+\$'
+")->fetchAll(PDO::FETCH_COLUMN);
+$clientTaskStmt = $pdo->prepare('
+    SELECT id FROM tasks
+    WHERE tenant_id = 1 AND client_id = :client_id
+    ORDER BY recurrence_parent_id IS NOT NULL, id
+');
+$deleteClientStmt = $pdo->prepare('DELETE FROM clients WHERE id = :id AND tenant_id = 1');
+foreach ($e2eClientIds as $clientId) {
+    $clientTaskStmt->execute(['client_id' => $clientId]);
+    foreach ($clientTaskStmt->fetchAll(PDO::FETCH_COLUMN) as $taskId) {
+        $taskModel->delete((int) $taskId);
+    }
+    $deleteClientStmt->execute(['id' => $clientId]);
+}
+
 echo "[seed] OK — admin@crm.local, e2e.seller@crm.local e cliente de kanban prontos.\n";
