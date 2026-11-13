@@ -259,6 +259,40 @@ final class TaskGoogleQueueTest extends TestCase
         $this->assertSame(1, (int) $linha['google_sync_pending']);
     }
 
+    public function testTrocaSemIdComPendenciaEContaRemoveIdDeterministicoDoDonoAntigo(): void
+    {
+        $id = $this->tarefa(['google_sync_pending' => 1]);
+
+        (new Task())->update($id, ['assigned_to' => self::BIA]);
+
+        $this->assertSame(
+            [['tenant_id' => self::TENANT, 'user_id' => self::ANA, 'google_event_id' => $this->idDeterministico(self::TENANT, $id)]],
+            $this->remocoes()
+        );
+        $linha = $this->linha($id);
+        $this->assertSame(self::BIA, (int) $linha['assigned_to']);
+        $this->assertSame(2, (int) $linha['google_sync_pending']);
+    }
+
+    public function testTrocaSemIdDeDonoSemContaNaoEnfileira(): void
+    {
+        $id = $this->tarefa(['assigned_to' => self::CAIO, 'created_by' => self::CAIO, 'google_sync_pending' => 1]);
+
+        (new Task())->update($id, ['assigned_to' => self::ANA]);
+
+        $this->assertSame([], $this->remocoes());
+        $this->assertSame(self::ANA, (int) $this->linha($id)['assigned_to']);
+    }
+
+    public function testTrocaSemIdESemPendenciaNaoEnfileira(): void
+    {
+        $id = $this->tarefa(['google_sync_pending' => 0]);
+
+        (new Task())->update($id, ['assigned_to' => self::BIA]);
+
+        $this->assertSame([], $this->remocoes());
+    }
+
     public function testMesmoResponsavelNaoMoveEvento(): void
     {
         $id = $this->tarefa([
@@ -310,9 +344,38 @@ final class TaskGoogleQueueTest extends TestCase
 
         $this->assertFalse((new Task())->markSynced($id, 1, 'evento-novo', self::ANA, '"etag-1"', 30));
 
+        $this->assertSame(2, (int) $this->linha($id)['google_sync_pending']);
+    }
+
+    public function testMarkSyncedComContadorMudadoGuardaVinculoDoMesmoDono(): void
+    {
+        $id = $this->tarefa(['google_sync_pending' => 1]);
+        (new Task())->update($id, ['due_date' => $this->em('-2 days')]);
+
+        $this->assertFalse((new Task())->markSynced($id, 1, 'evento-novo', self::ANA, '"etag-1"', 30));
+
         $linha = $this->linha($id);
+        $this->assertSame('evento-novo', $linha['google_event_id']);
+        $this->assertSame(self::ANA, (int) $linha['google_owner_id']);
+        $this->assertSame('"etag-1"', $linha['google_etag']);
+        $this->assertSame(30, (int) $linha['google_duration_min']);
         $this->assertSame(2, (int) $linha['google_sync_pending']);
+        // vencida e vinculada, segue na fila para o envio levar a data nova.
+        $this->assertSame([$id], array_map(fn (array $t): int => (int) $t['id'], (new Task())->pendingForUser(self::ANA, 10)));
+    }
+
+    public function testMarkSyncedComOutroResponsavelNaoGravaNada(): void
+    {
+        $id = $this->tarefa(['google_sync_pending' => 1]);
+        (new Task())->update($id, ['assigned_to' => self::BIA]);
+
+        $this->assertFalse((new Task())->markSynced($id, 1, 'evento-novo', self::ANA, '"etag-1"', 30));
+
+        $linha = $this->linha($id);
         $this->assertNull($linha['google_event_id']);
+        $this->assertNull($linha['google_owner_id']);
+        $this->assertNull($linha['google_etag']);
+        $this->assertSame(2, (int) $linha['google_sync_pending']);
     }
 
     public function testDropFromQueueZeraSoComContadorVisto(): void

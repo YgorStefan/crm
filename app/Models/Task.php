@@ -213,25 +213,24 @@ class Task extends Model
     private function releaseGoogleEventOnReassign(int $id, int $tenantId, int $newAssignee): array
     {
         $stmt = $this->db->prepare(
-            "SELECT assigned_to, google_event_id, google_owner_id FROM tasks
+            "SELECT " . self::DELETION_COLUMNS . " FROM tasks
              WHERE id = :id AND tenant_id = :tenant_id
              FOR UPDATE"
         );
         $stmt->execute([':id' => $id, ':tenant_id' => $tenantId]);
         $row = $stmt->fetch();
 
-        if (!$row
-            || (int) $row['assigned_to'] === $newAssignee
-            || $row['google_event_id'] === null
-            || $row['google_owner_id'] === null
-        ) {
+        if (!$row || (int) $row['assigned_to'] === $newAssignee) {
             return [];
         }
 
-        // o evento mora na agenda do dono antigo: sai de la, e o envio cria
-        // outro na agenda do novo responsavel.
-        (new GoogleEventDeletion())->enqueue((int) $row['google_owner_id'], (string) $row['google_event_id']);
-        return ['google_event_id = NULL', 'google_owner_id = NULL', 'google_etag = NULL'];
+        // o evento mora na agenda do dono antigo, inclusive o de um insert sem
+        // resposta: sai de la pela mesma regra do delete, e o envio cria outro
+        // na agenda do novo responsavel.
+        $this->enqueueGoogleDeletions($tenantId, [$row]);
+        return $row['google_event_id'] !== null
+            ? ['google_event_id = NULL', 'google_owner_id = NULL', 'google_etag = NULL']
+            : [];
     }
 
     public function delete(int $id): bool
@@ -625,18 +624,12 @@ class Task extends Model
         return $stmt->fetchAll();
     }
 
+    /**
+     * @return bool  true so quando zerou a pendencia
+     */
     public function markSynced(int $id, int $seenPending, string $eventId, int $ownerId, ?string $etag, int $durationMin): bool
     {
-        // tudo ou nada: com o contador mudado, gravar o vinculo poderia prender
-        // a tarefa a agenda de um responsavel que ja saiu, e o proximo envio
-        // reencontra o evento pelo id deterministico.
-        $stmt = $this->db->prepare(
-            "UPDATE tasks
-             SET google_event_id = :event_id, google_owner_id = :owner_id, google_etag = :etag,
-                 google_duration_min = :duration_min, google_sync_pending = 0
-             WHERE id = :id AND tenant_id = :tenant_id AND google_sync_pending = :seen"
-        );
-        $stmt->execute([
+        $params = [
             ':event_id'     => $eventId,
             ':owner_id'     => $ownerId,
             ':etag'         => $etag,
@@ -644,8 +637,34 @@ class Task extends Model
             ':id'           => $id,
             ':tenant_id'    => $this->currentTenantId(),
             ':seen'         => $seenPending,
-        ]);
-        return $stmt->rowCount() > 0;
+        ];
+
+        $stmt = $this->db->prepare(
+            "UPDATE tasks
+             SET google_event_id = :event_id, google_owner_id = :owner_id, google_etag = :etag,
+                 google_duration_min = :duration_min, google_sync_pending = 0
+             WHERE id = :id AND tenant_id = :tenant_id AND google_sync_pending = :seen"
+        );
+        $stmt->execute($params);
+        if ($stmt->rowCount() > 0) {
+            return true;
+        }
+
+        // com o contador mudado o vinculo ainda e gravado, senao uma tarefa
+        // movida para o passado durante o envio sairia da fila sem id e o
+        // evento ficaria na data antiga. com outro responsavel nada e gravado,
+        // porque o id e de uma agenda que nao e mais a dele.
+        $params[':assignee'] = $ownerId;
+        $stmt = $this->db->prepare(
+            "UPDATE tasks
+             SET google_event_id = :event_id, google_owner_id = :owner_id, google_etag = :etag,
+                 google_duration_min = :duration_min
+             WHERE id = :id AND tenant_id = :tenant_id
+               AND google_sync_pending <> :seen
+               AND assigned_to = :assignee"
+        );
+        $stmt->execute($params);
+        return false;
     }
 
     public function dropFromQueue(int $id, int $seenPending): void
