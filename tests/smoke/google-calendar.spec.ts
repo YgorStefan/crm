@@ -181,6 +181,35 @@ test.describe('Calendário / eventos e avisos do Google com feed falso', () => {
         expect(await link.getAttribute('href')).toMatch(/\/google\/connect$/);
     });
 
+    test('a resposta atrasada de um mês que já saiu da tela não muda o aviso', async ({ page }) => {
+        let release!: () => void;
+        const held = new Promise<void>((resolve) => { release = resolve; });
+        let calls = 0;
+        await page.route((url) => url.pathname.endsWith('/api/tasks/calendar'), async (route) => {
+            calls++;
+            const stale = calls === 1;
+            if (stale) await held;
+            await route.fulfill({
+                status: 200,
+                contentType: 'application/json',
+                headers: { 'X-CRM-Google-Status': stale ? 'degraded' : 'ok' },
+                body: '[]',
+            });
+        });
+        await openTasks(page);
+        await expect.poll(() => calls).toBe(1);
+        await page.locator('.fc-next-button').click();
+        await expect.poll(() => calls).toBe(2);
+
+        const late = page.waitForResponse((r) => r.headers()['x-crm-google-status'] === 'degraded');
+        release();
+        await late;
+        // o fullcalendar descarta a resposta velha sem sinal nenhum na tela, entao a espera
+        // da tempo de o script processar o json antes de conferir que o aviso nao apareceu.
+        await page.waitForTimeout(300);
+        await expect(page.locator('#googleFeedNotice')).toBeHidden();
+    });
+
     test('falha de rede no feed não quebra a tela', async ({ page }) => {
         const errors: string[] = [];
         page.on('pageerror', (e) => errors.push(e.message));

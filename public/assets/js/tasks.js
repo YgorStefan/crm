@@ -80,6 +80,7 @@
         #applyingFilters = false;
         #selectedDate  = null;
         #teamMode = false;
+        #feedRequest = 0;
         #googleBarState = null;
         #googleEvent = null;
 
@@ -181,6 +182,7 @@
         }
 
         async #fetchEvents(info) {
+            const request = ++this.#feedRequest;
             // sem a janela o feed carrega todas as tarefas do tenant.
             const params = new URLSearchParams({ start: info.startStr, end: info.endStr });
             if (this.#teamMode) params.set('team', '1');
@@ -192,7 +194,9 @@
             if (!resp.ok) throw new Error('O calendário respondeu ' + resp.status + '.');
             const events = await resp.json();
             if (!Array.isArray(events)) throw new Error('O calendário não devolveu uma lista de eventos.');
-            this.#showGoogleStatus(resp.headers.get('X-CRM-Google-Status'));
+            // o fullcalendar joga fora a resposta de um pedido ja superado, entao o aviso
+            // acompanha so o ultimo pedido, que e o que a tela mostra.
+            if (request === this.#feedRequest) this.#showGoogleStatus(resp.headers.get('X-CRM-Google-Status'));
             return events;
         }
 
