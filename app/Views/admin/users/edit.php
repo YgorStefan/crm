@@ -46,17 +46,19 @@ $csrf_token = $csrf_token ?? '';
             </div>
         </div>
         <div class="px-6 py-4 bg-gray-50 dark:bg-zinc-800/30 flex justify-between gap-3">
-            <form method="POST" action="<?= APP_URL ?>/admin/users/<?= $user['id'] ?>/delete"
-                  onsubmit="return confirm('Desativar este usuário?')">
-                <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
-                <button type="submit" class="px-4 py-2 border border-red-300 text-red-600 rounded-lg text-sm hover:bg-red-50 transition-colors">
-                    Desativar
-                </button>
-            </form>
+            <button type="submit" form="form-deactivate-user" class="px-4 py-2 border border-red-300 text-red-600 rounded-lg text-sm hover:bg-red-50 transition-colors">
+                Desativar
+            </button>
             <div class="flex gap-3">
                 <a href="<?= APP_URL ?>/admin/users" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-100 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 dark:border-zinc-700 transition-colors">Cancelar</a>
                 <button type="submit" class="px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg text-sm transition-colors">Salvar</button>
             </div>
         </div>
+    </form>
+
+    <!-- o form de desativar fica fora do de edicao porque o html nao aceita form dentro de form: o navegador descartava este e o botao enviava a edicao. -->
+    <form id="form-deactivate-user" method="POST" action="<?= APP_URL ?>/admin/users/<?= $user['id'] ?>/delete"
+          onsubmit="return confirm('Desativar este usuário?')" class="hidden">
+        <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
     </form>
 </div>

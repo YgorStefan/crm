@@ -1,5 +1,14 @@
-import { test, expect } from '@playwright/test';
-import { login } from './helpers';
+import { test, expect, type Page } from '@playwright/test';
+import { login, setE2eAssigneeActive } from './helpers';
+
+const E2E_ASSIGNEE_EMAIL = 'e2e.responsavel@crm.local';
+
+// abre a edicao pelo goto, que espera o load, para os scripts da tela ja estarem ligados.
+async function openAssigneeEdit(page: Page): Promise<void> {
+    await page.goto('/admin/users');
+    const href = await page.locator('tr', { hasText: E2E_ASSIGNEE_EMAIL }).locator('a[href$="/edit"]').getAttribute('href');
+    await page.goto(href!);
+}
 
 test.describe('Painel Admin', () => {
     test.beforeEach(async ({ page }) => {
@@ -44,6 +53,20 @@ test.describe('Painel Admin', () => {
 
         await expect(page.getByText('Usuário atualizado com sucesso!')).toBeVisible();
         await expect(page.locator('tr', { hasText: uniqueEmail })).toContainText(newName);
+    });
+
+    test('o botão desativar da edição desativa o usuário', async ({ page }) => {
+        page.on('dialog', (dialog) => dialog.accept());
+        await setE2eAssigneeActive(true);
+        try {
+            await openAssigneeEdit(page);
+            await page.getByRole('button', { name: 'Desativar' }).click();
+
+            await expect(page.getByText('Usuário desativado com sucesso.')).toBeVisible();
+            await expect(page.locator('tr', { hasText: E2E_ASSIGNEE_EMAIL })).toContainText('Inativo');
+        } finally {
+            await setE2eAssigneeActive(false);
+        }
     });
 
     test('navega entre as abas de Organização e Ciclo de Pagamento', async ({ page }) => {
