@@ -6,7 +6,7 @@ use PHPUnit\Framework\TestCase;
 
 require_once __DIR__ . '/Support/GoogleTestDb.php';
 
-class StoreRespondeu extends \RuntimeException
+class RespostaCapturada extends \RuntimeException
 {
     public function __construct(
         public readonly string $via,
@@ -18,17 +18,18 @@ class StoreRespondeu extends \RuntimeException
 }
 
 // json() e redirect() terminam em exit, que derrubaria o processo do phpunit; aqui eles lancam
-// StoreRespondeu, que para o fluxo de store() no mesmo ponto em que o exit pararia e entrega a resposta ao teste.
+// RespostaCapturada, que para a acao testada (store, update ou destroy) no mesmo ponto em que o
+// exit pararia e entrega a resposta ao teste.
 class CapturingTaskController extends TaskController
 {
     protected function json(mixed $data, int $status = 200): void
     {
-        throw new StoreRespondeu('json', $data, $status);
+        throw new RespostaCapturada('json', $data, $status);
     }
 
     protected function redirect(string $path): void
     {
-        throw new StoreRespondeu('redirect', $path, 302);
+        throw new RespostaCapturada('redirect', $path, 302);
     }
 }
 
@@ -65,26 +66,26 @@ class TaskStoreValidationTest extends TestCase
         unset($_SERVER['HTTP_X_REQUESTED_WITH']);
     }
 
-    private function storeResponse(): StoreRespondeu
+    private function storeResponse(): RespostaCapturada
     {
         return $this->resposta(fn () => (new CapturingTaskController())->store());
     }
 
-    private function updateResponse(int $id): StoreRespondeu
+    private function updateResponse(int $id): RespostaCapturada
     {
         return $this->resposta(fn () => (new CapturingTaskController())->update(['id' => (string) $id]));
     }
 
-    private function destroyResponse(int $id): StoreRespondeu
+    private function destroyResponse(int $id): RespostaCapturada
     {
         return $this->resposta(fn () => (new CapturingTaskController())->destroy(['id' => (string) $id]));
     }
 
-    private function resposta(callable $acao): StoreRespondeu
+    private function resposta(callable $acao): RespostaCapturada
     {
         try {
             $acao();
-        } catch (StoreRespondeu $resposta) {
+        } catch (RespostaCapturada $resposta) {
             return $resposta;
         } catch (\InvalidArgumentException | \PDOException $e) {
             $this->fail('a acao deixou a excecao subir: ' . $e->getMessage());
@@ -113,19 +114,19 @@ class TaskStoreValidationTest extends TestCase
         return $linhas[0];
     }
 
-    private function assertRespondeu422(StoreRespondeu $resposta, string $mensagem): void
+    private function assertRespondeu422(RespostaCapturada $resposta, string $mensagem): void
     {
         $this->assertRespondeuErro($resposta, 422, $mensagem);
     }
 
-    private function assertRespondeuErro(StoreRespondeu $resposta, int $status, string $mensagem): void
+    private function assertRespondeuErro(RespostaCapturada $resposta, int $status, string $mensagem): void
     {
         $this->assertSame('json', $resposta->via);
         $this->assertSame($status, $resposta->status);
         $this->assertSame(['success' => false, 'error' => $mensagem], $resposta->payload);
     }
 
-    private function assertVoltouComFlash(StoreRespondeu $resposta, string $destino, string $mensagem): void
+    private function assertVoltouComFlash(RespostaCapturada $resposta, string $destino, string $mensagem): void
     {
         $this->assertSame('redirect', $resposta->via);
         $this->assertSame($destino, $resposta->payload);
