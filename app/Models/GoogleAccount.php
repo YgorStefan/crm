@@ -20,4 +20,140 @@ class GoogleAccount extends Model
         $stmt->execute([':user_id' => $userId, ':tenant_id' => $this->currentTenantId()]);
         return $stmt->fetch();
     }
+
+    public function upsertConnected(
+        int $userId,
+        string $email,
+        string $sub,
+        string $encRefresh,
+        string $encAccess,
+        string $expiresAt,
+    ): void {
+        // o on duplicate key nao aceita where, entao o tenant e conferido na
+        // origem: so entra usuario do tenant da sessao, e a chave e o user_id.
+        $stmt = $this->db->prepare(
+            "INSERT INTO google_accounts
+                (user_id, tenant_id, google_email, google_sub, refresh_token, access_token,
+                 access_token_expires_at, status)
+             SELECT u.id, u.tenant_id, :email, :sub, :refresh, :access, :expires, 'active'
+             FROM users u
+             WHERE u.id = :user_id AND u.tenant_id = :tenant_id
+             ON DUPLICATE KEY UPDATE
+                google_email = :email_upd, google_sub = :sub_upd,
+                refresh_token = :refresh_upd, access_token = :access_upd,
+                access_token_expires_at = :expires_upd,
+                status = 'active', connected_at = CURRENT_TIMESTAMP"
+        );
+        $stmt->execute([
+            ':email'       => $email,
+            ':sub'         => $sub,
+            ':refresh'     => $encRefresh,
+            ':access'      => $encAccess,
+            ':expires'     => $expiresAt,
+            ':user_id'     => $userId,
+            ':tenant_id'   => $this->currentTenantId(),
+            ':email_upd'   => $email,
+            ':sub_upd'     => $sub,
+            ':refresh_upd' => $encRefresh,
+            ':access_upd'  => $encAccess,
+            ':expires_upd' => $expiresAt,
+        ]);
+    }
+
+    public function storeAccessToken(int $userId, string $encAccess, string $expiresAt): void
+    {
+        // so conta ativa: uma renovacao que termina depois do desconectar nao
+        // pode devolver credencial a uma conta ja limpa.
+        $stmt = $this->db->prepare(
+            "UPDATE google_accounts SET access_token = :access, access_token_expires_at = :expires
+             WHERE user_id = :user_id AND tenant_id = :tenant_id AND status = 'active'"
+        );
+        $stmt->execute([
+            ':access'    => $encAccess,
+            ':expires'   => $expiresAt,
+            ':user_id'   => $userId,
+            ':tenant_id' => $this->currentTenantId(),
+        ]);
+    }
+
+    public function markRevoked(int $userId): void
+    {
+        // conta desconectada nao volta a aparecer como revogada, o que pediria
+        // reconexao a quem escolheu sair.
+        $stmt = $this->db->prepare(
+            "UPDATE google_accounts SET status = 'revoked'
+             WHERE user_id = :user_id AND tenant_id = :tenant_id AND status = 'active'"
+        );
+        $stmt->execute([':user_id' => $userId, ':tenant_id' => $this->currentTenantId()]);
+    }
+
+    public function markDisconnected(int $userId): void
+    {
+        // o google_sub fica, porque a proxima conexao compara com ele para
+        // saber se os vinculos das tarefas ainda sao desta conta.
+        $stmt = $this->db->prepare(
+            "UPDATE google_accounts
+             SET refresh_token = NULL, access_token = NULL, access_token_expires_at = NULL,
+                 status = 'disconnected'
+             WHERE user_id = :user_id AND tenant_id = :tenant_id"
+        );
+        $stmt->execute([':user_id' => $userId, ':tenant_id' => $this->currentTenantId()]);
+    }
+
+    public function acquireDrain(int $userId): bool
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE google_accounts SET drain_until = NOW() + INTERVAL 15 SECOND
+             WHERE user_id = :user_id AND tenant_id = :tenant_id
+               AND (drain_until IS NULL OR drain_until < NOW())"
+        );
+        $stmt->execute([':user_id' => $userId, ':tenant_id' => $this->currentTenantId()]);
+        return $stmt->rowCount() === 1;
+    }
+
+    public function releaseDrain(int $userId): void
+    {
+        $stmt = $this->db->prepare(
+            'UPDATE google_accounts SET drain_until = NULL WHERE user_id = :user_id AND tenant_id = :tenant_id'
+        );
+        $stmt->execute([':user_id' => $userId, ':tenant_id' => $this->currentTenantId()]);
+    }
+
+    /** @return list<int> */
+    public function userIdsWithWork(): array
+    {
+        $tenantId = $this->currentTenantId();
+        // o filtro de tarefa repete o de Task::pendingForUser, senao o envio
+        // travaria contas que nao tem nada que ele mande.
+        $stmt = $this->db->prepare(
+            "SELECT ga.user_id
+             FROM google_accounts ga
+             JOIN users u ON u.id = ga.user_id AND u.tenant_id = :tenant_u
+             WHERE ga.tenant_id = :tenant_ga
+               AND ga.status = 'active'
+               AND u.is_active = 1
+               AND (
+                   EXISTS (
+                       SELECT 1 FROM tasks t
+                       WHERE t.tenant_id = :tenant_t
+                         AND t.assigned_to = ga.user_id
+                         AND t.google_sync_pending > 0
+                         AND (t.google_event_id IS NOT NULL OR t.due_date >= CURDATE())
+                   )
+                   OR EXISTS (
+                       SELECT 1 FROM google_event_deletions d
+                       WHERE d.tenant_id = :tenant_d AND d.user_id = ga.user_id
+                   )
+               )
+             ORDER BY ga.user_id"
+        );
+        $stmt->execute([
+            ':tenant_u'  => $tenantId,
+            ':tenant_ga' => $tenantId,
+            ':tenant_t'  => $tenantId,
+            ':tenant_d'  => $tenantId,
+        ]);
+
+        return array_map('intval', $stmt->fetchAll(\PDO::FETCH_COLUMN));
+    }
 }
