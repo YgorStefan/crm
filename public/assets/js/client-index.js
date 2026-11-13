@@ -34,8 +34,9 @@
                     document.getElementById('qiClientId').value = btn.dataset.clientId;
                     document.getElementById('qiClientName').textContent = btn.dataset.clientName;
                     const now = new Date();
-                    now.setSeconds(0, 0);
-                    document.getElementById('qiOccurredAt').value = now.toISOString().slice(0, 16);
+                    const pad = n => String(n).padStart(2, '0');
+                    document.getElementById('qiOccurredAt').value = now.getFullYear() + '-' + pad(now.getMonth() + 1)
+                        + '-' + pad(now.getDate()) + 'T' + pad(now.getHours()) + ':' + pad(now.getMinutes());
                     document.getElementById('modalQuickInteraction').classList.remove('hidden');
                 }
 

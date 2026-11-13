@@ -124,3 +124,24 @@ test.describe('Clientes', () => {
         await expect(page.locator('#flashMsg')).toHaveCount(0);
     });
 });
+
+test.describe('Clientes / interação rápida da lista', () => {
+    // sem fixar o fuso, um ci em utc passaria com o codigo antigo, porque ali o
+    // horario de toISOString coincide com o horario local.
+    test.use({ timezoneId: 'America/Sao_Paulo' });
+
+    test.beforeEach(async ({ page }) => {
+        await login(page);
+    });
+
+    test('a interação rápida abre com a data e a hora locais do navegador', async ({ page }) => {
+        // 22:30 em -03:00 ja e o dia seguinte em utc, entao o erro aparece na data e na hora.
+        await page.clock.setFixedTime(new Date('2026-11-13T22:30:00-03:00'));
+        await page.goto('/clients?search=' + encodeURIComponent('Cliente E2E Kanban'));
+
+        await page.locator('[data-action="open-quick-interaction"]').first().click();
+
+        await expect(page.locator('#modalQuickInteraction')).toBeVisible();
+        await expect(page.locator('#qiOccurredAt')).toHaveValue('2026-11-13T22:30');
+    });
+});
