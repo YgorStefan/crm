@@ -267,7 +267,7 @@ $assetV = static function (string $rel): string {
             <div id="flashMsg"
                 class="mx-4 sm:mx-6 mt-4 px-4 py-3 rounded border-l-4 <?= $flashColor ?> flex items-center justify-between">
                 <span class="text-sm"><?= htmlspecialchars($flash['message'], ENT_QUOTES, 'UTF-8') ?></span>
-                <button onclick="document.getElementById('flashMsg').remove()"
+                <button data-flash-close
                     class="ml-4 text-lg font-bold opacity-60 hover:opacity-100">&times;</button>
             </div>
         <?php endif; ?>

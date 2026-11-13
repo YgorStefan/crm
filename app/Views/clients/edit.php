@@ -229,8 +229,7 @@ unset($_jsV);
         <div class="px-6 py-4 bg-gray-50 dark:bg-zinc-800/30 dark:border-t dark:border-zinc-800 flex flex-col sm:flex-row justify-between gap-3">
             <!-- Placeholder para manter o layout (form delete fica fora) -->
             <div>
-                <button type="button" form="form-delete-client"
-                    onclick="if(confirm('Tem certeza que deseja remover este cliente?')) document.getElementById('form-delete-client').submit();"
+                <button type="submit" form="form-delete-client"
                     class="px-4 py-2 border border-red-300 text-red-600 rounded-lg text-sm hover:bg-red-50 transition-colors">
                     🗑️ Remover Cliente
                 </button>
@@ -250,7 +249,8 @@ unset($_jsV);
     </form>
 
 <!-- Form de delete FORA do form de edição (HTML não suporta forms aninhados) -->
-<form id="form-delete-client" method="POST" action="<?= APP_URL ?>/clients/<?= $client['id'] ?>/delete" style="display:none;">
+<form id="form-delete-client" method="POST" action="<?= APP_URL ?>/clients/<?= $client['id'] ?>/delete" style="display:none;"
+    data-confirm="Tem certeza que deseja remover este cliente?">
     <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
 </form>
 </div>

@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { login, setE2eAssigneeActive } from './helpers';
+import { answerDialogs, login, setE2eAssigneeActive } from './helpers';
 
 const E2E_ASSIGNEE_EMAIL = 'e2e.responsavel@crm.local';
 
@@ -55,15 +55,22 @@ test.describe('Painel Admin', () => {
         await expect(page.locator('tr', { hasText: uniqueEmail })).toContainText(newName);
     });
 
-    test('o botão desativar da edição desativa o usuário', async ({ page }) => {
-        page.on('dialog', (dialog) => dialog.accept());
+    test('o botão desativar da edição pede confirmação: cancelar mantém o usuário ativo e aceitar desativa', async ({ page }) => {
+        const dialogs = answerDialogs(page, [false, true]);
         await setE2eAssigneeActive(true);
         try {
+            await openAssigneeEdit(page);
+            await page.getByRole('button', { name: 'Desativar' }).click();
+            await expect.poll(() => dialogs).toEqual(['Desativar este usuário?']);
+            await page.goto('/admin/users');
+            await expect(page.locator('tr', { hasText: E2E_ASSIGNEE_EMAIL })).not.toContainText('Inativo');
+
             await openAssigneeEdit(page);
             await page.getByRole('button', { name: 'Desativar' }).click();
 
             await expect(page.getByText('Usuário desativado com sucesso.')).toBeVisible();
             await expect(page.locator('tr', { hasText: E2E_ASSIGNEE_EMAIL })).toContainText('Inativo');
+            expect(dialogs).toEqual(['Desativar este usuário?', 'Desativar este usuário?']);
         } finally {
             await setE2eAssigneeActive(false);
         }

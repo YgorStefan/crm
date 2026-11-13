@@ -19,6 +19,21 @@ export async function setE2eAssigneeActive(active: boolean): Promise<void> {
     await execFileAsync('php', [path.join(__dirname, 'e2e-assignee.php'), active ? 'on' : 'off']);
 }
 
+// cada confirm e respondido na hora com a proxima resposta da fila (e recusado quando a fila
+// acaba), porque com o dialogo aberto a pagina para e nenhuma verificacao seguinte roda.
+export function answerDialogs(page: Page, answers: boolean[]): string[] {
+    const messages: string[] = [];
+    page.on('dialog', async (dialog) => {
+        messages.push(dialog.message());
+        if (answers.shift()) {
+            await dialog.accept();
+        } else {
+            await dialog.dismiss();
+        }
+    });
+    return messages;
+}
+
 /**
  * Limpa as tentativas de login registradas para o IP local (ver comentário
  * em tests/smoke/reset-rate-limit.php). Chamar antes de qualquer teste que

@@ -58,7 +58,7 @@ $csrf_token = $csrf_token ?? '';
 
     <!-- o form de desativar fica fora do de edicao porque o html nao aceita form dentro de form: o navegador descartava este e o botao enviava a edicao. -->
     <form id="form-deactivate-user" method="POST" action="<?= APP_URL ?>/admin/users/<?= $user['id'] ?>/delete"
-          onsubmit="return confirm('Desativar este usuário?')" class="hidden">
+          data-confirm="Desativar este usuário?" class="hidden">
         <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
     </form>
 </div>
