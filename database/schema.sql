@@ -62,7 +62,7 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255)        NOT NULL,
     role          ENUM('admin','seller','viewer')
                                       NOT NULL DEFAULT 'seller',
-    avatar        VARCHAR(255)        NULL     COMMENT 'Caminho relativo ao /public/uploads/',
+    avatar        VARCHAR(255)        NULL     COMMENT 'URL http(s) da foto de perfil, informada pelo admin',
     is_active            TINYINT(1)          NOT NULL DEFAULT 1 COMMENT '0 = usuário desativado (soft-delete)',
     password_must_change TINYINT(1)          NOT NULL DEFAULT 0 COMMENT '1 = forçar troca de senha no próximo login',
     is_system_admin      TINYINT(1)          NOT NULL DEFAULT 0 COMMENT '1 = admin da plataforma (acesso a /admin/tenants)',
@@ -422,7 +422,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 --  11. google_accounts       → conexão de cada usuário com o Google Agenda
 --  12. google_event_deletions → fila de remoções de eventos no Google Agenda
 --
--- Consolidado até a migration 021 (inclusive). Qualquer migration nova
+-- Consolidado até a migration 022 (inclusive). Qualquer migration nova
 -- em database/migrations/ deve ser aplicada com `php bin/migrate.php`
 -- após o baseline inicial (`php bin/migrate.php --baseline`).
 -- ============================================================
