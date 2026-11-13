@@ -66,20 +66,45 @@ class TaskStoreValidationTest extends TestCase
 
     private function storeResponse(): StoreRespondeu
     {
+        return $this->resposta(fn () => (new CapturingTaskController())->store());
+    }
+
+    private function updateResponse(int $id): StoreRespondeu
+    {
+        return $this->resposta(fn () => (new CapturingTaskController())->update(['id' => (string) $id]));
+    }
+
+    private function resposta(callable $acao): StoreRespondeu
+    {
         try {
-            (new CapturingTaskController())->store();
+            $acao();
         } catch (StoreRespondeu $resposta) {
             return $resposta;
-        } catch (\InvalidArgumentException $e) {
-            $this->fail('store() deixou a excecao subir: ' . $e->getMessage());
+        } catch (\InvalidArgumentException | \PDOException $e) {
+            $this->fail('a acao deixou a excecao subir: ' . $e->getMessage());
         }
 
-        $this->fail('store() terminou sem responder por json() nem redirect()');
+        $this->fail('a acao terminou sem responder por json() nem redirect()');
     }
 
     private function assertNenhumaTarefaGravada(): void
     {
         $this->assertSame(0, (int) $this->pdo->query('SELECT COUNT(*) FROM tasks')->fetchColumn());
+    }
+
+    private function tarefaExistente(): int
+    {
+        $this->pdo->exec("INSERT INTO tasks (assigned_to, created_by, tenant_id, title, due_date, priority, status)
+            VALUES (1, 1, 1, 'Tarefa existente', '2026-06-15 10:00:00', 'medium', 'pending')");
+        return (int) $this->pdo->lastInsertId();
+    }
+
+    /** @return array<string, mixed> */
+    private function unicaTarefa(): array
+    {
+        $linhas = $this->pdo->query('SELECT title, due_date, priority FROM tasks')->fetchAll();
+        $this->assertCount(1, $linhas);
+        return $linhas[0];
     }
 
     private function assertRespondeu422(StoreRespondeu $resposta, string $mensagem): void
@@ -155,5 +180,94 @@ class TaskStoreValidationTest extends TestCase
 
         $this->assertVoltouComFlash($this->storeResponse(), '/tasks', 'Cliente inválido.');
         $this->assertNenhumaTarefaGravada();
+    }
+
+    public function testPrazoNoFormatoDoNavegadorGrava(): void
+    {
+        $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
+        $_POST['priority'] = 'high';
+
+        $resposta = $this->storeResponse();
+
+        $this->assertSame('json', $resposta->via);
+        $this->assertSame(200, $resposta->status);
+        $this->assertSame(
+            ['title' => 'Ligar para o cliente', 'due_date' => '2026-06-15 10:00:00', 'priority' => 'high'],
+            $this->unicaTarefa(),
+        );
+    }
+
+    public function testPrazoComEspacoNoLugarDoTGrava(): void
+    {
+        $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
+        $_POST['due_date'] = '2026-06-15 10:00';
+
+        $this->assertSame(200, $this->storeResponse()->status);
+        $this->assertSame('2026-06-15 10:00:00', $this->unicaTarefa()['due_date']);
+    }
+
+    public function testPrioridadeForaDaListaViaAjaxRecebe422(): void
+    {
+        $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
+        $_POST['priority'] = 'urgente';
+
+        $this->assertRespondeu422($this->storeResponse(), 'Prioridade inválida.');
+        $this->assertNenhumaTarefaGravada();
+    }
+
+    public function testPrazoMalformadoViaAjaxRecebe422(): void
+    {
+        $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
+        $_POST['due_date'] = 'amanha';
+
+        $this->assertRespondeu422($this->storeResponse(), 'Prazo inválido.');
+        $this->assertNenhumaTarefaGravada();
+    }
+
+    public function testPrazoComDiaInexistenteViaAjaxRecebe422(): void
+    {
+        $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
+        $_POST['due_date'] = '2026-02-30T10:00';
+
+        $this->assertRespondeu422($this->storeResponse(), 'Prazo inválido.');
+        $this->assertNenhumaTarefaGravada();
+    }
+
+    public function testPrazoInvalidoViaFormularioVoltaParaATelaDoCliente(): void
+    {
+        $_POST['due_date'] = '2026-06-15T10:00:00';
+        $_POST['client_id'] = '10';
+
+        $this->assertVoltouComFlash($this->storeResponse(), '/clients/10', 'Prazo inválido.');
+        $this->assertNenhumaTarefaGravada();
+    }
+
+    public function testEdicaoComPrazoNoFormatoDoNavegadorGrava(): void
+    {
+        $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
+        $id = $this->tarefaExistente();
+        $_POST = ['due_date' => '2026-07-01T09:30'];
+
+        $this->assertSame(200, $this->updateResponse($id)->status);
+        $this->assertSame('2026-07-01 09:30:00', $this->unicaTarefa()['due_date']);
+    }
+
+    public function testEdicaoComPrazoMalformadoViaAjaxRecebe422(): void
+    {
+        $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
+        $id = $this->tarefaExistente();
+        $_POST = ['due_date' => 'amanha'];
+
+        $this->assertRespondeu422($this->updateResponse($id), 'Prazo inválido.');
+        $this->assertSame('2026-06-15 10:00:00', $this->unicaTarefa()['due_date']);
+    }
+
+    public function testEdicaoComPrazoComDiaInexistenteViaFormularioVoltaComFlash(): void
+    {
+        $id = $this->tarefaExistente();
+        $_POST = ['due_date' => '2026-02-30T10:00'];
+
+        $this->assertVoltouComFlash($this->updateResponse($id), '/tasks', 'Prazo inválido.');
+        $this->assertSame('2026-06-15 10:00:00', $this->unicaTarefa()['due_date']);
     }
 }

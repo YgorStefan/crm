@@ -263,13 +263,11 @@ class TaskController extends Controller
         $title = $this->input('title');
         $dueDate = $this->inputPost('due_date');
         $clientId = $this->inputPost('client_id');
+        $backTo = $clientId ? '/clients/' . (int) $clientId : '/tasks';
 
         if (empty($title) || empty($dueDate)) {
             // Redireciona para a tela de tarefas (Referer header é forjável)
-            $this->rejectTaskRequest(
-                'Título e prazo são obrigatórios.',
-                $clientId ? '/clients/' . (int) $clientId : '/tasks',
-            );
+            $this->rejectTaskRequest('Título e prazo são obrigatórios.', $backTo);
             return;
         }
 
@@ -280,8 +278,17 @@ class TaskController extends Controller
             return;
         }
 
-        // Converte datetime-local para MySQL
-        $dueDate = str_replace('T', ' ', $dueDate) . ':00';
+        $dueDate = self::parseDueDate((string) $dueDate);
+        if ($dueDate === null) {
+            $this->rejectTaskRequest('Prazo inválido.', $backTo);
+            return;
+        }
+
+        $priority = $this->inputPost('priority', 'medium');
+        if (!in_array($priority, ['low', 'medium', 'high'], true)) {
+            $this->rejectTaskRequest('Prioridade inválida.', $backTo);
+            return;
+        }
 
         $assignedTo = self::assigneeForStore(
             $this->inputPost('assigned_to'),
@@ -301,15 +308,12 @@ class TaskController extends Controller
                 'title'           => $title,
                 'description'     => $this->input('description'),
                 'due_date'        => $dueDate,
-                'priority'        => $this->inputPost('priority', 'medium'),
+                'priority'        => $priority,
                 'recurrence_type' => $recurrenceType,
                 'created_by'      => $_SESSION['user']['id'],
             ]);
         } catch (\InvalidArgumentException) {
-            $this->rejectTaskRequest(
-                'Responsável inválido.',
-                $clientId ? '/clients/' . (int) $clientId : '/tasks',
-            );
+            $this->rejectTaskRequest('Responsável inválido.', $backTo);
             return;
         }
 
@@ -326,6 +330,19 @@ class TaskController extends Controller
         } else {
             $this->redirect('/tasks');
         }
+    }
+
+    // o espaco no lugar do t continua aceito porque o cadastro ja aceitava as duas
+    // formas antes, e o que nao casar o banco recusaria com erro 500.
+    private static function parseDueDate(string $raw): ?string
+    {
+        $parsed = \DateTimeImmutable::createFromFormat('!Y-m-d H:i', str_replace('T', ' ', $raw));
+        $errors = \DateTimeImmutable::getLastErrors();
+        if ($parsed === false || ($errors !== false && $errors['warning_count'] + $errors['error_count'] > 0)) {
+            return null;
+        }
+
+        return $parsed->format('Y-m-d H:i:s');
     }
 
     // o ajax recebe 422 e nunca redirect, porque o fetch segue o 302, chega a um
@@ -366,8 +383,14 @@ class TaskController extends Controller
         }
         if (isset($_POST['title']))
             $data['title'] = $this->input('title');
-        if (isset($_POST['due_date']))
-            $data['due_date'] = str_replace('T', ' ', $this->inputPost('due_date')) . ':00';
+        if (isset($_POST['due_date'])) {
+            $dueDate = self::parseDueDate((string) $this->inputPost('due_date'));
+            if ($dueDate === null) {
+                $this->rejectTaskRequest('Prazo inválido.');
+                return;
+            }
+            $data['due_date'] = $dueDate;
+        }
         if (isset($_POST['description']))
             $data['description'] = $this->input('description');
 
