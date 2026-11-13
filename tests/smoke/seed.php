@@ -86,6 +86,23 @@ $stmt->execute([
 
 // 4) o spec de tarefas cria "Tarefa E2E <timestamp>" e nunca a apaga; sem esta
 //    limpeza as sobras de runs anteriores se acumulam no dia em que o spec clica.
+//    o delete direto pula o task::delete, entao os eventos vinculados ao google,
+//    inclusive os das filhas que o cascade leva junto, entram na fila de remocao
+//    aqui, senao ficariam orfaos na agenda de quem estiver conectado.
+$pdo->beginTransaction();
+$pdo->exec("
+    INSERT INTO google_event_deletions (tenant_id, user_id, google_event_id)
+    SELECT t.tenant_id, t.google_owner_id, t.google_event_id
+    FROM tasks t
+    WHERE t.tenant_id = 1
+      AND t.google_event_id IS NOT NULL
+      AND t.google_owner_id IS NOT NULL
+      AND (t.title LIKE 'Tarefa E2E %'
+           OR t.recurrence_parent_id IN (
+               SELECT p.id FROM tasks p WHERE p.tenant_id = 1 AND p.title LIKE 'Tarefa E2E %'
+           ))
+");
 $pdo->exec("DELETE FROM tasks WHERE tenant_id = 1 AND title LIKE 'Tarefa E2E %'");
+$pdo->commit();
 
 echo "[seed] OK — admin@crm.local, e2e.seller@crm.local e cliente de kanban prontos.\n";
