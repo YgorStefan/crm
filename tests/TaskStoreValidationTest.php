@@ -1,8 +1,9 @@
 <?php
 
 use App\Controllers\TaskController;
-use Core\Database;
 use PHPUnit\Framework\TestCase;
+
+require_once __DIR__ . '/Support/GoogleTestDb.php';
 
 class StoreRespondeu extends \RuntimeException
 {
@@ -32,69 +33,15 @@ class CapturingTaskController extends TaskController
 
 class TaskStoreValidationTest extends TestCase
 {
-    private static ?\PDO $pdo = null;
-
-    public static function setUpBeforeClass(): void
-    {
-        $host = getenv('DB_HOST') ?: '127.0.0.1';
-        $port = getenv('DB_PORT') ?: '3306';
-        $user = getenv('DB_USER') ?: 'root';
-        $pass = ($p = getenv('DB_PASS')) !== false ? $p : '';
-
-        try {
-            $pdo = new \PDO("mysql:host={$host};port={$port};charset=utf8mb4", $user, $pass, [
-                \PDO::ATTR_ERRMODE            => \PDO::ERRMODE_EXCEPTION,
-                \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
-                \PDO::ATTR_EMULATE_PREPARES   => false,
-            ]);
-            $pdo->exec('CREATE DATABASE IF NOT EXISTS crm_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
-            $pdo->exec('USE crm_test');
-        } catch (\Throwable $e) {
-            self::markTestSkipped('MySQL indisponivel para teste de integracao: ' . $e->getMessage());
-        }
-
-        $pdo->exec('DROP TABLE IF EXISTS tasks');
-        $pdo->exec('DROP TABLE IF EXISTS clients');
-        $pdo->exec('DROP TABLE IF EXISTS users');
-        $pdo->exec('CREATE TABLE users (id INT UNSIGNED PRIMARY KEY, name VARCHAR(100), tenant_id INT UNSIGNED) ENGINE=InnoDB');
-        $pdo->exec('CREATE TABLE clients (id INT UNSIGNED PRIMARY KEY, name VARCHAR(100), tenant_id INT UNSIGNED, is_active TINYINT(1) DEFAULT 1) ENGINE=InnoDB');
-        $pdo->exec(
-            'CREATE TABLE tasks (
-                id INT UNSIGNED PRIMARY KEY AUTO_INCREMENT,
-                client_id INT UNSIGNED NULL, assigned_to INT UNSIGNED, title VARCHAR(200),
-                description TEXT NULL, due_date DATETIME, priority VARCHAR(20), status VARCHAR(20),
-                recurrence_type VARCHAR(20) DEFAULT "none", recurrence_parent_id INT UNSIGNED NULL,
-                created_by INT UNSIGNED, tenant_id INT UNSIGNED,
-                google_event_id VARCHAR(255) NULL, google_owner_id INT UNSIGNED NULL,
-                google_etag VARCHAR(100) NULL, google_duration_min INT UNSIGNED NULL,
-                google_sync_pending INT UNSIGNED NOT NULL DEFAULT 1
-            ) ENGINE=InnoDB'
-        );
-
-        $pdo->exec("INSERT INTO users (id, name, tenant_id) VALUES (1,'Ana',1), (2,'Bob',2)");
-        $pdo->exec("INSERT INTO clients (id, name, tenant_id, is_active) VALUES (10,'Cliente A',1,1), (11,'Cliente Inativo',1,0), (20,'Cliente B',2,1)");
-
-        $prop = (new \ReflectionClass(Database::class))->getProperty('instance');
-        $prop->setValue(null, $pdo);
-
-        self::$pdo = $pdo;
-    }
-
-    public static function tearDownAfterClass(): void
-    {
-        if (self::$pdo !== null) {
-            self::$pdo->exec('DROP TABLE IF EXISTS tasks');
-            self::$pdo->exec('DROP TABLE IF EXISTS clients');
-            self::$pdo->exec('DROP TABLE IF EXISTS users');
-            $prop = (new \ReflectionClass(Database::class))->getProperty('instance');
-            $prop->setValue(null, null);
-            self::$pdo = null;
-        }
-    }
+    private ?\PDO $pdo = null;
 
     protected function setUp(): void
     {
-        self::$pdo->exec('DELETE FROM tasks');
+        $this->pdo = GoogleTestDb::setUp();
+        $this->pdo->exec("INSERT INTO users (id, name, tenant_id) VALUES (1, 'Ana', 1), (2, 'Bob', 2)");
+        $this->pdo->exec("INSERT INTO clients (id, name, tenant_id, is_active) VALUES
+            (10, 'Cliente A', 1, 1), (11, 'Cliente Inativo', 1, 0), (20, 'Cliente B', 2, 1)");
+
         $_SESSION = [
             'tenant_id' => 1,
             'user'      => ['id' => 1, 'role' => 'admin'],
@@ -108,6 +55,10 @@ class TaskStoreValidationTest extends TestCase
 
     protected function tearDown(): void
     {
+        if ($this->pdo !== null) {
+            GoogleTestDb::tearDown($this->pdo);
+            $this->pdo = null;
+        }
         $_SESSION = [];
         $_POST = [];
         unset($_SERVER['HTTP_X_REQUESTED_WITH']);
@@ -128,7 +79,7 @@ class TaskStoreValidationTest extends TestCase
 
     private function assertNenhumaTarefaGravada(): void
     {
-        $this->assertSame(0, (int) self::$pdo->query('SELECT COUNT(*) FROM tasks')->fetchColumn());
+        $this->assertSame(0, (int) $this->pdo->query('SELECT COUNT(*) FROM tasks')->fetchColumn());
     }
 
     private function assertRespondeu422(StoreRespondeu $resposta, string $mensagem): void

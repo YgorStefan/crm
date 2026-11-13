@@ -2,11 +2,6 @@ import { test, expect, type Page } from '@playwright/test';
 import { login } from './helpers';
 
 // o chamador avanca o calendario um mes antes, o que evita colidir com tarefas de outros specs criadas no mes atual.
-/**
- * Clica num dia do mês seguinte. Se o dia já tiver evento, o próprio modal de
- * conflito oferece "Criar novo", que abre o modal de nova tarefa normalmente
- * para a mesma data.
- */
 async function openNewTaskModalOnDay(page: Page, day = 10): Promise<string> {
     const now = new Date();
     const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
