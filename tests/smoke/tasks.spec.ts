@@ -409,3 +409,38 @@ test.describe('Tarefas / conflito do dia no calendário', () => {
         }
     });
 });
+
+test.describe('Tarefas / aviso de atrasadas', () => {
+    // sem fixar o fuso, um ci em utc passaria com o codigo antigo, porque ali o dia de
+    // toISOString coincide com o dia local.
+    test.use({ timezoneId: 'America/Sao_Paulo' });
+
+    test.beforeEach(async ({ page }) => {
+        await login(page);
+        await page.goto('/tasks');
+        await expect(page.locator('#fc-calendar')).toBeVisible();
+        // o aviso so existe quando ha tarefa vencida, e o seed apaga as "Tarefa E2E" na proxima rodada.
+        const past = new Date(Date.now() - 3 * 24 * 60 * 60 * 1000);
+        const pad = (n: number) => String(n).padStart(2, '0');
+        const dueDate = `${past.getFullYear()}-${pad(past.getMonth() + 1)}-${pad(past.getDate())}T10:00`;
+        expect(await postFromPage(page, '/tasks/store', { title: `Tarefa E2E ${Date.now()}`, due_date: dueDate })).toBe(true);
+    });
+
+    test('dispensar o aviso as 22h30 vale ate o fim do dia local', async ({ page }) => {
+        // 22:30 em -03:00 ja e o dia seguinte em utc, entao a chave que o codigo antigo guarda ja
+        // e a do dia seguinte e o aviso nao volta na virada do dia local.
+        await page.clock.setFixedTime(new Date('2026-11-13T22:30:00-03:00'));
+        await page.goto('/tasks');
+        await expect(page.locator('#overdueBanner')).toBeVisible();
+        await page.locator('#overdueDismiss').click();
+        await expect(page.locator('#overdueBanner')).toBeHidden();
+
+        await page.clock.setFixedTime(new Date('2026-11-13T23:30:00-03:00'));
+        await page.reload();
+        await expect(page.locator('#overdueBanner')).toBeHidden();
+
+        await page.clock.setFixedTime(new Date('2026-11-14T00:30:00-03:00'));
+        await page.reload();
+        await expect(page.locator('#overdueBanner')).toBeVisible();
+    });
+});

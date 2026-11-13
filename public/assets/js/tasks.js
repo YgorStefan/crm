@@ -1,8 +1,12 @@
 (function () {
     'use strict';
 
+    // dia no fuso do navegador: o toISOString e utc, e em -03:00 ja e o dia seguinte depois das 21h.
+    const pad = n => String(n).padStart(2, '0');
+    const localDate = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+
     class OverdueBanner {
-        static #KEY = 'crm_overdue_dismissed_' + new Date().toISOString().slice(0, 10);
+        static #KEY = 'crm_overdue_dismissed_' + localDate(new Date());
 
         #banner;
         #toggle;
@@ -200,10 +204,7 @@
 
         handleDateClick(dateStr) {
             this.#selectedDate = dateStr;
-            // o dateStr do dia clicado e a data local, entao o evento entra pela data local
-            // dele; a de toISOString e a de utc, que em -03:00 ja e o dia seguinte depois das 21h.
-            const pad = n => String(n).padStart(2, '0');
-            const localDate = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+            // o dateStr do dia clicado e a data local, entao o evento entra pela data local dele.
             const eventsOnDate = this.#calendar.getEvents().filter(e =>
                 e.start && localDate(e.start) === dateStr
             );
