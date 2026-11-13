@@ -332,6 +332,10 @@ test.describe('Tarefas / modal da tela do cliente', () => {
 });
 
 test.describe('Tarefas / tarefa rápida da lista de clientes', () => {
+    // sem fixar o fuso, um ci em utc passaria com o codigo antigo, porque ali o
+    // horario de toISOString coincide com o horario local.
+    test.use({ timezoneId: 'America/Sao_Paulo' });
+
     test.beforeEach(async ({ page }) => {
         await login(page);
         await page.goto('/clients?search=' + encodeURIComponent('Cliente E2E Kanban'));
@@ -355,5 +359,15 @@ test.describe('Tarefas / tarefa rápida da lista de clientes', () => {
         await expect(page.locator('#qt_title')).toHaveValue('');
         await expect(page.locator('#qt_priority')).toHaveValue('medium');
         await expect(page.locator(`${priority} .cs-label`)).toHaveText('Média');
+    });
+
+    test('a tarefa rápida abre com o prazo de amanhã ao meio-dia no fuso do navegador', async ({ page }) => {
+        const tomorrow = new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit',
+        }).format(new Date(Date.now() + 24 * 60 * 60 * 1000));
+
+        await page.locator('[data-action="open-quick-task"]').first().click();
+        await expect(page.locator('#modalQuickTask')).toBeVisible();
+        await expect(page.locator('#qt_due_date')).toHaveValue(`${tomorrow}T12:00`);
     });
 });
