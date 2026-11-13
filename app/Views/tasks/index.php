@@ -92,7 +92,7 @@ $googleTeam       = $googleEnabled && $googleConnection === 'active' && ($_SESSI
             </button>
         <?php endif; ?>
         <?php if ($googleEnabled): ?>
-            <div data-google-bar="<?= htmlspecialchars($googleConnection ?? 'none', ENT_QUOTES, 'UTF-8') ?>"class="ml-auto flex items-center gap-2 min-w-0 text-xs">
+            <div data-google-bar="<?= htmlspecialchars($googleConnection ?? 'none', ENT_QUOTES, 'UTF-8') ?>" class="ml-auto flex items-center gap-2 min-w-0 text-xs">
                 <?php if ($googleConnection === 'active'): ?>
                     <span class="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" aria-hidden="true"></span>
                     <span class="truncate max-w-[18rem] text-gray-600 dark:text-zinc-300" title="<?= $googleEmailSafe ?>">

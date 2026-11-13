@@ -80,7 +80,6 @@ async function mockFeed(page: Page, events: FeedEvent[], status: string | null =
     return feed;
 }
 
-// guarda o corpo de cada post para a rota do evento e responde com o que o teste pedir.
 async function mockGoogleEventRoute(page: Page, action: 'update' | 'delete', reply: object = { success: true }): Promise<URLSearchParams[]> {
     const bodies: URLSearchParams[] = [];
     await page.route((url) => url.pathname.endsWith(`/api/google/events/evtfalso123/${action}`), async (route) => {

@@ -408,7 +408,8 @@
                 TaskCalendarManager.#setGoogleDates(f, true, startDate, endDate);
                 return;
             }
-            // de volta ao horario, cada data recebe a hora que o evento tinha, ou um horario de trabalho.
+            // a hora original volta para que marcar e desmarcar o dia inteiro, sem mexer em mais
+            // nada, deixe os campos iguais aos da abertura e o envio nao conte como alteracao.
             const startTime = initial.allDay ? '09:00' : initial.start.slice(11);
             const endTime = initial.allDay ? '10:00' : initial.end.slice(11);
             TaskCalendarManager.#setGoogleDates(f, false, startDate + 'T' + startTime, endDate + 'T' + endTime);
