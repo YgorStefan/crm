@@ -198,10 +198,6 @@ $assetV = static function (string $rel): string {
                 ☰
             </button>
 
-            <h2 class="text-base font-semibold text-gray-700 dark:text-zinc-200 truncate flex-1">
-                <?= htmlspecialchars($pageTitle ?? '', ENT_QUOTES, 'UTF-8') ?>
-            </h2>
-
             <!-- Ações do topbar -->
             <div class="flex items-center gap-2 ml-auto">
 

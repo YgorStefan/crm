@@ -215,7 +215,6 @@ class TaskController extends Controller
         $users = $this->users->findAllActive();
 
         $this->render('tasks/index', [
-            'pageTitle' => 'Tarefas',
             'title' => 'Tarefas — ' . APP_NAME,
             'tasks' => $tasks,
             'overdue' => $overdue,

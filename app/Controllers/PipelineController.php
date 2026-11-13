@@ -23,7 +23,6 @@ class PipelineController extends Controller
         $grouped = $this->clients->findGroupedByStage(); // ['stage_id' => [clientes...]]
 
         $this->render('pipeline/index', [
-            'pageTitle' => 'Pipeline de Vendas',
             'title' => 'Pipeline — ' . APP_NAME,
             'stages' => $stages,
             'grouped' => $grouped,
@@ -70,7 +69,6 @@ class PipelineController extends Controller
         $this->requireRole('admin');
 
         $this->render('pipeline/stages', [
-            'pageTitle' => 'Gerenciar Etapas do Funil',
             'title' => 'Etapas — ' . APP_NAME,
             'stages' => $this->stages->findAllOrderedWithClientCount(),
             'csrf_token' => CsrfMiddleware::getToken(),

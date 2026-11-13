@@ -36,7 +36,6 @@ class SettingsController extends Controller
         }
 
         $this->render('settings/index', [
-            'pageTitle'     => 'Configurações',
             'title'         => 'Configurações — ' . APP_NAME,
             'tenant'        => $tenant,
             'has_gmaps_key' => !empty($tenant['google_maps_api_key']),

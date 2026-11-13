@@ -20,7 +20,6 @@ class UserController extends Controller
         $this->requireRole('admin');
 
         $this->render('admin/users/index', [
-            'pageTitle' => 'Usuários',
             'title' => 'Usuários — ' . APP_NAME,
             'users' => $this->users->findAll(),
         ]);
@@ -36,7 +35,6 @@ class UserController extends Controller
     {
         $this->requireRole('admin');
         $this->render('admin/users/create', [
-            'pageTitle' => 'Novo Usuário',
             'title' => 'Novo Usuário — ' . APP_NAME,
             'csrf_token' => CsrfMiddleware::getToken(),
         ]);
@@ -100,7 +98,6 @@ class UserController extends Controller
         }
 
         $this->render('admin/users/edit', [
-            'pageTitle' => 'Editar: ' . $user['name'],
             'title' => 'Editar Usuário — ' . APP_NAME,
             'user' => $user,
             'csrf_token' => CsrfMiddleware::getToken(),

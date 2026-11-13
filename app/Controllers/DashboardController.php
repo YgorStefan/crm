@@ -43,7 +43,6 @@ class DashboardController extends Controller
         $upcomingTasks = $this->tasks->findUpcomingForDashboard($_SESSION['user']['id'], 7, 10);
 
         $this->render('dashboard/index', [
-            'pageTitle' => 'Dashboard',
             'title' => 'Dashboard — ' . APP_NAME,
             'totalClients' => $totalClients,
             'pendingTasks' => $pendingTasks,

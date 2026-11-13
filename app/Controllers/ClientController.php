@@ -63,7 +63,6 @@ class ClientController extends Controller
         ];
 
         $this->render('clients/index', [
-            'pageTitle'  => 'Clientes',
             'title'      => 'Clientes — ' . APP_NAME,
             'clients'    => $clients,
             'stages'     => $stages,
@@ -84,7 +83,6 @@ class ClientController extends Controller
     {
         $this->requireRole(['admin', 'seller']);
         $this->render('clients/create', [
-            'pageTitle' => 'Novo Cliente',
             'title' => 'Novo Cliente — ' . APP_NAME,
             'stages' => $this->stages->findAllOrdered(),
             'users' => $this->users->findAllActive(),
@@ -213,7 +211,6 @@ class ClientController extends Controller
         $sales = $this->service->getSalesWithPaymentStatus($id);
 
         $this->render('clients/show', [
-            'pageTitle' => $client['name'],
             'title' => $client['name'] . ' — ' . APP_NAME,
             'client' => $client,
             'interactions' => $this->interactions->findByClient($id),
@@ -243,7 +240,6 @@ class ClientController extends Controller
         }
 
         $this->render('clients/edit', [
-            'pageTitle' => 'Editar: ' . $client['name'],
             'title' => 'Editar Cliente — ' . APP_NAME,
             'client' => $client,
             'stages' => $this->stages->findAllOrdered(),
