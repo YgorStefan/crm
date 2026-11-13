@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { login } from './helpers';
+import { E2E_ASSIGNEE_NAME, login, setE2eAssigneeActive } from './helpers';
 
 function nextMonthDate(day: number): string {
     const now = new Date();
@@ -48,6 +48,17 @@ async function openNewTaskModalOnDay(page: Page, day = 10): Promise<string> {
 
     await expect(modalTask).toBeVisible();
     return dateStr;
+}
+
+async function openKanbanClientPage(page: Page): Promise<void> {
+    await page.goto('/clients?search=' + encodeURIComponent('Cliente E2E Kanban'));
+    await page.getByRole('link', { name: 'Cliente E2E Kanban', exact: true }).first().click();
+    await expect(page).toHaveURL(/\/clients\/\d+$/);
+}
+
+async function selectE2eAssignee(page: Page, selectId: string): Promise<void> {
+    const value = await page.locator(`#${selectId} option`, { hasText: E2E_ASSIGNEE_NAME }).getAttribute('value');
+    await page.locator(`#${selectId}`).selectOption(value!);
 }
 
 // o seed garante admin@crm.local ativo no tenant, entao sempre existe um colega na lista do select.
@@ -236,8 +247,33 @@ test.describe('Tarefas / Calendário', () => {
         await page.locator('#btnSaveTask').click();
         await updatePromise;
 
-        await expect.poll(() => alerts).toEqual(['Erro ao salvar tarefa. Verifique os campos e tente novamente.']);
+        await expect.poll(() => alerts).toEqual(['Tarefa não encontrada.']);
         await expect(page.locator('#modalTask')).toBeVisible();
+    });
+
+    test('nova tarefa mostra a mensagem do servidor quando o responsável foi desativado depois de a tela abrir', async ({ page }) => {
+        await setE2eAssigneeActive(true);
+        try {
+            await page.reload();
+            await expect(page.locator('#fc-calendar')).toBeVisible();
+            await page.locator('.fc-next-button').click();
+            await openNewTaskModalOnDay(page, 22);
+            await page.locator('#task_title').fill(`Tarefa E2E ${Date.now()}`);
+            await selectE2eAssignee(page, 'task_assigned_to');
+            await setE2eAssigneeActive(false);
+            const alerts = collectAlerts(page);
+
+            const storePromise = page.waitForResponse(
+                (resp) => resp.url().includes('/tasks/store') && resp.request().method() === 'POST',
+            );
+            await page.locator('#btnSaveTask').click();
+            await storePromise;
+
+            await expect.poll(() => alerts).toEqual(['Responsável inválido.']);
+            await expect(page.locator('#modalTask')).toBeVisible();
+        } finally {
+            await setE2eAssigneeActive(false);
+        }
     });
 });
 
@@ -247,9 +283,7 @@ test.describe('Tarefas / modal da tela do cliente', () => {
     });
 
     test('nova tarefa reaberta sem salvar volta o responsável e a prioridade, no valor e no rótulo exibido', async ({ page }) => {
-        await page.goto('/clients?search=' + encodeURIComponent('Cliente E2E Kanban'));
-        await page.getByRole('link', { name: 'Cliente E2E Kanban', exact: true }).first().click();
-        await expect(page).toHaveURL(/\/clients\/\d+$/);
+        await openKanbanClientPage(page);
 
         const { me, colega } = await loggedUserAndColega(page, 'newTask_assigned_to');
         const assignee = '.cs-wrapper:has(#newTask_assigned_to)';
@@ -271,5 +305,28 @@ test.describe('Tarefas / modal da tela do cliente', () => {
         await expect(page.locator(`${assignee} .cs-label`)).toHaveText(me.name);
         await expect(page.locator('#newTask_priority')).toHaveValue('medium');
         await expect(page.locator(`${priority} .cs-label`)).toHaveText('Média');
+    });
+
+    test('nova tarefa mostra a mensagem do servidor quando o responsável foi desativado depois de a tela abrir', async ({ page }) => {
+        await setE2eAssigneeActive(true);
+        try {
+            await openKanbanClientPage(page);
+            await page.locator('#btn-open-new-task').click();
+            await expect(page.locator('#newTaskModal')).toBeVisible();
+            await page.locator('#newTask_title').fill(`Tarefa E2E ${Date.now()}`);
+            await selectE2eAssignee(page, 'newTask_assigned_to');
+            await setE2eAssigneeActive(false);
+
+            const storePromise = page.waitForResponse(
+                (resp) => resp.url().includes('/tasks/store') && resp.request().method() === 'POST',
+            );
+            await page.locator('#newTaskSave').click();
+            await storePromise;
+
+            await expect(page.locator('#crm-toast-container')).toContainText('Responsável inválido.');
+            await expect(page.locator('#newTaskModal')).toBeVisible();
+        } finally {
+            await setE2eAssigneeActive(false);
+        }
     });
 });

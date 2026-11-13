@@ -325,7 +325,7 @@
                     document.getElementById('modalTask').style.display = 'none';
                     this.#calendar.refetchEvents();
                 } else {
-                    alert('Erro ao salvar tarefa. Verifique os campos e tente novamente.');
+                    alert(data?.error || 'Erro ao salvar tarefa. Verifique os campos e tente novamente.');
                 }
             } catch (e) {
                 alert('Erro ao salvar tarefa.');
@@ -343,7 +343,7 @@
                     if (ev) ev.remove();
                     document.getElementById('modalTask').style.display = 'none';
                 } else {
-                    alert('Erro ao excluir tarefa.');
+                    alert(data?.error || 'Erro ao excluir tarefa.');
                 }
             } catch (e) {
                 alert('Erro de rede ao excluir tarefa.');
@@ -361,7 +361,7 @@
                     document.getElementById('modalTask').style.display = 'none';
                     this.#calendar.refetchEvents();
                 } else {
-                    alert('Erro ao atualizar tarefa.');
+                    alert(data?.error || 'Erro ao atualizar tarefa.');
                 }
             } catch (e) {
                 alert('Erro de rede ao atualizar tarefa.');
@@ -378,7 +378,7 @@
                     document.getElementById('modalTask').style.display = 'none';
                     this.#calendar.refetchEvents();
                 } else {
-                    alert(data.error || 'Erro ao cancelar série.');
+                    alert(data?.error || 'Erro ao cancelar série.');
                 }
             } catch (e) {
                 alert('Erro de rede ao cancelar série.');

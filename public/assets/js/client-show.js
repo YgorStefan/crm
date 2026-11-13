@@ -422,7 +422,7 @@
 
                 try {
                     const { ok, data } = await CRM.api.post(this.#appUrl + '/tasks/store', body);
-                    if (!ok || !data?.success) { this.#notify('Erro ao salvar tarefa.', 'error'); return; }
+                    if (!ok || !data?.success) { this.#notify(data?.error || 'Erro ao salvar tarefa.', 'error'); return; }
                     appendTaskRow({ title, due_date: due, priority: selPrio?.value || 'medium' });
                     closeModal();
                     this.#notify('Tarefa criada com sucesso!', 'success');

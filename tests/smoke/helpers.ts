@@ -12,6 +12,13 @@ export const E2E_SELLER_PASSWORD = 'E2eSeller@1234';
 export const DEFAULT_ADMIN_EMAIL = 'admin@crm.local';
 export const DEFAULT_ADMIN_PASSWORD = 'Admin@1234';
 
+export const E2E_ASSIGNEE_NAME = 'E2E Responsável Desativado';
+
+// fora do spec que o usa o responsavel fica desativado, para nao entrar no select dos outros specs.
+export async function setE2eAssigneeActive(active: boolean): Promise<void> {
+    await execFileAsync('php', [path.join(__dirname, 'e2e-assignee.php'), active ? 'on' : 'off']);
+}
+
 /**
  * Limpa as tentativas de login registradas para o IP local (ver comentário
  * em tests/smoke/reset-rate-limit.php). Chamar antes de qualquer teste que
