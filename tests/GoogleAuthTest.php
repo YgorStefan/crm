@@ -575,6 +575,42 @@ final class GoogleAuthTest extends TestCase
         $this->assertCount(1, $this->http->requests());
     }
 
+    public function testForcarRenovacaoIgnoraTokenValido(): void
+    {
+        // o 401 da agenda chega com o token salvo ainda no prazo, e so a renovacao diz se a conta caiu
+        $this->conta(self::ANA, ['access_token_expires_at' => $this->aposT0(3600)]);
+        $refreshAntes = $this->contaDe(self::ANA)['refresh_token'];
+        $this->http->respond('oauth2.googleapis.com/token', 200, self::respostaDaRenovacao());
+
+        $this->assertSame('acesso-renovado-falso', $this->auth()->accessTokenFor(self::ANA, 1234, true));
+
+        $pedidos = $this->http->requests();
+        $this->assertCount(1, $pedidos);
+        $this->assertSame(self::TOKEN_URL, $pedidos[0]['url']);
+        $this->assertSame(1234, $pedidos[0]['timeoutMs']);
+        $this->assertSame('refresh_token', self::formulario($pedidos[0]['body'])['grant_type']);
+
+        $conta = $this->contaDe(self::ANA);
+        $this->assertSame('acesso-renovado-falso', $this->decifrado($conta['access_token']));
+        $this->assertSame($this->aposT0(3599), $conta['access_token_expires_at']);
+        $this->assertSame($refreshAntes, $conta['refresh_token']);
+        $this->assertSame('active', $conta['status']);
+    }
+
+    public function testForcarRenovacaoComInvalidGrantPedeReconexao(): void
+    {
+        $this->conta(self::ANA, ['access_token_expires_at' => $this->aposT0(3600)]);
+        $this->http->respond('oauth2.googleapis.com/token', 400, [
+            'error' => 'invalid_grant', 'error_description' => 'Token has been expired or revoked.',
+        ]);
+
+        $erro = $this->capturar(fn () => $this->auth()->accessTokenFor(self::ANA, 1500, true));
+
+        $this->assertInstanceOf(GoogleReconnectRequired::class, $erro);
+        $this->assertSame('revoked', $this->contaDe(self::ANA)['status']);
+        $this->assertCount(1, $this->http->requests());
+    }
+
     public function testInvalidGrantMarcaRevokedELanca(): void
     {
         $this->conta(self::ANA, ['access_token_expires_at' => $this->aposT0(-10)]);

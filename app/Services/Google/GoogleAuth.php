@@ -142,21 +142,28 @@ final class GoogleAuth
     }
 
     /**
+     * forceRefresh e para quando a agenda responde 401 a um token que o crm
+     * ainda considera valido: o google pode invalidar o token antes do prazo, e
+     * so a renovacao diz se a conta caiu. quem chama tenta de novo uma vez com
+     * o token renovado, e so um segundo 401 significa reconexao.
+     *
      * @throws GoogleReconnectRequired conta sem uso ate o usuario autorizar de novo
      * @throws GoogleUnavailable       renovacao sem resposta util, conta intacta
      */
-    public function accessTokenFor(int $userId, int $timeoutMs): string
+    public function accessTokenFor(int $userId, int $timeoutMs, bool $forceRefresh = false): string
     {
         $account = $this->accounts->findForUser($userId);
         if ($account === false || $account['status'] !== 'active') {
             throw new GoogleReconnectRequired('A conta Google não está ativa.');
         }
 
-        $now       = ($this->now)();
-        $access    = $this->decrypt($account['access_token']);
-        $expiresAt = is_string($account['access_token_expires_at']) ? strtotime($account['access_token_expires_at']) : false;
-        if ($access !== null && $expiresAt !== false && $expiresAt - $now > self::EXPIRY_MARGIN_S) {
-            return $access;
+        $now = ($this->now)();
+        if (!$forceRefresh) {
+            $access    = $this->decrypt($account['access_token']);
+            $expiresAt = is_string($account['access_token_expires_at']) ? strtotime($account['access_token_expires_at']) : false;
+            if ($access !== null && $expiresAt !== false && $expiresAt - $now > self::EXPIRY_MARGIN_S) {
+                return $access;
+            }
         }
 
         $refresh = $this->decrypt($account['refresh_token']);
