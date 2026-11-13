@@ -1,6 +1,7 @@
 <?php
 
 use App\Controllers\TaskController;
+use App\Models\Task;
 use PHPUnit\Framework\TestCase;
 
 require_once __DIR__ . '/Support/GoogleTestDb.php';
@@ -243,13 +244,31 @@ class TaskStoreValidationTest extends TestCase
         $this->assertNenhumaTarefaGravada();
     }
 
-    public function testPrazoInvalidoViaFormularioVoltaParaATelaDoCliente(): void
+    public function testPrazoInvalidoViaFormularioComClienteVoltaParaTarefas(): void
     {
         $_POST['due_date'] = '2026-06-15T10:00:00';
         $_POST['client_id'] = '10';
 
-        $this->assertVoltouComFlash($this->storeResponse(), '/clients/10', 'Prazo inválido.');
+        $this->assertVoltouComFlash($this->storeResponse(), '/tasks', 'Prazo inválido.');
         $this->assertNenhumaTarefaGravada();
+    }
+
+    public function testFormularioSemTituloComClienteDeOutroTenantVoltaParaTarefas(): void
+    {
+        $_POST['title'] = '';
+        $_POST['client_id'] = '20';
+
+        $this->assertVoltouComFlash($this->storeResponse(), '/tasks', 'Título e prazo são obrigatórios.');
+        $this->assertNenhumaTarefaGravada();
+    }
+
+    public function testPrazoNoBuracoDoHorarioDeVeraoGuardaOHorarioDigitado(): void
+    {
+        $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
+        $_POST['due_date'] = '2018-11-04T00:30';
+
+        $this->assertSame(200, $this->storeResponse()->status);
+        $this->assertSame('2018-11-04 00:30:00', $this->unicaTarefa()['due_date']);
     }
 
     public function testEdicaoComPrazoNoFormatoDoNavegadorGrava(): void
@@ -302,5 +321,80 @@ class TaskStoreValidationTest extends TestCase
         $_POST = [];
 
         $this->assertRespondeuErro($this->destroyResponse(999), 404, 'Tarefa não encontrada.');
+    }
+
+    public function testEdicaoPorSellerSemPermissaoRecebe403AntesDeValidarOPrazo(): void
+    {
+        $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
+        $id = $this->tarefaExistente();
+        $_SESSION['user'] = ['id' => 3, 'role' => 'seller'];
+        $_POST = ['due_date' => 'amanha'];
+
+        $this->assertRespondeuErro($this->updateResponse($id), 403, 'Acesso negado.');
+        $this->assertSame('2026-06-15 10:00:00', $this->unicaTarefa()['due_date']);
+    }
+
+    public function testEdicaoDeTarefaInexistenteRecebe404AntesDeValidarOPrazo(): void
+    {
+        $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
+        $_POST = ['due_date' => 'amanha'];
+
+        $this->assertRespondeuErro($this->updateResponse(999), 404, 'Tarefa não encontrada.');
+    }
+
+    private function codigoDaRecusaDoModel(callable $acao): int
+    {
+        try {
+            $acao();
+        } catch (\InvalidArgumentException $e) {
+            return $e->getCode();
+        }
+
+        $this->fail('o model aceitou o dado invalido');
+    }
+
+    /** @param array<string, mixed> $campos */
+    private function criarPeloModel(array $campos): int
+    {
+        return (new Task())->create(array_merge([
+            'assigned_to' => 1,
+            'title'       => 'Ligar para o cliente',
+            'due_date'    => '2026-06-15 10:00:00',
+            'created_by'  => 1,
+        ], $campos));
+    }
+
+    public function testModelDizQueOClienteFalhou(): void
+    {
+        $this->assertSame(
+            Task::INVALID_CLIENT,
+            $this->codigoDaRecusaDoModel(fn () => $this->criarPeloModel(['client_id' => 11])),
+        );
+    }
+
+    public function testModelDizQueOResponsavelFalhou(): void
+    {
+        $this->assertSame(
+            Task::INVALID_ASSIGNEE,
+            $this->codigoDaRecusaDoModel(fn () => $this->criarPeloModel(['assigned_to' => 2])),
+        );
+    }
+
+    public function testModelConfereOClienteAntesDoResponsavel(): void
+    {
+        $this->assertSame(
+            Task::INVALID_CLIENT,
+            $this->codigoDaRecusaDoModel(fn () => $this->criarPeloModel(['client_id' => 20, 'assigned_to' => 2])),
+        );
+    }
+
+    public function testModelDizQueOResponsavelFalhouNaEdicao(): void
+    {
+        $id = $this->tarefaExistente();
+
+        $this->assertSame(
+            Task::INVALID_ASSIGNEE,
+            $this->codigoDaRecusaDoModel(fn () => (new Task())->update($id, ['assigned_to' => 2])),
+        );
     }
 }

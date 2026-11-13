@@ -263,30 +263,21 @@ class TaskController extends Controller
         $title = $this->input('title');
         $dueDate = $this->inputPost('due_date');
         $clientId = $this->inputPost('client_id');
-        $backTo = $clientId ? '/clients/' . (int) $clientId : '/tasks';
 
         if (empty($title) || empty($dueDate)) {
-            // Redireciona para a tela de tarefas (Referer header é forjável)
-            $this->rejectTaskRequest('Título e prazo são obrigatórios.', $backTo);
-            return;
-        }
-
-        // o task::create recusa cliente e responsavel com a mesma excecao, entao o
-        // cliente e conferido antes, para a mensagem dizer qual dos dois esta errado.
-        if (!empty($clientId) && !$this->clients->findActiveById((int) $clientId)) {
-            $this->rejectTaskRequest('Cliente inválido.');
+            $this->rejectTaskRequest('Título e prazo são obrigatórios.');
             return;
         }
 
         $dueDate = self::parseDueDate((string) $dueDate);
         if ($dueDate === null) {
-            $this->rejectTaskRequest('Prazo inválido.', $backTo);
+            $this->rejectTaskRequest('Prazo inválido.');
             return;
         }
 
         $priority = $this->inputPost('priority', 'medium');
         if (!in_array($priority, ['low', 'medium', 'high'], true)) {
-            $this->rejectTaskRequest('Prioridade inválida.', $backTo);
+            $this->rejectTaskRequest('Prioridade inválida.');
             return;
         }
 
@@ -312,8 +303,15 @@ class TaskController extends Controller
                 'recurrence_type' => $recurrenceType,
                 'created_by'      => $_SESSION['user']['id'],
             ]);
-        } catch (\InvalidArgumentException) {
-            $this->rejectTaskRequest('Responsável inválido.', $backTo);
+        } catch (\InvalidArgumentException $e) {
+            if ($e->getCode() === Task::INVALID_CLIENT) {
+                $this->rejectTaskRequest('Cliente inválido.');
+            } elseif ($e->getCode() === Task::INVALID_ASSIGNEE) {
+                // o task::create confere o cliente antes do responsavel, entao aqui o cliente ja e valido.
+                $this->rejectTaskRequest('Responsável inválido.', $clientId ? '/clients/' . (int) $clientId : '/tasks');
+            } else {
+                throw $e;
+            }
             return;
         }
 
@@ -333,10 +331,12 @@ class TaskController extends Controller
     }
 
     // o espaco no lugar do t continua aceito porque o cadastro ja aceitava as duas
-    // formas antes, e o que nao casar o banco recusaria com erro 500.
+    // formas antes, e o que nao casar o banco recusaria com erro 500. o utc so serve
+    // para guardar o texto como veio: no fuso do app, um horario que nao existe por
+    // causa do horario de verao seria empurrado uma hora para frente.
     private static function parseDueDate(string $raw): ?string
     {
-        $parsed = \DateTimeImmutable::createFromFormat('!Y-m-d H:i', str_replace('T', ' ', $raw));
+        $parsed = \DateTimeImmutable::createFromFormat('!Y-m-d H:i', str_replace('T', ' ', $raw), new \DateTimeZone('UTC'));
         $errors = \DateTimeImmutable::getLastErrors();
         if ($parsed === false || ($errors !== false && $errors['warning_count'] + $errors['error_count'] > 0)) {
             return null;
@@ -363,6 +363,16 @@ class TaskController extends Controller
     public function update(array $params = []): void
     {
         $id = (int) ($params['id'] ?? 0);
+
+        $task = $this->tasks->findById($id);
+        if (!$task) {
+            $this->rejectTaskRequest('Tarefa não encontrada.', '/tasks', 404);
+            return;
+        }
+
+        if (!$this->authorizeTaskMutation($task)) {
+            return;
+        }
 
         $data = [];
         if (isset($_POST['status'])) {
@@ -394,16 +404,6 @@ class TaskController extends Controller
         if (isset($_POST['description']))
             $data['description'] = $this->input('description');
 
-        $task = $this->tasks->findById($id);
-        if (!$task) {
-            $this->rejectTaskRequest('Tarefa não encontrada.', '/tasks', 404);
-            return;
-        }
-
-        if (!$this->authorizeTaskMutation($task)) {
-            return;
-        }
-
         $newAssignee = self::assigneeChange(
             $this->inputPost('assigned_to'),
             (string) ($_SESSION['user']['role'] ?? ''),
@@ -415,7 +415,10 @@ class TaskController extends Controller
 
         try {
             $this->tasks->update($id, $data);
-        } catch (\InvalidArgumentException) {
+        } catch (\InvalidArgumentException $e) {
+            if ($e->getCode() !== Task::INVALID_ASSIGNEE) {
+                throw $e;
+            }
             $this->rejectTaskRequest('Responsável inválido.');
             return;
         }

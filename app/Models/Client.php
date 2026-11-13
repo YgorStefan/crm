@@ -191,15 +191,6 @@ class Client extends Model
         return $stmt->fetch();
     }
 
-    public function findActiveById(int $id): array|bool
-    {
-        $stmt = $this->db->prepare(
-            "SELECT id FROM clients WHERE id = :id AND is_active = 1 AND tenant_id = :tenant_id LIMIT 1"
-        );
-        $stmt->execute([':id' => $id, ':tenant_id' => $this->currentTenantId()]);
-        return $stmt->fetch();
-    }
-
     /**
      * Cria um novo cliente no banco.
      *

@@ -9,6 +9,9 @@ class Task extends Model
 {
     protected string $table = 'tasks';
 
+    public const INVALID_ASSIGNEE = 1;
+    public const INVALID_CLIENT   = 2;
+
     private const CALENDAR_COLUMNS = "
         t.id, t.title, t.due_date, t.priority, t.status, t.client_id,
         t.description, t.assigned_to, t.created_by,
@@ -110,22 +113,25 @@ class Task extends Model
         $tenantId   = $this->currentTenantId();
         $assignedTo = (int) $data['assigned_to'];
 
-        $check = $this->db->prepare(
-            "SELECT id FROM users WHERE id = :uid AND tenant_id = :tenant_id_u AND is_active = 1"
-        );
-        $check->execute([':uid' => $assignedTo, ':tenant_id_u' => $tenantId]);
-        if (!$check->fetch()) {
-            throw new \InvalidArgumentException("assigned_to não pertence ao tenant atual.");
-        }
-
+        // o cliente vem antes do responsavel porque o taskcontroller so devolve o
+        // formulario para a tela do cliente quando o erro e do responsavel, o que
+        // pressupoe o cliente ja aprovado aqui.
         if (!empty($data['client_id'])) {
             $checkClient = $this->db->prepare(
                 "SELECT id FROM clients WHERE id = :cid AND tenant_id = :tenant_id_c AND is_active = 1"
             );
             $checkClient->execute([':cid' => (int) $data['client_id'], ':tenant_id_c' => $tenantId]);
             if (!$checkClient->fetch()) {
-                throw new \InvalidArgumentException("client_id não pertence ao tenant atual.");
+                throw new \InvalidArgumentException("client_id não pertence ao tenant atual.", self::INVALID_CLIENT);
             }
+        }
+
+        $check = $this->db->prepare(
+            "SELECT id FROM users WHERE id = :uid AND tenant_id = :tenant_id_u AND is_active = 1"
+        );
+        $check->execute([':uid' => $assignedTo, ':tenant_id_u' => $tenantId]);
+        if (!$check->fetch()) {
+            throw new \InvalidArgumentException("assigned_to não pertence ao tenant atual.", self::INVALID_ASSIGNEE);
         }
 
         $stmt = $this->db->prepare("
@@ -167,7 +173,7 @@ class Task extends Model
             );
             $check->execute([':uid' => (int) $data['assigned_to'], ':tenant_id_u' => $tenantId]);
             if (!$check->fetch()) {
-                throw new \InvalidArgumentException("assigned_to não pertence ao tenant atual.");
+                throw new \InvalidArgumentException("assigned_to não pertence ao tenant atual.", self::INVALID_ASSIGNEE);
             }
         }
 
