@@ -372,3 +372,40 @@ test.describe('Tarefas / tarefa rápida da lista de clientes', () => {
         await expect(page.locator('#qt_due_date')).toHaveValue(`${tomorrow}T12:00`);
     });
 });
+
+test.describe('Tarefas / conflito do dia no calendário', () => {
+    // em utc a tarefa das 22h continua no mesmo dia, e o teste passaria com o codigo antigo.
+    test.use({ timezoneId: 'America/Sao_Paulo' });
+
+    test.beforeEach(async ({ page }) => {
+        await login(page);
+        await page.goto('/tasks');
+        await expect(page.locator('#fc-calendar')).toBeVisible();
+    });
+
+    test('a tarefa das 22h conta como conflito no próprio dia e não no seguinte', async ({ page }) => {
+        const taskTitle = `Tarefa E2E ${Date.now()}`;
+        const day = nextMonthDate(25);
+        const nextDay = nextMonthDate(26);
+        expect(await postFromPage(page, '/tasks/store', { title: taskTitle, due_date: `${day}T22:00` })).toBe(true);
+
+        await page.reload();
+        await expect(page.locator('#fc-calendar')).toBeVisible();
+        await page.locator('.fc-next-button').click();
+        await expect(page.getByText(taskTitle)).toBeVisible();
+
+        await page.locator(`.fc-daygrid-day[data-date="${day}"] .fc-daygrid-day-top`).click();
+        await expect(page.locator('#modalDayConflict')).toBeVisible();
+        await expect(page.locator('#conflictEventsList')).toContainText(taskTitle);
+        // o modal de conflito nao tem botao de fechar, ele fecha pelo clique no fundo.
+        await page.locator('#modalDayConflict').click({ position: { x: 5, y: 5 } });
+        await expect(page.locator('#modalDayConflict')).toBeHidden();
+
+        // outra tarefa do banco no dia seguinte tambem abre o conflito, entao o que importa e esta nao aparecer nele.
+        await page.locator(`.fc-daygrid-day[data-date="${nextDay}"] .fc-daygrid-day-top`).click();
+        await expect(page.locator('#modalTask:visible, #modalDayConflict:visible')).toBeVisible();
+        if (await page.locator('#modalDayConflict').isVisible()) {
+            await expect(page.locator('#conflictEventsList')).not.toContainText(taskTitle);
+        }
+    });
+});

@@ -200,8 +200,12 @@
 
         handleDateClick(dateStr) {
             this.#selectedDate = dateStr;
+            // o dateStr do dia clicado e a data local, entao o evento entra pela data local
+            // dele; a de toISOString e a de utc, que em -03:00 ja e o dia seguinte depois das 21h.
+            const pad = n => String(n).padStart(2, '0');
+            const localDate = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
             const eventsOnDate = this.#calendar.getEvents().filter(e =>
-                e.start && e.start.toISOString().slice(0, 10) === dateStr
+                e.start && localDate(e.start) === dateStr
             );
             if (eventsOnDate.length > 0) {
                 const list = document.getElementById('conflictEventsList');
