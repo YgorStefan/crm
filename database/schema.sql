@@ -320,7 +320,7 @@ CREATE TABLE IF NOT EXISTS cold_contacts (
                                                   COMMENT 'Data/hora da importação — agrupa Cards Mensais',
     tenant_id            INT UNSIGNED    NOT NULL DEFAULT 1 COMMENT 'Isolamento multi-tenant',
     archived_at          DATETIME        NULL     DEFAULT NULL,
-    imported_year_month  CHAR(7) GENERATED ALWAYS AS (DATE_FORMAT(imported_at, '%Y-%m')) STORED,
+    imported_year_month  CHAR(7) GENERATED ALWAYS AS (CONCAT(YEAR(imported_at), '-', LPAD(MONTH(imported_at), 2, '0'))) STORED,
     created_at           TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at           TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP
                                          ON UPDATE CURRENT_TIMESTAMP,
