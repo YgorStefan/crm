@@ -371,8 +371,12 @@
 
             document.getElementById('googleEventRecurring').classList.toggle('hidden', !this.#googleEvent.recurring);
             document.getElementById('googleEventReadOnly').classList.toggle('hidden', canEdit);
-            document.getElementById('btnSaveGoogleEvent').style.display = canEdit ? '' : 'none';
-            document.getElementById('btnDeleteGoogleEvent').style.display = canEdit ? '' : 'none';
+            const save = document.getElementById('btnSaveGoogleEvent');
+            const remove = document.getElementById('btnDeleteGoogleEvent');
+            save.style.display = canEdit ? '' : 'none';
+            remove.style.display = canEdit ? '' : 'none';
+            save.disabled = false;
+            remove.disabled = false;
             document.getElementById('btnCloseGoogleEvent').textContent = canEdit ? 'Cancelar' : 'Fechar';
 
             const link = document.getElementById('googleEventLink');
@@ -414,13 +418,20 @@
             document.getElementById('modalGoogleEvent').style.display = 'none';
         }
 
-        #googleEventUrl(action) {
-            return this.#appUrl + '/api/google/events/' + encodeURIComponent(this.#googleEvent.googleId) + '/' + action;
+        #googleEventUrl(target, action) {
+            return this.#appUrl + '/api/google/events/' + encodeURIComponent(target.googleId) + '/' + action;
+        }
+
+        // o modal pode ser fechado e aberto em outro evento enquanto o pedido esta em voo,
+        // entao a resposta so mexe no modal se ele ainda mostra o evento do pedido.
+        #isCurrentGoogleEvent(target) {
+            return this.#googleEvent?.calendarId === target.calendarId;
         }
 
         async #saveGoogleEvent() {
+            const target = this.#googleEvent;
             const f = this.#googleFields();
-            const initial = this.#googleEvent.initial;
+            const initial = target.initial;
             const current = {
                 title:       f.title.value,
                 description: f.description.value,
@@ -455,35 +466,40 @@
             const btn = document.getElementById('btnSaveGoogleEvent');
             btn.disabled = true;
             try {
-                const { ok, data } = await CRM.api.post(this.#googleEventUrl('update'), body);
+                const { ok, data } = await CRM.api.post(this.#googleEventUrl(target, 'update'), body);
                 if (ok && data?.success) {
-                    this.#closeGoogleEventModal();
+                    if (this.#isCurrentGoogleEvent(target)) this.#closeGoogleEventModal();
                     this.#calendar.refetchEvents();
-                } else {
+                } else if (this.#isCurrentGoogleEvent(target)) {
                     this.#showGoogleError(data?.error || 'Não foi possível salvar o evento no Google Agenda.');
                 }
             } catch (e) {
-                this.#showGoogleError('Erro de rede ao salvar o evento no Google Agenda.');
+                if (this.#isCurrentGoogleEvent(target)) this.#showGoogleError('Erro de rede ao salvar o evento no Google Agenda.');
             } finally {
-                btn.disabled = false;
+                if (this.#googleEvent === target) btn.disabled = false;
             }
         }
 
         async #deleteGoogleEvent() {
-            const question = this.#googleEvent.recurring
+            const target = this.#googleEvent;
+            const question = target.recurring
                 ? 'Excluir esta ocorrência do Google Agenda? As outras datas da série continuam.'
                 : 'Excluir este evento do Google Agenda?';
             if (!window.confirm(question)) return;
+            const btn = document.getElementById('btnDeleteGoogleEvent');
+            btn.disabled = true;
             try {
-                const { ok, data } = await CRM.api.post(this.#googleEventUrl('delete'));
+                const { ok, data } = await CRM.api.post(this.#googleEventUrl(target, 'delete'));
                 if (ok && data?.success) {
-                    this.#calendar.getEventById(this.#googleEvent.calendarId)?.remove();
-                    this.#closeGoogleEventModal();
-                } else {
+                    this.#calendar.getEventById(target.calendarId)?.remove();
+                    if (this.#isCurrentGoogleEvent(target)) this.#closeGoogleEventModal();
+                } else if (this.#isCurrentGoogleEvent(target)) {
                     this.#showGoogleError(data?.error || 'Não foi possível excluir o evento do Google Agenda.');
                 }
             } catch (e) {
-                this.#showGoogleError('Erro de rede ao excluir o evento do Google Agenda.');
+                if (this.#isCurrentGoogleEvent(target)) this.#showGoogleError('Erro de rede ao excluir o evento do Google Agenda.');
+            } finally {
+                if (this.#googleEvent === target) btn.disabled = false;
             }
         }
 

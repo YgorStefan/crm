@@ -90,6 +90,30 @@ async function mockGoogleEventRoute(page: Page, action: 'update' | 'delete', rep
     return bodies;
 }
 
+// a rota segura a resposta ate o teste soltar, para dar tempo de fechar o modal e abrir
+// outro evento com o pedido ainda em voo.
+async function holdGoogleEventRoute(page: Page, action: 'update' | 'delete', reply: object = { success: true }): Promise<() => void> {
+    let release!: () => void;
+    const held = new Promise<void>((resolve) => { release = resolve; });
+    await page.route((url) => url.pathname.endsWith(`/api/google/events/evtfalso123/${action}`), async (route) => {
+        await held;
+        await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(reply) });
+    });
+    return release;
+}
+
+function otherGoogleEvent(): FeedEvent {
+    return {
+        ...googleEvent({
+            title: 'Outro evento E2E',
+            start: `${dayInView(1)}T10:00:00`,
+            end: `${dayInView(1)}T11:00:00`,
+            props: { google_id: 'outrofalso' },
+        }),
+        id: 'g_outrofalso',
+    };
+}
+
 function sentFields(body: URLSearchParams): Record<string, string> {
     const fields = Object.fromEntries(body.entries());
     delete fields._csrf_token;
@@ -380,6 +404,52 @@ test.describe('Calendário / eventos e avisos do Google com feed falso', () => {
         expect(bodies).toHaveLength(1);
         expect(bodies[0].get('_csrf_token')).toBeTruthy();
         await expect(page.getByText('Reunião E2E do Google')).toHaveCount(0);
+    });
+
+    test('excluir trava o botão e, com outro evento aberto no meio, tira só o evento pedido', async ({ page }) => {
+        await mockFeed(page, [googleEvent(), otherGoogleEvent()]);
+        const release = await holdGoogleEventRoute(page, 'delete');
+        answerDialogs(page, [true]);
+        await openTasks(page);
+
+        await page.getByText('Reunião E2E do Google').click();
+        const sent = page.waitForRequest((r) => r.url().endsWith('/api/google/events/evtfalso123/delete'));
+        await page.locator('#btnDeleteGoogleEvent').click();
+        await sent;
+        await expect(page.locator('#btnDeleteGoogleEvent')).toBeDisabled();
+
+        await page.locator('#btnCloseGoogleEvent').click();
+        await page.getByText('Outro evento E2E').click();
+        await expect(page.locator('#googleEvent_title')).toHaveValue('Outro evento E2E');
+        await expect(page.locator('#btnDeleteGoogleEvent')).toBeEnabled();
+
+        release();
+        await expect(page.getByText('Reunião E2E do Google')).toHaveCount(0);
+        await expect(page.locator('.fc-event', { hasText: 'Outro evento E2E' })).toHaveCount(1);
+        await expect(page.locator('#modalGoogleEvent')).toBeVisible();
+        await expect(page.locator('#googleEvent_title')).toHaveValue('Outro evento E2E');
+    });
+
+    test('salvar com outro evento aberto no meio não fecha o modal do outro', async ({ page }) => {
+        const feed = await mockFeed(page, [googleEvent(), otherGoogleEvent()]);
+        const release = await holdGoogleEventRoute(page, 'update');
+        await openTasks(page);
+
+        await page.getByText('Reunião E2E do Google').click();
+        await page.locator('#googleEvent_title').fill('Reunião E2E renomeada');
+        const sent = page.waitForRequest((r) => r.url().endsWith('/api/google/events/evtfalso123/update'));
+        await page.locator('#btnSaveGoogleEvent').click();
+        await sent;
+
+        await page.locator('#btnCloseGoogleEvent').click();
+        await page.getByText('Outro evento E2E').click();
+        await expect(page.locator('#btnSaveGoogleEvent')).toBeEnabled();
+        const before = feed.requests.length;
+
+        release();
+        await expect.poll(() => feed.requests.length).toBeGreaterThan(before);
+        await expect(page.locator('#modalGoogleEvent')).toBeVisible();
+        await expect(page.locator('#googleEvent_title')).toHaveValue('Outro evento E2E');
     });
 
     test('filtro de status ou de prioridade esconde os eventos do Google e deixa as tarefas', async ({ page }) => {
