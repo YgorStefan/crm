@@ -60,6 +60,29 @@ final class TaskActiveAssigneeTest extends TestCase
         return (int) $this->pdo->lastInsertId();
     }
 
+    private function moldeSemanalVencido(int $responsavel, string $prazo): int
+    {
+        $this->pdo->prepare(
+            "INSERT INTO tasks (assigned_to, created_by, tenant_id, title, due_date, priority, status, recurrence_type)
+             VALUES (:responsavel, 1, 1, 'Reuniao semanal', :prazo, 'medium', 'pending', 'weekly')"
+        )->execute([':responsavel' => $responsavel, ':prazo' => (new \DateTime($prazo))->format('Y-m-d H:i:s')]);
+        return (int) $this->pdo->lastInsertId();
+    }
+
+    private function ocorrenciaGerada(int $molde, int $responsavel, string $prazo): int
+    {
+        $this->pdo->prepare(
+            "INSERT INTO tasks (assigned_to, created_by, tenant_id, title, due_date, priority, status,
+                                recurrence_type, recurrence_parent_id)
+             VALUES (:responsavel, 1, 1, 'Reuniao semanal', :prazo, 'medium', 'pending', 'none', :molde)"
+        )->execute([
+            ':responsavel' => $responsavel,
+            ':prazo'       => (new \DateTime($prazo))->format('Y-m-d H:i:s'),
+            ':molde'       => $molde,
+        ]);
+        return (int) $this->pdo->lastInsertId();
+    }
+
     /** @return list<int> um responsavel por ocorrencia gerada */
     private function responsaveisDasOcorrencias(int $molde): array
     {
@@ -106,6 +129,31 @@ final class TaskActiveAssigneeTest extends TestCase
         $responsaveis = $this->responsaveisDasOcorrencias($molde);
         $this->assertNotEmpty($responsaveis);
         $this->assertSame([self::CAIO], array_values(array_unique($responsaveis)));
+    }
+
+    public function testSerieRetomadaComecaNaPrimeiraOcorrenciaAPartirDeAgora(): void
+    {
+        // a serie gerou ate 43 semanas atras e parou ali, com a responsavel desativada. os
+        // dois dias a mais tiram as ocorrencias da hora exata de agora, que dependeria dos
+        // milissegundos entre o teste e o model.
+        $molde = $this->moldeSemanalVencido(self::BIA, '-58 weeks +2 days');
+        $filhaAntiga = $this->ocorrenciaGerada($molde, self::BIA, '-43 weeks +2 days');
+        $this->abrirCalendarioComoAdmin();
+
+        $this->pdo->exec('UPDATE users SET is_active = 1 WHERE id = ' . self::BIA);
+        $agora = (new \DateTime())->format('Y-m-d H:i:s');
+        $umaSemanaDepois = (new \DateTime('+1 week'))->format('Y-m-d H:i:s');
+        $this->abrirCalendarioComoAdmin();
+
+        $stmt = $this->pdo->prepare(
+            'SELECT due_date FROM tasks WHERE recurrence_parent_id = :pid AND id <> :antiga ORDER BY due_date'
+        );
+        $stmt->execute([':pid' => $molde, ':antiga' => $filhaAntiga]);
+        $novas = $stmt->fetchAll(\PDO::FETCH_COLUMN);
+
+        $this->assertNotEmpty($novas);
+        $this->assertGreaterThanOrEqual($agora, $novas[0], 'a retomada criou ocorrencia ja vencida');
+        $this->assertLessThan($umaSemanaDepois, $novas[0], 'a retomada pulou a primeira ocorrencia a partir de agora');
     }
 
     public function testOcorrenciasJaCriadasFicamQuandoOResponsavelEDesativado(): void

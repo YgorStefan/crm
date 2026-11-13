@@ -529,12 +529,12 @@ class Task extends Model
             ? (new \DateTime($latestDate))->add($interval)
             : (clone $parentDate)->add($interval);
 
-        // On first generation, skip past instances to avoid flooding calendar with overdue rows
-        if (!$latestDate) {
-            $now = new \DateTime();
-            while ($next < $now) {
-                $next->add($interval);
-            }
+        // tanto a primeira geracao quanto a volta de uma serie parada (responsavel que
+        // ficou inativo) comecam na primeira ocorrencia a partir de agora, senao o
+        // calendario recebe de uma vez as ocorrencias do periodo parado, ja vencidas.
+        $now = new \DateTime();
+        while ($next < $now) {
+            $next->add($interval);
         }
 
         if ($next > $horizon) return false;
