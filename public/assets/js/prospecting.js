@@ -212,7 +212,11 @@
             XLSX.utils.book_append_sheet(wb, ws, 'Leads');
 
             const term     = document.getElementById('searchTerm')?.value.trim().replace(/[^a-zA-Z0-9]/g, '-') ?? 'leads';
-            const filename = 'prospeccao-' + term + '-' + new Date().toISOString().slice(0, 10) + '.xlsx';
+            // data local: o toISOString e utc, e em -03:00 o nome sairia com a data de amanha depois das 21h.
+            const now      = new Date();
+            const pad      = n => String(n).padStart(2, '0');
+            const today    = now.getFullYear() + '-' + pad(now.getMonth() + 1) + '-' + pad(now.getDate());
+            const filename = 'prospeccao-' + term + '-' + today + '.xlsx';
             XLSX.writeFile(wb, filename);
         });
     }
