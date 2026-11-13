@@ -223,13 +223,14 @@
             document.getElementById('task_id').value = '';
             document.getElementById('task_title').value = '';
             document.getElementById('task_due_date').value = dateStr + 'T08:00';
-            document.getElementById('task_priority').value = 'medium';
+            const priorityEl = document.getElementById('task_priority');
+            priorityEl.value = 'medium';
+            window.CRMSelect.sync(priorityEl);
             document.getElementById('task_description').value = '';
             const assignedEl = document.getElementById('task_assigned_to');
             if (assignedEl) {
                 for (const opt of assignedEl.options) opt.selected = opt.defaultSelected;
-                // o select customizado so troca o rotulo exibido ao receber um evento change, e mudar a opcao por codigo nao dispara nenhum.
-                assignedEl.dispatchEvent(new Event('change', { bubbles: true }));
+                window.CRMSelect.sync(assignedEl);
             }
             document.getElementById('taskActionBtns').style.display = 'none';
             document.getElementById('btnSaveTask').style.display = this.#userRole === 'viewer' ? 'none' : '';
@@ -254,10 +255,15 @@
                 document.getElementById('task_id').value = task.id;
                 document.getElementById('task_title').value = task.title;
                 document.getElementById('task_due_date').value = task.due_date.replace(' ', 'T').slice(0, 16);
-                document.getElementById('task_priority').value = task.priority;
+                const priorityEl = document.getElementById('task_priority');
+                priorityEl.value = task.priority;
+                window.CRMSelect.sync(priorityEl);
                 document.getElementById('task_description').value = task.description || '';
                 const assignedEl = document.getElementById('task_assigned_to');
-                if (assignedEl && task.assigned_to) assignedEl.value = task.assigned_to;
+                if (assignedEl && task.assigned_to) {
+                    assignedEl.value = task.assigned_to;
+                    window.CRMSelect.sync(assignedEl);
+                }
 
                 const canEdit = this.#userRole === 'admin' ||
                     (this.#userRole === 'seller' && (task.assigned_to == this.#userId || task.created_by == this.#userId));

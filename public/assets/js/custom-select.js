@@ -18,6 +18,7 @@
     'use strict';
 
     var idCounter = 0;
+    const labelSyncers = new WeakMap();
 
     function uid() { return 'csel-' + (++idCounter); }
 
@@ -234,6 +235,7 @@
 
         // Sincroniza com mudancas externas no <select>
         select.addEventListener('change', syncLabel);
+        labelSyncers.set(select, syncLabel);
 
         // Insere o wrapper antes do select e move o select para dentro
         select.parentNode.insertBefore(wrapper, select);
@@ -248,7 +250,14 @@
         (root || document).querySelectorAll('select:not([multiple]):not([data-no-custom])').forEach(enhance);
     }
 
-    window.CRMSelect = { enhance: enhance, enhanceAll: enhanceAll };
+    // mudar o value por codigo nao dispara change, entao quem muda o valor assim
+    // chama sync para o rotulo exibido acompanhar o valor que sera enviado.
+    function sync(select) {
+        const syncLabel = labelSyncers.get(select);
+        if (syncLabel) syncLabel();
+    }
+
+    window.CRMSelect = { enhance: enhance, enhanceAll: enhanceAll, sync: sync };
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function () { enhanceAll(); });

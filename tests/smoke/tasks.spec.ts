@@ -33,15 +33,15 @@ async function openNewTaskModalOnDay(page: Page, day = 10): Promise<string> {
 }
 
 // o seed garante admin@crm.local ativo no tenant, entao sempre existe um colega na lista do select.
-async function loggedUserAndColega(page: Page) {
+async function loggedUserAndColega(page: Page, selectId = 'task_assigned_to') {
     const loggedUserId = (await page.locator('meta[name="user-id"]').getAttribute('content'))!;
     const read = async (selector: string) => {
         const option = page.locator(selector).first();
         return { id: (await option.getAttribute('value'))!, name: (await option.textContent())!.trim() };
     };
     return {
-        me: await read(`#task_assigned_to option[value="${loggedUserId}"]`),
-        colega: await read(`#task_assigned_to option:not([value="${loggedUserId}"])`),
+        me: await read(`#${selectId} option[value="${loggedUserId}"]`),
+        colega: await read(`#${selectId} option:not([value="${loggedUserId}"])`),
     };
 }
 
@@ -134,5 +134,83 @@ test.describe('Tarefas / Calendário', () => {
         await openNewTaskModalOnDay(page, 14);
         await expect(page.locator('#task_assigned_to')).toHaveValue(me.id);
         await expect(page.locator(`${assignee} .cs-label`)).toHaveText(me.name);
+    });
+
+    test('nova tarefa volta a prioridade escolhida sem salvar para a padrão, no rótulo exibido', async ({ page }) => {
+        const priority = '.cs-wrapper:has(#task_priority)';
+
+        await page.locator('.fc-next-button').click();
+        await openNewTaskModalOnDay(page, 12);
+        await page.locator(`${priority} .cs-trigger`).click();
+        await page.locator(`${priority} .cs-option[data-value="high"]`).click();
+        await expect(page.locator(`${priority} .cs-label`)).toHaveText('Alta');
+        await page.locator('#modalTask button[data-action="close-modal"]').first().click();
+        await expect(page.locator('#modalTask')).toBeHidden();
+
+        await openNewTaskModalOnDay(page, 14);
+        await expect(page.locator('#task_priority')).toHaveValue('medium');
+        await expect(page.locator(`${priority} .cs-label`)).toHaveText('Média');
+    });
+
+    test('a edição da tarefa de um colega mostra o nome dele e a prioridade da tarefa no rótulo exibido', async ({ page }) => {
+        const taskTitle = `Tarefa E2E ${Date.now()}`;
+        const { colega } = await loggedUserAndColega(page);
+        const assignee = '.cs-wrapper:has(#task_assigned_to)';
+        const priority = '.cs-wrapper:has(#task_priority)';
+
+        await page.locator('.fc-next-button').click();
+        await openNewTaskModalOnDay(page, 16);
+        await page.locator('#task_title').fill(taskTitle);
+        await page.locator('#task_priority').selectOption('low');
+        await page.locator('#task_assigned_to').selectOption(colega.id);
+        const storePromise = page.waitForResponse(
+            (resp) => resp.url().includes('/tasks/store') && resp.request().method() === 'POST',
+        );
+        await page.locator('#btnSaveTask').click();
+        expect((await storePromise).ok()).toBeTruthy();
+        await expect(page.locator('#modalTask')).toBeHidden();
+
+        // recarrega para os rotulos voltarem ao padrao da pagina, assim so a abertura da edicao pode troca-los
+        await page.reload();
+        await expect(page.locator('#fc-calendar')).toBeVisible();
+        await page.locator('.fc-next-button').click();
+
+        await page.getByText(taskTitle).click();
+        await expect(page.locator('#modalTaskTitle')).toHaveText('Editar Tarefa');
+        await expect(page.locator(`${assignee} .cs-label`)).toHaveText(colega.name);
+        await expect(page.locator(`${priority} .cs-label`)).toHaveText('Baixa');
+    });
+});
+
+test.describe('Tarefas / modal da tela do cliente', () => {
+    test.beforeEach(async ({ page }) => {
+        await login(page);
+    });
+
+    test('nova tarefa reaberta sem salvar volta o responsável e a prioridade, no valor e no rótulo exibido', async ({ page }) => {
+        await page.goto('/clients?search=' + encodeURIComponent('Cliente E2E Kanban'));
+        await page.getByRole('link', { name: 'Cliente E2E Kanban', exact: true }).first().click();
+        await expect(page).toHaveURL(/\/clients\/\d+$/);
+
+        const { me, colega } = await loggedUserAndColega(page, 'newTask_assigned_to');
+        const assignee = '.cs-wrapper:has(#newTask_assigned_to)';
+        const priority = '.cs-wrapper:has(#newTask_priority)';
+
+        await page.locator('#btn-open-new-task').click();
+        await expect(page.locator('#newTaskModal')).toBeVisible();
+        await page.locator(`${assignee} .cs-trigger`).click();
+        await page.locator(`${assignee} .cs-option[data-value="${colega.id}"]`).click();
+        await page.locator(`${priority} .cs-trigger`).click();
+        await page.locator(`${priority} .cs-option[data-value="high"]`).click();
+        await expect(page.locator(`${assignee} .cs-label`)).toHaveText(colega.name);
+        await expect(page.locator(`${priority} .cs-label`)).toHaveText('Alta');
+        await page.locator('#newTaskCancel').click();
+        await expect(page.locator('#newTaskModal')).toBeHidden();
+
+        await page.locator('#btn-open-new-task').click();
+        await expect(page.locator('#newTask_assigned_to')).toHaveValue(me.id);
+        await expect(page.locator(`${assignee} .cs-label`)).toHaveText(me.name);
+        await expect(page.locator('#newTask_priority')).toHaveValue('medium');
+        await expect(page.locator(`${priority} .cs-label`)).toHaveText('Média');
     });
 });
