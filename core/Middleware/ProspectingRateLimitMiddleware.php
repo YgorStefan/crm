@@ -42,10 +42,18 @@ class ProspectingRateLimitMiddleware
             http_response_code(429);
             header('Content-Type: application/json');
             echo json_encode(ApiResponse::error('Limite de buscas atingido. Aguarde um instante antes de tentar novamente.'));
-            exit;
+            $this->terminate();
+            return; // so alcancado quando um teste sobrescreve o terminate: a chamada barrada nao entra na janela.
         }
 
         $pdo->prepare("INSERT INTO prospecting_requests (tenant_id) VALUES (:tid)")
             ->execute([':tid' => $tenantId]);
+    }
+
+    // o exit fica num metodo proprio porque o teste chama o middleware no mesmo processo
+    // do phpunit, e um exit ali encerraria a suite com codigo 0 e sem resumo.
+    protected function terminate(): void
+    {
+        exit;
     }
 }

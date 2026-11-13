@@ -11,7 +11,10 @@ use PHPUnit\Framework\Assert;
 final class GoogleTestDb
 {
     // filhas antes das maes, na ordem em que um DROP com FK ligada aceitaria.
-    private const TABLES = ['google_event_deletions', 'google_accounts', 'tasks', 'clients', 'users'];
+    private const TABLES = [
+        'google_event_deletions', 'google_accounts', 'tasks', 'clients', 'users',
+        'login_attempts', 'prospecting_requests',
+    ];
 
     public static function setUp(): \PDO
     {
@@ -78,6 +81,16 @@ final class GoogleTestDb
             google_event_id VARCHAR(1024) NOT NULL,
             created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
             INDEX idx_google_event_deletions_tenant_user (tenant_id, user_id)
+        ) ENGINE=InnoDB');
+        $pdo->exec('CREATE TABLE login_attempts (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            ip VARCHAR(45) NOT NULL, identifier VARCHAR(150) NULL,
+            attempted_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB');
+        $pdo->exec('CREATE TABLE prospecting_requests (
+            id INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            tenant_id INT UNSIGNED NOT NULL,
+            requested_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB');
 
         (new \ReflectionClass(Database::class))->getProperty('instance')->setValue(null, $pdo);
