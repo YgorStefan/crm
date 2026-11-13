@@ -87,7 +87,7 @@ $googleTeam       = $googleEnabled && $googleConnection === 'active' && ($_SESSI
                        border-gray-300 text-gray-600 hover:bg-gray-100
                        dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800
                        aria-pressed:bg-indigo-600 aria-pressed:border-indigo-600 aria-pressed:text-white aria-pressed:hover:bg-indigo-700
-                       dark:aria-pressed:bg-indigo-500 dark:aria-pressed:border-indigo-500">
+                       dark:aria-pressed:bg-indigo-500 dark:aria-pressed:border-indigo-500 dark:aria-pressed:text-white">
                 Tarefas da equipe
             </button>
         <?php endif; ?>
