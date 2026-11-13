@@ -111,7 +111,7 @@ class Task extends Model
         $assignedTo = (int) $data['assigned_to'];
 
         $check = $this->db->prepare(
-            "SELECT id FROM users WHERE id = :uid AND tenant_id = :tenant_id_u"
+            "SELECT id FROM users WHERE id = :uid AND tenant_id = :tenant_id_u AND is_active = 1"
         );
         $check->execute([':uid' => $assignedTo, ':tenant_id_u' => $tenantId]);
         if (!$check->fetch()) {
@@ -163,7 +163,7 @@ class Task extends Model
 
         if (array_key_exists('assigned_to', $data)) {
             $check = $this->db->prepare(
-                "SELECT id FROM users WHERE id = :uid AND tenant_id = :tenant_id_u"
+                "SELECT id FROM users WHERE id = :uid AND tenant_id = :tenant_id_u AND is_active = 1"
             );
             $check->execute([':uid' => (int) $data['assigned_to'], ':tenant_id_u' => $tenantId]);
             if (!$check->fetch()) {
