@@ -27,6 +27,27 @@ test.describe('Clientes', () => {
         await expect(page.getByText(uniqueName)).toBeVisible();
     });
 
+    test('a busca do cep preenche a uf no valor e no rótulo exibido do select', async ({ page }) => {
+        let viaCepCalls = 0;
+        // o fetch sai do localhost para outra origem, entao a resposta falsa precisa do cabecalho de cors.
+        await page.route('https://viacep.com.br/ws/**', async (route) => {
+            viaCepCalls++;
+            await route.fulfill({
+                status: 200,
+                headers: { 'Access-Control-Allow-Origin': '*' },
+                json: { cep: '80010-000', logradouro: 'Praça Tiradentes', bairro: 'Centro', localidade: 'Curitiba', uf: 'PR' },
+            });
+        });
+
+        await page.goto('/clients/create');
+        await page.locator('#zip_code').fill('80010000');
+
+        await expect(page.locator('input[name="city"]')).toHaveValue('Curitiba');
+        await expect(page.locator('#state')).toHaveValue('PR');
+        await expect(page.locator('.cs-wrapper:has(#state) .cs-label')).toHaveText('PR');
+        expect(viaCepCalls).toBe(1);
+    });
+
     test('lista de clientes carrega com a tabela de resultados', async ({ page }) => {
         await page.goto('/clients');
         await expect(page.locator('table')).toBeVisible();

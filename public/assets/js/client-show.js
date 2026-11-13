@@ -342,13 +342,10 @@
             const openModal = () => {
                 if (inpTitle)  inpTitle.value  = '';
                 if (inpDue)    inpDue.value    = todayAt8();
-                if (selPrio) {
-                    selPrio.value = 'medium';
-                    window.CRMSelect.sync(selPrio);
-                }
+                if (selPrio)   selPrio.value   = 'medium';
                 if (selAssign) {
                     for (const opt of selAssign.options) opt.selected = opt.defaultSelected;
-                    window.CRMSelect.sync(selAssign);
+                    window.CRMSelect?.sync?.(selAssign);
                 }
                 if (inpDesc)   inpDesc.value   = '';
                 if (recurChk)  recurChk.checked = false;
