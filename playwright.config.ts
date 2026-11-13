@@ -1,7 +1,13 @@
 import { defineConfig, devices } from '@playwright/test';
 
-const PORT = 8000;
+const PORT = Number(process.env.E2E_PORT) || 8000;
 const BASE_URL = process.env.PLAYWRIGHT_BASE_URL || `http://localhost:${PORT}`;
+const E2E_DB_NAME = process.env.E2E_DB_NAME;
+
+// o seed e os helpers abrem o php como processo filho e herdam este ambiente, entao o DB_NAME vai para o process.env e eles usam o mesmo banco do servidor.
+if (E2E_DB_NAME) {
+  process.env.DB_NAME = E2E_DB_NAME;
+}
 
 /**
  * Config E2E — sobe o servidor embutido do PHP (mesmo comando do dev local,
@@ -44,8 +50,13 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: 'php -S localhost:8000 -t public router.php',
+    command: `php -S localhost:${PORT} -t public router.php`,
     url: `${BASE_URL}/login`,
+    // o Playwright soma este env ao process.env; o .env so preenche o que o ambiente nao trouxe.
+    env: {
+      APP_URL: `http://localhost:${PORT}`,
+      ...(E2E_DB_NAME ? { DB_NAME: E2E_DB_NAME } : {}),
+    },
     // true (não `!process.env.CI`) de propósito: no CI o servidor já é
     // subido manualmente ANTES do Playwright (ver .github/workflows/ci.yml)
     // para que o k6 rode logo em seguida contra o mesmo processo/estado —

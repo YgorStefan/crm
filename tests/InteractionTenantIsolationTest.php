@@ -23,6 +23,7 @@ class InteractionTenantIsolationTest extends TestCase
         $port = getenv('DB_PORT') ?: '3306';
         $user = getenv('DB_USER') ?: 'root';
         $pass = ($p = getenv('DB_PASS')) !== false ? $p : '';
+        $dbName = testDatabaseName();
 
         try {
             $pdo = new \PDO("mysql:host={$host};port={$port};charset=utf8mb4", $user, $pass, [
@@ -30,8 +31,8 @@ class InteractionTenantIsolationTest extends TestCase
                 \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
                 \PDO::ATTR_EMULATE_PREPARES   => false,
             ]);
-            $pdo->exec('CREATE DATABASE IF NOT EXISTS crm_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
-            $pdo->exec('USE crm_test');
+            $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+            $pdo->exec("USE `{$dbName}`");
         } catch (\Throwable $e) {
             self::markTestSkipped('MySQL indisponivel para teste de integracao: ' . $e->getMessage());
         }
