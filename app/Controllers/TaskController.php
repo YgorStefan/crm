@@ -299,16 +299,27 @@ class TaskController extends Controller
             $recurrenceType = 'none';
         }
 
-        $this->tasks->create([
-            'client_id'       => $clientId ?: null,
-            'assigned_to'     => $assignedTo,
-            'title'           => $title,
-            'description'     => $this->input('description'),
-            'due_date'        => $dueDate,
-            'priority'        => $this->inputPost('priority', 'medium'),
-            'recurrence_type' => $recurrenceType,
-            'created_by'      => $_SESSION['user']['id'],
-        ]);
+        try {
+            $this->tasks->create([
+                'client_id'       => $clientId ?: null,
+                'assigned_to'     => $assignedTo,
+                'title'           => $title,
+                'description'     => $this->input('description'),
+                'due_date'        => $dueDate,
+                'priority'        => $this->inputPost('priority', 'medium'),
+                'recurrence_type' => $recurrenceType,
+                'created_by'      => $_SESSION['user']['id'],
+            ]);
+        } catch (\InvalidArgumentException) {
+            $message = 'Responsável ou cliente inválido.';
+            if ($this->isAjax()) {
+                $this->json(ApiResponse::error($message), 422);
+                return;
+            }
+            $this->flash('error', $message);
+            $this->redirect($clientId ? '/clients/' . (int) $clientId : '/tasks');
+            return;
+        }
 
         if ($this->isAjax()) {
             $this->json(ApiResponse::success(token: true));
