@@ -3,6 +3,12 @@ $_jsV = static fn(string $f): string => is_file(__DIR__ . '/../../../public/asse
     ? (string) filemtime(__DIR__ . '/../../../public/assets/js/' . $f) : '0';
 $pageScripts = '<script nonce="' . CSP_NONCE . '" defer src="' . APP_URL . '/assets/js/tasks.js?v=' . $_jsV('tasks.js') . '"></script>';
 unset($_jsV);
+
+$googleEnabled    = $googleEnabled ?? false;
+$googleConnection = $googleConnection ?? null;
+$googleConnectUrl = htmlspecialchars(APP_URL . '/google/connect', ENT_QUOTES, 'UTF-8');
+$googleEmailSafe  = htmlspecialchars((string) ($googleEmail ?? ''), ENT_QUOTES, 'UTF-8');
+$googleTeam       = $googleEnabled && $googleConnection === 'active' && ($_SESSION['user']['role'] ?? '') === 'admin';
 ?>
 
 <!-- Alerta compacto: Tarefas Atrasadas (colapsavel + dispensavel por sessao) -->
@@ -45,6 +51,20 @@ unset($_jsV);
 <!-- Calendario FullCalendar -->
 <div data-crm-widget="task-calendar"
      class="bg-white dark:bg-zinc-900 rounded-xl shadow-sm border border-gray-100 dark:border-zinc-800 p-4">
+    <?php if ($googleEnabled && $googleConnection === null): ?>
+        <div data-google-hint
+             class="hidden flex items-start gap-3 mb-3 rounded-lg border border-indigo-100 dark:border-indigo-900/60 bg-indigo-50/70 dark:bg-indigo-950/40 px-3 py-2.5">
+            <span class="crm-google-mark mt-0.5" aria-hidden="true"></span>
+            <p class="flex-1 min-w-0 text-sm text-indigo-900 dark:text-indigo-100">
+                Conecte o Google Agenda para ver seus compromissos aqui e mandar as tarefas do CRM para a sua agenda.
+                <span class="font-semibold">Na tela do Google, marque a permissão de acesso à agenda.</span>
+            </p>
+            <button type="button" data-google-hint-dismiss aria-label="Dispensar aviso"
+                class="flex-shrink-0 text-indigo-400 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-200 p-1 -m-1 rounded-md hover:bg-indigo-100 dark:hover:bg-indigo-900/50 transition-colors">
+                ✕
+            </button>
+        </div>
+    <?php endif; ?>
     <!-- Filtros rapidos -->
     <div class="flex flex-wrap items-center gap-2 mb-3 pb-3 border-b border-gray-100 dark:border-zinc-800">
         <span class="text-xs font-medium text-gray-500 dark:text-zinc-400 mr-1">Filtrar:</span>
@@ -61,7 +81,50 @@ unset($_jsV);
             <option value="medium">Média</option>
             <option value="low">Baixa</option>
         </select>
+        <?php if ($googleTeam): ?>
+            <button type="button" data-google-team aria-pressed="false"
+                class="ml-2 px-3 py-1 text-xs font-medium rounded-md border transition-colors
+                       border-gray-300 text-gray-600 hover:bg-gray-100
+                       dark:border-zinc-700 dark:text-zinc-300 dark:hover:bg-zinc-800
+                       aria-pressed:bg-indigo-600 aria-pressed:border-indigo-600 aria-pressed:text-white aria-pressed:hover:bg-indigo-700
+                       dark:aria-pressed:bg-indigo-500 dark:aria-pressed:border-indigo-500">
+                Tarefas da equipe
+            </button>
+        <?php endif; ?>
+        <?php if ($googleEnabled): ?>
+            <div data-google-bar="<?= htmlspecialchars($googleConnection ?? 'none', ENT_QUOTES, 'UTF-8') ?>"class="ml-auto flex items-center gap-2 min-w-0 text-xs">
+                <?php if ($googleConnection === 'active'): ?>
+                    <span class="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0" aria-hidden="true"></span>
+                    <span class="truncate max-w-[18rem] text-gray-600 dark:text-zinc-300" title="<?= $googleEmailSafe ?>">
+                        Conectado como <span class="font-medium text-gray-800 dark:text-zinc-100"><?= $googleEmailSafe ?></span>
+                    </span>
+                    <button type="button" data-google-disconnect
+                        class="flex-shrink-0 px-2 py-1 rounded-md font-medium text-gray-500 hover:text-red-700 hover:bg-red-50 dark:text-zinc-400 dark:hover:text-red-300 dark:hover:bg-red-900/30 transition-colors">
+                        Desconectar
+                    </button>
+                <?php elseif ($googleConnection === 'revoked'): ?>
+                    <span class="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" aria-hidden="true"></span>
+                    <span class="text-amber-800 dark:text-amber-300" title="<?= $googleEmailSafe ?>">A conexão com o Google Agenda expirou.</span>
+                    <a href="<?= $googleConnectUrl ?>"
+                        class="flex-shrink-0 px-3 py-1 rounded-md font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">
+                        Reconectar
+                    </a>
+                <?php else: ?>
+                    <a href="<?= $googleConnectUrl ?>"
+                        class="inline-flex items-center gap-2 px-3 py-1 rounded-md font-medium border border-indigo-200 bg-white text-indigo-700 hover:bg-indigo-50
+                               dark:border-indigo-800 dark:bg-transparent dark:text-indigo-300 dark:hover:bg-indigo-900/30 transition-colors">
+                        <span class="crm-google-mark" aria-hidden="true"></span>
+                        Conectar Google Agenda
+                    </a>
+                <?php endif; ?>
+            </div>
+        <?php endif; ?>
     </div>
+    <p id="googleFeedNotice" role="status"
+       class="hidden mb-3 rounded-md border border-amber-200 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-900/20 px-3 py-1.5 text-xs text-amber-800 dark:text-amber-200">
+        <span data-google-feed-text></span>
+        <a data-google-feed-reconnect class="hidden ml-1 font-semibold underline underline-offset-2 hover:no-underline">Reconectar</a>
+    </p>
     <div id="fc-calendar"></div>
 </div>
 
@@ -151,6 +214,85 @@ unset($_jsV);
                     class="flex-1 px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg text-sm font-medium transition-colors">
                     Criar novo
                 </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: evento que so existe no Google Agenda -->
+<div id="modalGoogleEvent" role="dialog" aria-modal="true" aria-labelledby="googleEventHeading"
+    class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4" style="display:none">
+    <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md sm:max-w-lg max-h-[90vh] overflow-y-auto">
+        <div class="px-6 py-5 border-b border-gray-100 dark:border-zinc-800 flex items-center justify-between gap-3">
+            <h4 id="googleEventHeading" class="flex items-center gap-2 text-lg font-bold text-gray-800 dark:text-white">
+                <span class="crm-google-mark" aria-hidden="true"></span>
+                Evento do Google Agenda
+            </h4>
+            <button type="button" data-action="close-modal" data-target="modalGoogleEvent" aria-label="Fechar"
+                class="text-gray-400 hover:text-gray-600 dark:text-zinc-500 dark:hover:text-zinc-300 text-2xl">&times;</button>
+        </div>
+        <div class="px-6 py-5 space-y-4">
+            <p id="googleEventRecurring" class="hidden rounded-lg bg-indigo-50 dark:bg-indigo-950/40 px-3 py-2 text-sm text-indigo-800 dark:text-indigo-200">
+                Este evento se repete. O que você mudar aqui vale só para esta ocorrência.
+            </p>
+            <p id="googleEventReadOnly" class="hidden rounded-lg bg-gray-100 dark:bg-zinc-800 px-3 py-2 text-sm text-gray-700 dark:text-zinc-300">
+                Só quem organizou o evento pode alterá-lo. Para mudar alguma coisa, abra no Google.
+            </p>
+
+            <div>
+                <label for="googleEvent_title" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Título</label>
+                <input type="text" id="googleEvent_title" autocomplete="off"
+                    class="crm-google-field w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+            </div>
+
+            <label class="flex items-center gap-2 cursor-pointer select-none w-fit">
+                <input type="checkbox" id="googleEvent_all_day"
+                    class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                <span class="text-sm font-medium text-gray-700 dark:text-zinc-300">Dia inteiro</span>
+            </label>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
+                <div>
+                    <label for="googleEvent_start" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Início</label>
+                    <input type="datetime-local" id="googleEvent_start"
+                        class="crm-google-field w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+                <div>
+                    <label for="googleEvent_end" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Fim</label>
+                    <input type="datetime-local" id="googleEvent_end"
+                        class="crm-google-field w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none">
+                </div>
+            </div>
+
+            <div>
+                <label for="googleEvent_description" class="block text-sm font-medium text-gray-700 dark:text-zinc-300 mb-1">Descrição</label>
+                <textarea id="googleEvent_description" rows="3"
+                    class="crm-google-field w-full px-3 py-2 border border-gray-300 dark:border-zinc-700 dark:bg-zinc-800 dark:text-white rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:outline-none"></textarea>
+            </div>
+
+            <p id="googleEventError" role="alert" class="hidden text-sm text-red-600 dark:text-red-400"></p>
+
+            <div class="flex flex-col-reverse sm:flex-row sm:items-center gap-3 pt-2">
+                <div class="flex items-center gap-3">
+                    <button type="button" id="btnDeleteGoogleEvent"
+                        class="px-3 py-2 bg-red-100 hover:bg-red-200 text-red-700 dark:bg-red-900/30 dark:hover:bg-red-900/50 dark:text-red-300 rounded-lg text-sm font-medium transition-colors">
+                        Excluir
+                    </button>
+                    <a id="googleEventLink" target="_blank" rel="noopener noreferrer"
+                        class="text-sm font-medium text-indigo-600 hover:underline dark:text-indigo-400">
+                        Abrir no Google
+                    </a>
+                </div>
+                <div class="flex gap-3 sm:ml-auto">
+                    <button type="button" id="btnCloseGoogleEvent" data-action="close-modal" data-target="modalGoogleEvent"
+                        class="flex-1 sm:flex-none px-4 py-2 border border-gray-300 text-gray-700 dark:border-zinc-700 dark:bg-zinc-800 dark:hover:bg-zinc-700 dark:text-zinc-200 rounded-lg text-sm hover:bg-gray-100 transition-colors">
+                        Cancelar
+                    </button>
+                    <button type="button" id="btnSaveGoogleEvent"
+                        class="flex-1 sm:flex-none px-6 py-2 bg-indigo-600 hover:bg-indigo-700 text-white font-medium rounded-lg text-sm transition-colors disabled:opacity-60">
+                        Salvar
+                    </button>
+                </div>
             </div>
         </div>
     </div>

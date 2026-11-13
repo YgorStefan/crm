@@ -356,6 +356,37 @@
     cursor: pointer;
 }
 
+/* Marca de calendário do Google Agenda (barra, aviso e modal), na cor do texto. */
+.crm-google-mark {
+    display: inline-block;
+    flex-shrink: 0;
+    width: 0.875rem;
+    height: 0.875rem;
+    border: 1.5px solid currentColor;
+    border-top-width: 4px;
+    border-radius: 3px;
+    opacity: 0.85;
+}
+
+/* Campos do modal de evento do Google em somente leitura: fundo apagado
+   mostra que não dá para editar. */
+.crm-google-field:read-only {
+    background-color: #f9fafb;
+    color: #4b5563;
+}
+.dark .crm-google-field:read-only {
+    background-color: #18181b;
+    color: #d4d4d8;
+}
+
+/* Evento que só existe no Google Agenda: na visão Mês o ponto vira anel,
+   para separar do ponto cheio das tarefas do CRM. */
+.fc-daygrid-dot-event.crm-google-event .fc-daygrid-event-dot {
+    width: 4px;
+    height: 4px;
+    border-width: 2px;
+}
+
 /* Toolbar (prev/next/hoje + título + mês/semana) quebra em telas estreitas
    (tablet 12.1" em retrato, ~1024px com sidebar) em vez de comprimir os
    botões ou estourar a largura do card. */

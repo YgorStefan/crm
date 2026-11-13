@@ -214,6 +214,13 @@ class TaskController extends Controller
         $overdue = $this->tasks->findOverdue($isAdmin ? null : (int) $_SESSION['user']['id']);
         $users = $this->users->findAllActive();
 
+        $userId = (int) $_SESSION['user']['id'];
+        $google = self::googleBarState(
+            \App\Services\Google\GoogleConfig::fromEnv()->isConfigured(),
+            (string) ($_SESSION['user']['role'] ?? ''),
+            static fn (): array|false => (new \App\Models\GoogleAccount())->findForUser($userId),
+        );
+
         $this->render('tasks/index', [
             'title' => 'Tarefas — ' . APP_NAME,
             'tasks' => $tasks,
@@ -221,7 +228,32 @@ class TaskController extends Controller
             'users' => $users,
             'filters' => $filters,
             'csrf_token' => CsrfMiddleware::getToken(),
+            'googleEnabled' => $google['enabled'],
+            'googleConnection' => $google['connection'],
+            'googleEmail' => $google['email'],
         ]);
+    }
+
+    /**
+     * @param \Closure(): (array|false) $findAccount
+     * @return array{enabled: bool, connection: ?string, email: ?string}
+     */
+    public static function googleBarState(bool $configured, string $role, \Closure $findAccount): array
+    {
+        $none = ['enabled' => false, 'connection' => null, 'email' => null];
+        if (!$configured || !in_array($role, ['admin', 'seller'], true)) {
+            return $none;
+        }
+
+        // conta desconectada guarda o google_email para comparar na proxima
+        // conexao, entao so o status diz se ela ainda esta ligada.
+        $account = $findAccount();
+        $status = is_array($account) ? ($account['status'] ?? null) : null;
+        if ($status !== 'active' && $status !== 'revoked') {
+            return ['enabled' => true, 'connection' => null, 'email' => null];
+        }
+
+        return ['enabled' => true, 'connection' => $status, 'email' => (string) ($account['google_email'] ?? '')];
     }
 
     public static function assigneeForStore(mixed $posted, string $role, int $sessionUserId): int

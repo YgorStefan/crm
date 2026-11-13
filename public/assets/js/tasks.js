@@ -4,6 +4,16 @@
     // dia no fuso do navegador: o toISOString e utc, e em -03:00 ja e o dia seguinte depois das 21h.
     const pad = n => String(n).padStart(2, '0');
     const localDate = d => d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate());
+    const localDateTime = d => localDate(d) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+    const addDays = (ymd, days) => {
+        const [y, m, d] = ymd.split('-').map(Number);
+        return localDate(new Date(y, m - 1, d + days));
+    };
+
+    const storage = {
+        get(key) { try { return localStorage.getItem(key); } catch (e) { return null; } },
+        set(key, value) { try { localStorage.setItem(key, value); } catch (e) {} },
+    };
 
     class OverdueBanner {
         static #KEY = 'crm_overdue_dismissed_' + localDate(new Date());
@@ -55,6 +65,11 @@
     }
 
     class TaskCalendarManager {
+        static #GOOGLE_NOTICES = new Map([
+            ['degraded',  'O Google Agenda não respondeu agora. As tarefas do CRM estão todas aqui, e os eventos do Google voltam na próxima atualização.'],
+            ['reconnect', 'A conexão com o Google Agenda expirou. Reconecte para voltar a ver seus eventos e enviar as tarefas para a agenda.'],
+        ]);
+
         #calendarEl;
         #appUrl;
         #userRole;
@@ -64,6 +79,9 @@
         #filterPriority = 'all';
         #applyingFilters = false;
         #selectedDate  = null;
+        #teamMode = false;
+        #googleBarState = null;
+        #googleEvent = null;
 
         constructor(el) {
             this.#calendarEl = el.querySelector('#fc-calendar');
@@ -71,14 +89,20 @@
             this.#userRole   = document.querySelector('meta[name="user-role"]').content;
             this.#userId     = parseInt(document.querySelector('meta[name="user-id"]').content, 10);
 
+            this.#wireGoogleBar(el);
             this.#initCalendar();
             this.#wireFilters();
             this.#wireModalButtons();
+            this.#wireGoogleEventModal();
         }
 
         #passesFilter(ev) {
             const status   = ev.extendedProps.status;
             const priority = ev.extendedProps.priority;
+            // evento do google nao tem status nem prioridade, entao qualquer filtro ativo o esconde.
+            if (ev.extendedProps.source === 'google') {
+                return this.#filterStatus === 'all' && this.#filterPriority === 'all';
+            }
             if (this.#filterStatus === 'pending' && status !== 'pending' && status !== 'in_progress') return false;
             if (this.#filterStatus === 'done'    && status !== 'done') return false;
             if (this.#filterStatus === 'overdue') {
@@ -105,6 +129,11 @@
         buildTooltip(ev) {
             const lines = [ev.title];
             const props = ev.extendedProps || {};
+            if (props.source === 'google') {
+                lines.push('Evento do Google Agenda');
+                return lines.join('\n');
+            }
+            if (props.assigned_name) lines.push('Responsável: ' + props.assigned_name);
             if (props.client_name) lines.push('Cliente: ' + props.client_name);
             const prioLabel = { high: 'Alta', medium: 'Média', low: 'Baixa' }[props.priority] || props.priority;
             if (prioLabel) lines.push('Prioridade: ' + prioLabel);
@@ -120,14 +149,24 @@
                 headerToolbar: {
                     left:   'prev,next today',
                     center: 'title',
-                    right:  'dayGridMonth,timeGridWeek',
+                    right:  'dayGridMonth,timeGridWeek,timeGridDay',
                 },
-                buttonText: { today: 'Hoje', month: 'Mês', week: 'Semana' },
-                events:          this.#appUrl + '/api/tasks/calendar',
+                buttonText: { today: 'Hoje', month: 'Mês', week: 'Semana', day: 'Dia' },
+                // o corpo fica entre chaves para nao devolver a promise: o fullcalendar tambem
+                // aceita promise como retorno, e a doc nao diz o que ele faz com as duas formas juntas.
+                events:          (info, ok, fail) => { this.#fetchEvents(info).then(ok, fail); },
                 dayMaxEventRows: 3,
                 moreLinkText:    n => '+' + n + ' mais',
                 dateClick:       info => this.handleDateClick(info.dateStr),
-                eventClick:      info => { info.jsEvent.preventDefault(); this.openEditTaskModal(info.event.id); },
+                eventClick:      info => {
+                    info.jsEvent.preventDefault();
+                    if (info.event.extendedProps.source === 'google') {
+                        this.#openGoogleEventModal(info.event);
+                    } else {
+                        this.openEditTaskModal(info.event.id);
+                    }
+                },
+                eventClassNames: arg => (arg.event.extendedProps.source === 'google' ? ['crm-google-event'] : []),
                 eventDidMount:   info => {
                     info.el.style.cursor = 'pointer';
                     info.el.setAttribute('title', this.buildTooltip(info.event));
@@ -139,6 +178,78 @@
                 eventsSet: () => this.applyFilters(),
             });
             this.#calendar.render();
+        }
+
+        async #fetchEvents(info) {
+            // sem a janela o feed carrega todas as tarefas do tenant.
+            const params = new URLSearchParams({ start: info.startStr, end: info.endStr });
+            if (this.#teamMode) params.set('team', '1');
+            const resp = await fetch(this.#appUrl + '/api/tasks/calendar?' + params.toString(), {
+                headers: { Accept: 'application/json' },
+            });
+            // sessao caida chega como 200 com a tela de login, porque o fetch segue o
+            // redirect, entao so uma lista em json conta como resposta do feed.
+            if (!resp.ok) throw new Error('O calendário respondeu ' + resp.status + '.');
+            const events = await resp.json();
+            if (!Array.isArray(events)) throw new Error('O calendário não devolveu uma lista de eventos.');
+            this.#showGoogleStatus(resp.headers.get('X-CRM-Google-Status'));
+            return events;
+        }
+
+        #showGoogleStatus(status) {
+            const notice = document.getElementById('googleFeedNotice');
+            if (!notice) return;
+            const text = TaskCalendarManager.#GOOGLE_NOTICES.get(status);
+            // conta que ja abriu revogada tem o reconectar na barra, e o aviso repetiria o mesmo pedido.
+            const hide = !text || (status === 'reconnect' && this.#googleBarState === 'revoked');
+            notice.classList.toggle('hidden', hide);
+            if (hide) return;
+
+            notice.querySelector('[data-google-feed-text]').textContent = text;
+            const link = notice.querySelector('[data-google-feed-reconnect]');
+            const reconnect = status === 'reconnect';
+            link.classList.toggle('hidden', !reconnect);
+            if (reconnect) link.href = this.#appUrl + '/google/connect';
+        }
+
+        #wireGoogleBar(el) {
+            const bar = el.querySelector('[data-google-bar]');
+            this.#googleBarState = bar ? bar.dataset.googleBar : null;
+
+            const hint = el.querySelector('[data-google-hint]');
+            if (hint) {
+                const key = 'crm_google_hint_dismissed_' + this.#userId;
+                if (storage.get(key) !== '1') {
+                    hint.classList.remove('hidden');
+                    hint.querySelector('[data-google-hint-dismiss]').addEventListener('click', () => {
+                        storage.set(key, '1');
+                        hint.classList.add('hidden');
+                    });
+                }
+            }
+
+            el.querySelector('[data-google-disconnect]')?.addEventListener('click', () => this.#disconnectGoogle());
+
+            const team = el.querySelector('[data-google-team]');
+            team?.addEventListener('click', () => {
+                this.#teamMode = !this.#teamMode;
+                team.setAttribute('aria-pressed', String(this.#teamMode));
+                this.#calendar.refetchEvents();
+            });
+        }
+
+        async #disconnectGoogle() {
+            if (!window.confirm('Desconectar o Google Agenda? Os eventos já enviados continuam na sua agenda do Google.')) return;
+            try {
+                const { ok, data } = await CRM.api.post(this.#appUrl + '/google/disconnect');
+                if (ok && data?.success) {
+                    window.location.reload();
+                } else {
+                    alert(data?.error || 'Não foi possível desconectar o Google Agenda.');
+                }
+            } catch (e) {
+                alert('Erro de rede ao desconectar o Google Agenda.');
+            }
         }
 
         #wireFilters() {
@@ -169,7 +280,7 @@
             document.getElementById('btnDeleteTask').addEventListener('click', () => this.#deleteTask());
             document.getElementById('btnToggleDone').addEventListener('click', () => this.#toggleDone());
 
-            ['modalTask', 'modalDayConflict'].forEach(id => {
+            ['modalTask', 'modalDayConflict', 'modalGoogleEvent'].forEach(id => {
                 const el = document.getElementById(id);
                 el.addEventListener('click', e => { if (e.target === el) el.style.display = 'none'; });
             });
@@ -200,6 +311,180 @@
                     document.getElementById('task_recurrenceMenu').classList.add('hidden');
                 }
             });
+        }
+
+        #wireGoogleEventModal() {
+            document.getElementById('btnSaveGoogleEvent').addEventListener('click', () => this.#saveGoogleEvent());
+            document.getElementById('btnDeleteGoogleEvent').addEventListener('click', () => this.#deleteGoogleEvent());
+            document.getElementById('googleEvent_all_day').addEventListener('change', e => this.#switchGoogleAllDay(e.target.checked));
+        }
+
+        #googleFields() {
+            return {
+                title:       document.getElementById('googleEvent_title'),
+                allDay:      document.getElementById('googleEvent_all_day'),
+                start:       document.getElementById('googleEvent_start'),
+                end:         document.getElementById('googleEvent_end'),
+                description: document.getElementById('googleEvent_description'),
+            };
+        }
+
+        // o fim de evento de dia inteiro e exclusivo no google e no fullcalendar, entao o
+        // campo mostra o ultimo dia e o envio soma um dia de volta.
+        static #googleDates(ev, allDay) {
+            if (allDay) {
+                const start = localDate(ev.start);
+                return { start, end: ev.end ? addDays(localDate(ev.end), -1) : start };
+            }
+            const start = localDateTime(ev.start);
+            return { start, end: ev.end ? localDateTime(ev.end) : start };
+        }
+
+        static #setGoogleDates(fields, allDay, start, end) {
+            // o tipo muda antes do valor, porque o navegador descarta o valor que nao cabe no tipo.
+            const type = allDay ? 'date' : 'datetime-local';
+            fields.start.type = type;
+            fields.end.type = type;
+            fields.start.value = start;
+            fields.end.value = end;
+        }
+
+        #openGoogleEventModal(ev) {
+            const props = ev.extendedProps;
+            const allDay = typeof props.all_day === 'boolean' ? props.all_day : ev.allDay;
+            const canEdit = props.can_edit === true;
+            const dates = TaskCalendarManager.#googleDates(ev, allDay);
+            this.#googleEvent = {
+                googleId:  String(props.google_id || ''),
+                calendarId: ev.id,
+                recurring: props.recurring === true,
+                initial:   { title: ev.title, description: props.description || '', allDay, ...dates },
+            };
+
+            const f = this.#googleFields();
+            f.title.value = ev.title;
+            f.description.value = props.description || '';
+            f.allDay.checked = allDay;
+            TaskCalendarManager.#setGoogleDates(f, allDay, dates.start, dates.end);
+            [f.title, f.start, f.end, f.description].forEach(el => { el.readOnly = !canEdit; });
+            f.allDay.disabled = !canEdit;
+
+            document.getElementById('googleEventRecurring').classList.toggle('hidden', !this.#googleEvent.recurring);
+            document.getElementById('googleEventReadOnly').classList.toggle('hidden', canEdit);
+            document.getElementById('btnSaveGoogleEvent').style.display = canEdit ? '' : 'none';
+            document.getElementById('btnDeleteGoogleEvent').style.display = canEdit ? '' : 'none';
+            document.getElementById('btnCloseGoogleEvent').textContent = canEdit ? 'Cancelar' : 'Fechar';
+
+            const link = document.getElementById('googleEventLink');
+            const href = String(props.html_link || '');
+            if (href.startsWith('https://')) {
+                link.href = href;
+                link.style.display = '';
+            } else {
+                link.removeAttribute('href');
+                link.style.display = 'none';
+            }
+
+            this.#showGoogleError('');
+            document.getElementById('modalGoogleEvent').style.display = 'flex';
+        }
+
+        #switchGoogleAllDay(allDay) {
+            const f = this.#googleFields();
+            const initial = this.#googleEvent.initial;
+            const startDate = f.start.value.slice(0, 10);
+            const endDate = f.end.value.slice(0, 10);
+            if (allDay) {
+                TaskCalendarManager.#setGoogleDates(f, true, startDate, endDate);
+                return;
+            }
+            // de volta ao horario, cada data recebe a hora que o evento tinha, ou um horario de trabalho.
+            const startTime = initial.allDay ? '09:00' : initial.start.slice(11);
+            const endTime = initial.allDay ? '10:00' : initial.end.slice(11);
+            TaskCalendarManager.#setGoogleDates(f, false, startDate + 'T' + startTime, endDate + 'T' + endTime);
+        }
+
+        #showGoogleError(message) {
+            const el = document.getElementById('googleEventError');
+            el.textContent = message;
+            el.classList.toggle('hidden', message === '');
+        }
+
+        #closeGoogleEventModal() {
+            document.getElementById('modalGoogleEvent').style.display = 'none';
+        }
+
+        #googleEventUrl(action) {
+            return this.#appUrl + '/api/google/events/' + encodeURIComponent(this.#googleEvent.googleId) + '/' + action;
+        }
+
+        async #saveGoogleEvent() {
+            const f = this.#googleFields();
+            const initial = this.#googleEvent.initial;
+            const current = {
+                title:       f.title.value,
+                description: f.description.value,
+                allDay:      f.allDay.checked,
+                start:       f.start.value,
+                end:         f.end.value,
+            };
+            if (!current.start || !current.end) {
+                this.#showGoogleError('Preencha o início e o fim.');
+                return;
+            }
+            // os dois campos tem o mesmo formato, entao a ordem do texto e a ordem das datas.
+            if (current.end < current.start) {
+                this.#showGoogleError('O fim não pode ser antes do início.');
+                return;
+            }
+
+            const body = {};
+            const allDayChanged = current.allDay !== initial.allDay;
+            if (current.title !== initial.title) body.title = current.title;
+            if (current.description !== initial.description) body.description = current.description;
+            if (allDayChanged) body.all_day = current.allDay ? '1' : '0';
+            if (allDayChanged || current.start !== initial.start) body.start = current.start;
+            if (allDayChanged || current.end !== initial.end) {
+                body.end = current.allDay ? addDays(current.end, 1) : current.end;
+            }
+            if (Object.keys(body).length === 0) {
+                this.#closeGoogleEventModal();
+                return;
+            }
+
+            const btn = document.getElementById('btnSaveGoogleEvent');
+            btn.disabled = true;
+            try {
+                const { ok, data } = await CRM.api.post(this.#googleEventUrl('update'), body);
+                if (ok && data?.success) {
+                    this.#closeGoogleEventModal();
+                    this.#calendar.refetchEvents();
+                } else {
+                    this.#showGoogleError(data?.error || 'Não foi possível salvar o evento no Google Agenda.');
+                }
+            } catch (e) {
+                this.#showGoogleError('Erro de rede ao salvar o evento no Google Agenda.');
+            } finally {
+                btn.disabled = false;
+            }
+        }
+
+        async #deleteGoogleEvent() {
+            const question = this.#googleEvent.recurring
+                ? 'Excluir esta ocorrência do Google Agenda? As outras datas da série continuam.'
+                : 'Excluir este evento do Google Agenda?';
+            if (!window.confirm(question)) return;
+            try {
+                const { ok, data } = await CRM.api.post(this.#googleEventUrl('delete'));
+                if (ok && data?.success) {
+                    this.#calendar.getEventById(this.#googleEvent.calendarId)?.remove();
+                    this.#closeGoogleEventModal();
+                } else {
+                    this.#showGoogleError(data?.error || 'Não foi possível excluir o evento do Google Agenda.');
+                }
+            } catch (e) {
+                this.#showGoogleError('Erro de rede ao excluir o evento do Google Agenda.');
+            }
         }
 
         handleDateClick(dateStr) {
