@@ -14,7 +14,9 @@ async function openNewTaskModalOnDay(page: Page): Promise<string> {
     const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
     const dateStr = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}-10`;
 
-    await page.locator(`.fc-daygrid-day[data-date="${dateStr}"]`).click();
+    // o centro da celula cai no chip de uma tarefa que ja esteja no dia, e clique em
+    // evento abre a edicao em vez de disparar dateClick; a faixa do numero do dia nunca tem evento.
+    await page.locator(`.fc-daygrid-day[data-date="${dateStr}"] .fc-daygrid-day-top`).click();
 
     const modalTask = page.locator('#modalTask');
     const modalConflict = page.locator('#modalDayConflict');

@@ -84,4 +84,8 @@ $stmt->execute([
     'stage_id_update' => $firstStageId,
 ]);
 
+// 4) o spec de tarefas cria "Tarefa E2E <timestamp>" e nunca a apaga; sem esta
+//    limpeza as sobras de runs anteriores se acumulam no dia em que o spec clica.
+$pdo->exec("DELETE FROM tasks WHERE tenant_id = 1 AND title LIKE 'Tarefa E2E %'");
+
 echo "[seed] OK — admin@crm.local, e2e.seller@crm.local e cliente de kanban prontos.\n";
