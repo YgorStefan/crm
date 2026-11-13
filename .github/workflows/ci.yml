@@ -39,6 +39,18 @@ jobs:
           --health-timeout=5s
           --health-retries=10
 
+      # sem ports: o passo de import fala com este container por docker exec,
+      # entao nada precisa escutar no host (e a 3306 ja e do mysql).
+      mariadb:
+        image: mariadb:11
+        env:
+          MARIADB_ROOT_PASSWORD: root
+        options: >-
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=10
+
     steps:
       - name: Checkout
         uses: actions/checkout@v7
@@ -102,6 +114,20 @@ jobs:
 
       - name: Importar schema do banco
         run: mysql -h127.0.0.1 -uroot -proot crm_db < database/schema.sql
+
+      # producao roda mariadb, que recusa expressoes de coluna gerada que o mysql
+      # aceita (ex.: DATE_FORMAT, erro 1901); este import falha o job se o schema
+      # voltar a depender de algo que so o mysql entende.
+      - name: Importar schema no MariaDB (motor de produção)
+        env:
+          MARIADB_ID: ${{ job.services.mariadb.id }}
+        run: |
+          for i in $(seq 1 30); do
+            docker exec "$MARIADB_ID" mariadb -uroot -proot -e "SELECT 1" > /dev/null 2>&1 && break
+            sleep 2
+          done
+          docker exec "$MARIADB_ID" mariadb -uroot -proot -e "CREATE DATABASE crm_schema_check"
+          docker exec -i "$MARIADB_ID" mariadb -uroot -proot crm_schema_check < database/schema.sql
 
       - name: Registrar baseline das migrations
         run: php bin/migrate.php --baseline
