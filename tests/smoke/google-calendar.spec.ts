@@ -6,10 +6,17 @@ import { answerDialogs, login } from './helpers';
 
 const pad = (n: number) => String(n).padStart(2, '0');
 
-// dia 15 do mes corrente sempre aparece na visao Mes que a tela abre.
+// a data sai do fuso do navegador, fixado no test.use, e nao do fuso do node: num ci em utc,
+// entre 0h e 3h, o dia do node ja e o seguinte e os eventos de hoje cairiam no futuro.
+function saoPauloToday(): string {
+    return new Intl.DateTimeFormat('en-CA', {
+        timeZone: 'America/Sao_Paulo', year: 'numeric', month: '2-digit', day: '2-digit',
+    }).format(new Date());
+}
+
+// dia 15 do mes corrente sempre aparece na visao mes que a tela abre.
 function dayInView(offset = 0): string {
-    const now = new Date();
-    return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(15 + offset)}`;
+    return saoPauloToday().slice(0, 8) + pad(15 + offset);
 }
 
 type FeedEvent = Record<string, unknown>;
@@ -377,8 +384,7 @@ test.describe('Calendário / eventos e avisos do Google com feed falso', () => {
 
     test('filtro de status ou de prioridade esconde os eventos do Google e deixa as tarefas', async ({ page }) => {
         // a meia-noite de hoje ja passou, entao o filtro de atrasadas alcanca os dois.
-        const now = new Date();
-        const today = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+        const today = saoPauloToday();
         await mockFeed(page, [
             googleEvent({ start: `${today}T00:00:00`, end: `${today}T00:30:00` }),
             taskEvent({}, `${today} 00:00:00`),
