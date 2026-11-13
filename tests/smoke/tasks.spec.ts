@@ -1,11 +1,34 @@
 import { test, expect, type Page } from '@playwright/test';
 import { login } from './helpers';
 
-// o chamador avanca o calendario um mes antes, o que evita colidir com tarefas de outros specs criadas no mes atual.
-async function openNewTaskModalOnDay(page: Page, day = 10): Promise<string> {
+function nextMonthDate(day: number): string {
     const now = new Date();
     const nextMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1);
-    const dateStr = `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return `${nextMonth.getFullYear()}-${String(nextMonth.getMonth() + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+}
+
+// as mensagens ficam guardadas e o alert e aceito na hora, porque com ele aberto o
+// javascript da pagina para e nenhuma verificacao seguinte consegue rodar.
+function collectAlerts(page: Page): string[] {
+    const messages: string[] = [];
+    page.on('dialog', async (dialog) => {
+        messages.push(dialog.message());
+        await dialog.accept();
+    });
+    return messages;
+}
+
+async function postFromPage(page: Page, path: string, body: Record<string, string> = {}): Promise<boolean> {
+    return page.evaluate(async ({ path, body }) => {
+        const appUrl = document.querySelector<HTMLMetaElement>('meta[name="app-url"]')!.content;
+        const { ok, data } = await (window as any).CRM.api.post(appUrl + path, body);
+        return ok && data?.success === true;
+    }, { path, body });
+}
+
+// o chamador avanca o calendario um mes antes, o que evita colidir com tarefas de outros specs criadas no mes atual.
+async function openNewTaskModalOnDay(page: Page, day = 10): Promise<string> {
+    const dateStr = nextMonthDate(day);
 
     // o centro da celula cai no chip de uma tarefa que ja esteja no dia, e clique em
     // evento abre a edicao em vez de disparar dateClick; a faixa do numero do dia nunca tem evento.
@@ -174,6 +197,47 @@ test.describe('Tarefas / Calendário', () => {
         await expect(page.locator('#modalTaskTitle')).toHaveText('Editar Tarefa');
         await expect(page.locator(`${assignee} .cs-label`)).toHaveText(colega.name);
         await expect(page.locator(`${priority} .cs-label`)).toHaveText('Baixa');
+    });
+
+    test('nova tarefa continua aberta com aviso de erro quando a sessão caiu antes de salvar', async ({ page }) => {
+        await page.locator('.fc-next-button').click();
+        await openNewTaskModalOnDay(page, 18);
+        await page.locator('#task_title').fill(`Tarefa E2E ${Date.now()}`);
+        await page.context().clearCookies();
+        const alerts = collectAlerts(page);
+
+        const storePromise = page.waitForResponse(
+            (resp) => resp.url().includes('/tasks/store') && resp.request().method() === 'POST',
+        );
+        await page.locator('#btnSaveTask').click();
+        await storePromise;
+
+        await expect.poll(() => alerts).toEqual(['Erro ao salvar tarefa. Verifique os campos e tente novamente.']);
+        await expect(page.locator('#modalTask')).toBeVisible();
+    });
+
+    test('a edição continua aberta com aviso de erro quando a tarefa foi removida antes de salvar', async ({ page }) => {
+        const taskTitle = `Tarefa E2E ${Date.now()}`;
+        expect(await postFromPage(page, '/tasks/store', { title: taskTitle, due_date: `${nextMonthDate(20)}T09:00` })).toBe(true);
+
+        await page.reload();
+        await expect(page.locator('#fc-calendar')).toBeVisible();
+        await page.locator('.fc-next-button').click();
+        await page.getByText(taskTitle).click();
+        await expect(page.locator('#modalTaskTitle')).toHaveText('Editar Tarefa');
+
+        const taskId = await page.locator('#task_id').inputValue();
+        expect(await postFromPage(page, `/tasks/${taskId}/delete`)).toBe(true);
+        const alerts = collectAlerts(page);
+
+        const updatePromise = page.waitForResponse(
+            (resp) => resp.url().includes(`/tasks/${taskId}/update`) && resp.request().method() === 'POST',
+        );
+        await page.locator('#btnSaveTask').click();
+        await updatePromise;
+
+        await expect.poll(() => alerts).toEqual(['Erro ao salvar tarefa. Verifique os campos e tente novamente.']);
+        await expect(page.locator('#modalTask')).toBeVisible();
     });
 });
 

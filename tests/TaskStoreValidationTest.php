@@ -74,6 +74,11 @@ class TaskStoreValidationTest extends TestCase
         return $this->resposta(fn () => (new CapturingTaskController())->update(['id' => (string) $id]));
     }
 
+    private function destroyResponse(int $id): StoreRespondeu
+    {
+        return $this->resposta(fn () => (new CapturingTaskController())->destroy(['id' => (string) $id]));
+    }
+
     private function resposta(callable $acao): StoreRespondeu
     {
         try {
@@ -109,8 +114,13 @@ class TaskStoreValidationTest extends TestCase
 
     private function assertRespondeu422(StoreRespondeu $resposta, string $mensagem): void
     {
+        $this->assertRespondeuErro($resposta, 422, $mensagem);
+    }
+
+    private function assertRespondeuErro(StoreRespondeu $resposta, int $status, string $mensagem): void
+    {
         $this->assertSame('json', $resposta->via);
-        $this->assertSame(422, $resposta->status);
+        $this->assertSame($status, $resposta->status);
         $this->assertSame(['success' => false, 'error' => $mensagem], $resposta->payload);
     }
 
@@ -269,5 +279,28 @@ class TaskStoreValidationTest extends TestCase
 
         $this->assertVoltouComFlash($this->updateResponse($id), '/tasks', 'Prazo inválido.');
         $this->assertSame('2026-06-15 10:00:00', $this->unicaTarefa()['due_date']);
+    }
+
+    public function testEdicaoDeTarefaInexistenteViaAjaxRecebe404(): void
+    {
+        $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
+        $_POST = ['status' => 'done'];
+
+        $this->assertRespondeuErro($this->updateResponse(999), 404, 'Tarefa não encontrada.');
+    }
+
+    public function testEdicaoDeTarefaInexistenteViaFormularioVoltaComFlash(): void
+    {
+        $_POST = ['status' => 'done'];
+
+        $this->assertVoltouComFlash($this->updateResponse(999), '/tasks', 'Tarefa não encontrada.');
+    }
+
+    public function testRemocaoDeTarefaInexistenteViaAjaxRecebe404(): void
+    {
+        $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
+        $_POST = [];
+
+        $this->assertRespondeuErro($this->destroyResponse(999), 404, 'Tarefa não encontrada.');
     }
 }

@@ -345,12 +345,12 @@ class TaskController extends Controller
         return $parsed->format('Y-m-d H:i:s');
     }
 
-    // o ajax recebe 422 e nunca redirect, porque o fetch segue o 302, chega a um
-    // 200 e a tela fecharia o modal como se a tarefa tivesse sido salva.
-    private function rejectTaskRequest(string $message, string $redirectTo = '/tasks'): void
+    // o ajax recebe o erro em json e nunca redirect, porque o fetch segue o 302,
+    // chega a um 200 e a tela fecharia o modal como se a tarefa tivesse sido salva.
+    private function rejectTaskRequest(string $message, string $redirectTo = '/tasks', int $status = 422): void
     {
         if ($this->isAjax()) {
-            $this->json(ApiResponse::error($message), 422);
+            $this->json(ApiResponse::error($message), $status);
         } else {
             $this->flash('error', $message);
             $this->redirect($redirectTo);
@@ -396,7 +396,7 @@ class TaskController extends Controller
 
         $task = $this->tasks->findById($id);
         if (!$task) {
-            $this->redirect('/tasks');
+            $this->rejectTaskRequest('Tarefa não encontrada.', '/tasks', 404);
             return;
         }
 
@@ -441,7 +441,7 @@ class TaskController extends Controller
 
         $task = $this->tasks->findById($id);
         if (!$task) {
-            $this->redirect('/tasks');
+            $this->rejectTaskRequest('Tarefa não encontrada.', '/tasks', 404);
             return;
         }
 

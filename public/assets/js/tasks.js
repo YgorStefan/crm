@@ -318,8 +318,10 @@
             }
 
             try {
-                const { ok } = await CRM.api.post(url, body);
-                if (ok) {
+                // o fetch segue redirect, entao sessao caida e tarefa sumida chegam como
+                // 200 com html: so o success do json prova que o servidor gravou.
+                const { ok, data } = await CRM.api.post(url, body);
+                if (ok && data?.success) {
                     document.getElementById('modalTask').style.display = 'none';
                     this.#calendar.refetchEvents();
                 } else {
@@ -335,8 +337,8 @@
             if (!taskId) return;
             if (!window.confirm('Excluir esta tarefa permanentemente?')) return;
             try {
-                const { data } = await CRM.api.post(this.#appUrl + '/tasks/' + taskId + '/delete');
-                if (data && data.success) {
+                const { ok, data } = await CRM.api.post(this.#appUrl + '/tasks/' + taskId + '/delete');
+                if (ok && data?.success) {
                     const ev = this.#calendar.getEventById(taskId);
                     if (ev) ev.remove();
                     document.getElementById('modalTask').style.display = 'none';
@@ -354,8 +356,8 @@
             const btn = document.getElementById('btnToggleDone');
             const nextStatus = btn.dataset.nextStatus || 'done';
             try {
-                const { data } = await CRM.api.post(this.#appUrl + '/tasks/' + taskId + '/update', { status: nextStatus });
-                if (data && data.success) {
+                const { ok, data } = await CRM.api.post(this.#appUrl + '/tasks/' + taskId + '/update', { status: nextStatus });
+                if (ok && data?.success) {
                     document.getElementById('modalTask').style.display = 'none';
                     this.#calendar.refetchEvents();
                 } else {
@@ -371,8 +373,8 @@
             if (!taskId) return;
             if (!window.confirm('Cancelar a série? As ocorrências pendentes serão removidas. As já concluídas permanecem no histórico.')) return;
             try {
-                const { data } = await CRM.api.post(this.#appUrl + '/tasks/' + taskId + '/cancel-recurrence');
-                if (data && data.success) {
+                const { ok, data } = await CRM.api.post(this.#appUrl + '/tasks/' + taskId + '/cancel-recurrence');
+                if (ok && data?.success) {
                     document.getElementById('modalTask').style.display = 'none';
                     this.#calendar.refetchEvents();
                 } else {
