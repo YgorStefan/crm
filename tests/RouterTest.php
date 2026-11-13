@@ -148,6 +148,52 @@ class RouterTest extends TestCase
         $this->assertSame([SpyGlobalMiddleware::class], SpyMiddlewareBase::$executionLog);
         $this->assertSame('loginForm', RouterSpyController::$calledAction);
     }
+
+    public function testHeadChamaAActionDaRotaGet(): void
+    {
+        $router = $this->dispatch('HEAD', '/crm/public/privacidade');
+        $router->get('/privacidade', 'RouterSpyController', 'index', [], public: true);
+        $router->dispatch();
+
+        $this->assertSame('index', RouterSpyController::$calledAction);
+    }
+
+    public function testHeadNaoCasaRotaPostComOMesmoPadrao(): void
+    {
+        $router = $this->dispatch('HEAD', '/crm/public/clients/store');
+        $router->post('/clients/store', 'RouterSpyController', 'store');
+        $router->get('/clients/store', 'RouterSpyController', 'show');
+        $router->dispatch();
+
+        $this->assertSame('show', RouterSpyController::$calledAction);
+    }
+
+    public function testHeadEmRotaProtegidaExecutaOsMesmosMiddlewaresDoGet(): void
+    {
+        $router = $this->dispatch('HEAD', '/crm/public/clients');
+        $router->setDefaultMiddlewares(['SpyDefaultMiddleware']);
+        $router->setGlobalMiddlewares(['SpyGlobalMiddleware']);
+        $router->get('/clients', 'RouterSpyController', 'index', ['SpyRouteMiddleware']);
+        $router->dispatch();
+
+        $this->assertSame(
+            [SpyDefaultMiddleware::class, SpyRouteMiddleware::class, SpyGlobalMiddleware::class],
+            SpyMiddlewareBase::$executionLog
+        );
+        $this->assertSame('index', RouterSpyController::$calledAction);
+    }
+
+    public function testHeadEmRotaPublicaNaoExecutaMiddlewareDefault(): void
+    {
+        $router = $this->dispatch('HEAD', '/crm/public/login');
+        $router->setDefaultMiddlewares(['SpyDefaultMiddleware']);
+        $router->setGlobalMiddlewares(['SpyGlobalMiddleware']);
+        $router->get('/login', 'RouterSpyController', 'loginForm', [], public: true);
+        $router->dispatch();
+
+        $this->assertSame([SpyGlobalMiddleware::class], SpyMiddlewareBase::$executionLog);
+        $this->assertSame('loginForm', RouterSpyController::$calledAction);
+    }
 }
 
 }
