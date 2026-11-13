@@ -265,23 +265,18 @@ class TaskController extends Controller
         $clientId = $this->inputPost('client_id');
 
         if (empty($title) || empty($dueDate)) {
-            $this->flash('error', 'Título e prazo são obrigatórios.');
             // Redireciona para a tela de tarefas (Referer header é forjável)
-            $clientId = $this->inputPost('client_id');
-            if ($clientId) {
-                $this->redirect('/clients/' . (int) $clientId);
-            } else {
-                $this->redirect('/tasks');
-            }
+            $this->rejectTaskRequest(
+                'Título e prazo são obrigatórios.',
+                $clientId ? '/clients/' . (int) $clientId : '/tasks',
+            );
             return;
         }
 
-        // client_id é opcional, mas se enviado precisa pertencer ao tenant
-        // atual (Client::findById() já é escopado) — sem isso, uma tarefa
-        // podia ser criada apontando para o cliente de outro tenant.
-        if (!empty($clientId) && !$this->clients->findById((int) $clientId)) {
-            $this->flash('error', 'Cliente inválido.');
-            $this->redirect('/tasks');
+        // o task::create recusa cliente e responsavel com a mesma excecao, entao o
+        // cliente e conferido antes, para a mensagem dizer qual dos dois esta errado.
+        if (!empty($clientId) && !$this->clients->findActiveById((int) $clientId)) {
+            $this->rejectTaskRequest('Cliente inválido.');
             return;
         }
 
@@ -311,13 +306,10 @@ class TaskController extends Controller
                 'created_by'      => $_SESSION['user']['id'],
             ]);
         } catch (\InvalidArgumentException) {
-            $message = 'Responsável ou cliente inválido.';
-            if ($this->isAjax()) {
-                $this->json(ApiResponse::error($message), 422);
-                return;
-            }
-            $this->flash('error', $message);
-            $this->redirect($clientId ? '/clients/' . (int) $clientId : '/tasks');
+            $this->rejectTaskRequest(
+                'Responsável inválido.',
+                $clientId ? '/clients/' . (int) $clientId : '/tasks',
+            );
             return;
         }
 
@@ -336,17 +328,15 @@ class TaskController extends Controller
         }
     }
 
-    /**
-     * Responde a uma validação inválida em update(): JSON para AJAX,
-     * flash + redirect para submissão de formulário normal.
-     */
-    private function rejectTaskUpdate(string $message): void
+    // o ajax recebe 422 e nunca redirect, porque o fetch segue o 302, chega a um
+    // 200 e a tela fecharia o modal como se a tarefa tivesse sido salva.
+    private function rejectTaskRequest(string $message, string $redirectTo = '/tasks'): void
     {
         if ($this->isAjax()) {
             $this->json(ApiResponse::error($message), 422);
         } else {
             $this->flash('error', $message);
-            $this->redirect('/tasks');
+            $this->redirect($redirectTo);
         }
     }
 
@@ -361,7 +351,7 @@ class TaskController extends Controller
         if (isset($_POST['status'])) {
             $status = $this->inputPost('status');
             if (!in_array($status, ['pending', 'in_progress', 'done', 'cancelled'], true)) {
-                $this->rejectTaskUpdate('Status inválido.');
+                $this->rejectTaskRequest('Status inválido.');
                 return;
             }
             $data['status'] = $status;
@@ -369,7 +359,7 @@ class TaskController extends Controller
         if (isset($_POST['priority'])) {
             $priority = $this->inputPost('priority');
             if (!in_array($priority, ['low', 'medium', 'high'], true)) {
-                $this->rejectTaskUpdate('Prioridade inválida.');
+                $this->rejectTaskRequest('Prioridade inválida.');
                 return;
             }
             $data['priority'] = $priority;
@@ -403,7 +393,7 @@ class TaskController extends Controller
         try {
             $this->tasks->update($id, $data);
         } catch (\InvalidArgumentException) {
-            $this->rejectTaskUpdate('Responsável inválido.');
+            $this->rejectTaskRequest('Responsável inválido.');
             return;
         }
 

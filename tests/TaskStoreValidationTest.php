@@ -72,7 +72,7 @@ class TaskStoreValidationTest extends TestCase
         );
 
         $pdo->exec("INSERT INTO users (id, name, tenant_id) VALUES (1,'Ana',1), (2,'Bob',2)");
-        $pdo->exec("INSERT INTO clients (id, name, tenant_id, is_active) VALUES (10,'Cliente A',1,1), (11,'Cliente Inativo',1,0)");
+        $pdo->exec("INSERT INTO clients (id, name, tenant_id, is_active) VALUES (10,'Cliente A',1,1), (11,'Cliente Inativo',1,0), (20,'Cliente B',2,1)");
 
         $prop = (new \ReflectionClass(Database::class))->getProperty('instance');
         $prop->setValue(null, $pdo);
@@ -131,16 +131,26 @@ class TaskStoreValidationTest extends TestCase
         $this->assertSame(0, (int) self::$pdo->query('SELECT COUNT(*) FROM tasks')->fetchColumn());
     }
 
+    private function assertRespondeu422(StoreRespondeu $resposta, string $mensagem): void
+    {
+        $this->assertSame('json', $resposta->via);
+        $this->assertSame(422, $resposta->status);
+        $this->assertSame(['success' => false, 'error' => $mensagem], $resposta->payload);
+    }
+
+    private function assertVoltouComFlash(StoreRespondeu $resposta, string $destino, string $mensagem): void
+    {
+        $this->assertSame('redirect', $resposta->via);
+        $this->assertSame($destino, $resposta->payload);
+        $this->assertSame(['type' => 'error', 'message' => $mensagem], $_SESSION['flash']);
+    }
+
     public function testResponsavelDeOutroTenantViaAjaxRecebe422(): void
     {
         $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
         $_POST['assigned_to'] = '2';
 
-        $resposta = $this->storeResponse();
-
-        $this->assertSame('json', $resposta->via);
-        $this->assertSame(422, $resposta->status);
-        $this->assertSame(['success' => false, 'error' => 'Responsável ou cliente inválido.'], $resposta->payload);
+        $this->assertRespondeu422($this->storeResponse(), 'Responsável inválido.');
         $this->assertNenhumaTarefaGravada();
     }
 
@@ -149,11 +159,25 @@ class TaskStoreValidationTest extends TestCase
         $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
         $_POST['client_id'] = '11';
 
-        $resposta = $this->storeResponse();
+        $this->assertRespondeu422($this->storeResponse(), 'Cliente inválido.');
+        $this->assertNenhumaTarefaGravada();
+    }
 
-        $this->assertSame('json', $resposta->via);
-        $this->assertSame(422, $resposta->status);
-        $this->assertSame(['success' => false, 'error' => 'Responsável ou cliente inválido.'], $resposta->payload);
+    public function testClienteDeOutroTenantViaAjaxRecebe422(): void
+    {
+        $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
+        $_POST['client_id'] = '20';
+
+        $this->assertRespondeu422($this->storeResponse(), 'Cliente inválido.');
+        $this->assertNenhumaTarefaGravada();
+    }
+
+    public function testTituloVazioViaAjaxRecebe422(): void
+    {
+        $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
+        $_POST['title'] = '';
+
+        $this->assertRespondeu422($this->storeResponse(), 'Título e prazo são obrigatórios.');
         $this->assertNenhumaTarefaGravada();
     }
 
@@ -161,29 +185,24 @@ class TaskStoreValidationTest extends TestCase
     {
         $_POST['assigned_to'] = '2';
 
-        $resposta = $this->storeResponse();
-
-        $this->assertSame('redirect', $resposta->via);
-        $this->assertSame('/tasks', $resposta->payload);
-        $this->assertSame(
-            ['type' => 'error', 'message' => 'Responsável ou cliente inválido.'],
-            $_SESSION['flash'],
-        );
+        $this->assertVoltouComFlash($this->storeResponse(), '/tasks', 'Responsável inválido.');
         $this->assertNenhumaTarefaGravada();
     }
 
-    public function testClienteInativoViaFormularioVoltaParaATelaDoCliente(): void
+    public function testResponsavelInvalidoComClienteValidoViaFormularioVoltaParaATelaDoCliente(): void
+    {
+        $_POST['assigned_to'] = '2';
+        $_POST['client_id'] = '10';
+
+        $this->assertVoltouComFlash($this->storeResponse(), '/clients/10', 'Responsável inválido.');
+        $this->assertNenhumaTarefaGravada();
+    }
+
+    public function testClienteInativoViaFormularioVoltaParaTarefas(): void
     {
         $_POST['client_id'] = '11';
 
-        $resposta = $this->storeResponse();
-
-        $this->assertSame('redirect', $resposta->via);
-        $this->assertSame('/clients/11', $resposta->payload);
-        $this->assertSame(
-            ['type' => 'error', 'message' => 'Responsável ou cliente inválido.'],
-            $_SESSION['flash'],
-        );
+        $this->assertVoltouComFlash($this->storeResponse(), '/tasks', 'Cliente inválido.');
         $this->assertNenhumaTarefaGravada();
     }
 }
