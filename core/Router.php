@@ -167,6 +167,13 @@ class Router
         } else {
             echo '<h1>404 — Página não encontrada</h1>';
         }
+        $this->terminate();
+    }
+
+    // o exit fica num metodo proprio porque o teste do router despacha no mesmo processo
+    // do phpunit, e um exit ali encerraria a suite com codigo 0 e sem resumo.
+    protected function terminate(): void
+    {
         exit;
     }
 }
