@@ -26,25 +26,16 @@ jobs:
     timeout-minutes: 20
 
     services:
-      mysql:
-        image: mysql:8.0
-        env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: crm_db
-        ports:
-          - 3306:3306
-        options: >-
-          --health-cmd="mysqladmin ping -proot"
-          --health-interval=5s
-          --health-timeout=5s
-          --health-retries=10
-
-      # sem ports: o passo de import fala com este container por docker exec,
-      # entao nada precisa escutar no host (e a 3306 ja e do mysql).
+      # o mesmo motor de producao: com o mysql no ci, o que so ele aceita (como a
+      # coluna gerada com DATE_FORMAT, erro 1901 no mariadb) chegava a producao
+      # sem nenhum teste quebrar.
       mariadb:
         image: mariadb:11
         env:
           MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: crm_db
+        ports:
+          - 3306:3306
         options: >-
           --health-cmd="healthcheck.sh --connect --innodb_initialized"
           --health-interval=5s
@@ -73,7 +64,7 @@ jobs:
 
       # Cedo de propósito: é o passo mais barato do job e não precisa de banco,
       # navegador nem CSS compilado — falha de tipo aparece em segundos em vez
-      # de depois de subir MySQL e Playwright.
+      # de depois de subir MariaDB e Playwright.
       - name: Análise estática (PHPStan)
         run: composer analyse
 
@@ -105,29 +96,21 @@ jobs:
       - name: Criar config/database.php (gitignored — lê credenciais do .env)
         run: cp config/database.php.example config/database.php
 
-      - name: Aguardar MySQL ficar pronto
-        run: |
-          for i in $(seq 1 30); do
-            mysqladmin ping -h127.0.0.1 -uroot -proot --silent && break
-            sleep 2
-          done
-
-      - name: Importar schema do banco
-        run: mysql -h127.0.0.1 -uroot -proot crm_db < database/schema.sql
-
-      # producao roda mariadb, que recusa expressoes de coluna gerada que o mysql
-      # aceita (ex.: DATE_FORMAT, erro 1901); este import falha o job se o schema
-      # voltar a depender de algo que so o mysql entende.
-      - name: Importar schema no MariaDB (motor de produção)
+      # os passos de shell usam o cliente de dentro do container, da mesma versao
+      # do servidor, em vez do mysql que vem instalado no runner.
+      - name: Aguardar MariaDB ficar pronto
         env:
           MARIADB_ID: ${{ job.services.mariadb.id }}
         run: |
           for i in $(seq 1 30); do
-            docker exec "$MARIADB_ID" mariadb -uroot -proot -e "SELECT 1" > /dev/null 2>&1 && break
+            docker exec "$MARIADB_ID" mariadb-admin ping -uroot -proot --silent && break
             sleep 2
           done
-          docker exec "$MARIADB_ID" mariadb -uroot -proot -e "CREATE DATABASE crm_schema_check"
-          docker exec -i "$MARIADB_ID" mariadb -uroot -proot crm_schema_check < database/schema.sql
+
+      - name: Importar schema do banco
+        env:
+          MARIADB_ID: ${{ job.services.mariadb.id }}
+        run: docker exec -i "$MARIADB_ID" mariadb -uroot -proot crm_db < database/schema.sql
 
       - name: Registrar baseline das migrations
         run: php bin/migrate.php --baseline
