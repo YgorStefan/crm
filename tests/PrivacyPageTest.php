@@ -12,12 +12,16 @@ class PrivacyPageTest extends TestCase
         if (!defined('CSP_NONCE')) {
             define('CSP_NONCE', 'nonce-de-teste');
         }
+        // o env() dos testes cai no getenv quando o $_ENV nao tem a chave, entao
+        // o ambiente do processo tambem e limpo.
         unset($_ENV['APP_CONTACT_EMAIL']);
+        putenv('APP_CONTACT_EMAIL');
     }
 
     protected function tearDown(): void
     {
         unset($_ENV['APP_CONTACT_EMAIL']);
+        putenv('APP_CONTACT_EMAIL');
     }
 
     private function renderPage(): string
@@ -50,13 +54,49 @@ class PrivacyPageTest extends TestCase
         $this->assertStringNotContainsString('mailto:', $html);
     }
 
-    public function testEmailDeContatoSaiEscapado(): void
+    public function testEmailDeContatoInvalidoOrientaProcurarOAdministrador(): void
     {
         $_ENV['APP_CONTACT_EMAIL'] = 'x"><script>@example.com';
 
         $html = $this->renderPage();
 
-        $this->assertStringNotContainsString('x"><script>', $html);
-        $this->assertStringContainsString('x&quot;&gt;&lt;script&gt;@example.com', $html);
+        $this->assertStringContainsString('Fale com o administrador da sua empresa no CRM.', $html);
+        $this->assertStringNotContainsString('mailto:', $html);
+        $this->assertStringNotContainsString('<script>@', $html);
+    }
+
+    public function testEmailDeContatoDoAmbienteDoProcessoTambemValeEPassaPelaValidacao(): void
+    {
+        putenv('APP_CONTACT_EMAIL=nao-e-email');
+
+        $html = $this->renderPage();
+
+        $this->assertStringContainsString('Fale com o administrador da sua empresa no CRM.', $html);
+        $this->assertStringNotContainsString('mailto:', $html);
+    }
+
+    public function testEmailDeContatoValidoSaiEscapado(): void
+    {
+        $_ENV['APP_CONTACT_EMAIL'] = "o'neil&co@example.com";
+
+        $html = $this->renderPage();
+
+        $this->assertStringContainsString('href="mailto:o&#039;neil&amp;co@example.com"', $html);
+        $this->assertStringNotContainsString("o'neil&co@", $html);
+    }
+
+    public function testTextoDeclaraOQueOCrmGuardaECompartilha(): void
+    {
+        $html = $this->renderPage();
+
+        $this->assertStringContainsString('o endereço da foto de perfil, quando informado', $html);
+        $this->assertStringContainsString('registra o IP e o e-mail digitado em cada tentativa de login', $html);
+        $this->assertStringContainsString('dois tokens, um de acesso e um de renovação, guardados cifrados', $html);
+        $this->assertStringContainsString('Com quem os dados são compartilhados.', $html);
+        $this->assertStringNotContainsString('O que não fazemos.', $html);
+        $this->assertStringContainsString('ao ViaCEP, os CEPs consultados no cadastro', $html);
+        $this->assertStringContainsString('da jsDelivr e da SheetJS', $html);
+        $this->assertStringContainsString('incluindo os requisitos de Uso Limitado', $html);
+        $this->assertStringContainsString('Para apagá-los, use o contato abaixo.', $html);
     }
 }

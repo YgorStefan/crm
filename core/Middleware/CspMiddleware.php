@@ -6,10 +6,13 @@ class CspMiddleware
 {
     public function handle(): void
     {
-        $nonce = bin2hex(random_bytes(16));
-        define('CSP_NONCE', $nonce);
+        // a constante so existe antes daqui no processo do phpunit, onde os testes
+        // de layout a definem; o header usa a constante para casar com as views.
+        if (!defined('CSP_NONCE')) {
+            define('CSP_NONCE', bin2hex(random_bytes(16)));
+        }
 
-        $csp = self::buildPolicy($nonce);
+        $csp = self::buildPolicy(CSP_NONCE);
 
         // Em produção o CDN da Hostinger (hcdn) sobrescreve este header por
         // "upgrade-insecure-requests" antes de chegar ao navegador — a mesma

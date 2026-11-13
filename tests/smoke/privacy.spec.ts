@@ -7,7 +7,8 @@ test.describe('Política de privacidade', () => {
         const response = await page.goto('/privacidade');
 
         expect(response?.status()).toBe(200);
-        // Sem login, rota protegida redirecionaria para /login com 200.
+        // rota protegida tambem daria 200, pelo redirect para o login, entao so a
+        // url prova que a pagina abriu sem sessao.
         await expect(page).toHaveURL(/\/privacidade$/);
         await expect(page.getByRole('heading', { level: 1, name: 'Política de Privacidade' })).toBeVisible();
         await expect(page.locator('body')).toContainText('incluindo os requisitos de Uso Limitado');
