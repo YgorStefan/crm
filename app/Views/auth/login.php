@@ -4,7 +4,8 @@ $csrf_token = $csrf_token ?? '';
 $timeout    = $timeout ?? false;
 $error      = $error ?? '';
 ?>
-<div class="w-full max-w-xs bg-white dark:bg-zinc-900 rounded-2xl shadow-xl overflow-hidden">
+<div class="w-full max-w-xs">
+<div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl overflow-hidden">
 
     <!-- Cabeçalho colorido -->
     <div class="bg-indigo-600 dark:bg-indigo-700 px-6 py-5 text-center">
@@ -70,6 +71,12 @@ $error      = $error ?? '';
             </button>
         </form>
     </div>
+</div>
+
+<p class="mt-4 text-center text-xs">
+    <a href="<?= htmlspecialchars(APP_URL, ENT_QUOTES, 'UTF-8') ?>/privacidade"
+        class="text-gray-500 dark:text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline underline-offset-2 transition-colors">Política de privacidade</a>
+</p>
 </div>
 
 <script nonce="<?= CSP_NONCE ?>">

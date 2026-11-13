@@ -17,6 +17,9 @@ $router->get('/login', 'AuthController', 'loginForm', [], public: true);
 $router->post('/login', 'AuthController', 'login', ['RateLimitMiddleware', 'CsrfMiddleware'], public: true);
 $router->get('/logout', 'AuthController', 'logout');
 
+// a politica de privacidade fica publica porque o google confere essa url, sem login, ao publicar o app oauth do google agenda.
+$router->get('/privacidade', 'PrivacyController', 'index', [], public: true);
+
 // ---- Troca de senha obrigatória (AuthMiddleware libera mesmo com password_must_change) ----
 $router->get('/profile/change-password', 'ProfileController', 'changePasswordForm');
 $router->post('/profile/change-password', 'ProfileController', 'changePassword', ['CsrfMiddleware']);
