@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { answerDialogs, login } from './helpers';
+import { answerDialogs, login, waitForScreenScripts } from './helpers';
 
 async function createClient(page: Page): Promise<{ id: string; name: string }> {
     const name = `Cliente E2E ${Date.now()}`;
@@ -117,7 +117,7 @@ test.describe('Clientes', () => {
         await page.clock.pauseAt(Date.now() + 1000);
         await createClient(page);
         await expect(page.locator('#flashMsg')).toContainText('Cliente cadastrado com sucesso!');
-        await page.waitForLoadState('domcontentloaded');
+        await waitForScreenScripts(page);
 
         await page.locator('#flashMsg button').click();
 

@@ -19,6 +19,14 @@ export async function setE2eAssigneeActive(active: boolean): Promise<void> {
     await execFileAsync('php', [path.join(__dirname, 'e2e-assignee.php'), active ? 'on' : 'off']);
 }
 
+// o script de cada tela e defer e so liga os handlers depois de baixar os scripts que vem
+// antes dele, inclusive os de cdn; depois de uma navegacao por clique, o primeiro elemento
+// visivel ja aceita clique sem handler nenhum. o domcontentloaded so dispara depois que
+// todos os scripts defer rodaram, entao quem vai clicar em seguida espera por ele.
+export async function waitForScreenScripts(page: Page): Promise<void> {
+    await page.waitForLoadState('domcontentloaded');
+}
+
 // cada confirm e respondido na hora com a proxima resposta da fila (e recusado quando a fila
 // acaba), porque com o dialogo aberto a pagina para e nenhuma verificacao seguinte roda.
 export function answerDialogs(page: Page, answers: boolean[]): string[] {

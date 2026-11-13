@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { login } from './helpers';
+import { login, waitForScreenScripts } from './helpers';
 
 test.describe('Contatos Frios', () => {
     test.beforeEach(async ({ page }) => {
@@ -44,6 +44,7 @@ test.describe('Contatos Frios', () => {
         });
         await page.getByRole('button', { name: 'Importar' }).click();
         await expect(page.getByText(/contato\(s\) importado\(s\) com sucesso/)).toBeVisible();
+        await waitForScreenScripts(page);
 
         await page.locator('.btn-open-modal').first().click();
         const [download] = await Promise.all([

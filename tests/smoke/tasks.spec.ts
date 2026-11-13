@@ -1,5 +1,5 @@
 import { test, expect, type Page } from '@playwright/test';
-import { E2E_ASSIGNEE_NAME, login, setE2eAssigneeActive } from './helpers';
+import { E2E_ASSIGNEE_NAME, login, setE2eAssigneeActive, waitForScreenScripts } from './helpers';
 
 function nextMonthDate(day: number): string {
     const now = new Date();
@@ -54,6 +54,7 @@ async function openKanbanClientPage(page: Page): Promise<void> {
     await page.goto('/clients?search=' + encodeURIComponent('Cliente E2E Kanban'));
     await page.getByRole('link', { name: 'Cliente E2E Kanban', exact: true }).first().click();
     await expect(page).toHaveURL(/\/clients\/\d+$/);
+    await waitForScreenScripts(page);
 }
 
 async function selectE2eAssignee(page: Page, selectId: string): Promise<void> {
