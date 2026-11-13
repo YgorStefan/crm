@@ -55,7 +55,7 @@ $error      = $error ?? '';
                                bg-white dark:bg-zinc-800 text-gray-800 dark:text-white
                                placeholder-gray-400 dark:placeholder-zinc-600
                                focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors pr-10">
-                    <button type="button" onclick="togglePassword()"
+                    <button type="button" id="togglePassword"
                         class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 transition-colors"
                         title="Mostrar/ocultar senha">
                         <span id="eyeIconSvg">👁️</span>
@@ -80,10 +80,11 @@ $error      = $error ?? '';
 </div>
 
 <script nonce="<?= CSP_NONCE ?>">
-    function togglePassword() {
+    // a csp bloqueia atributo onclick, entao o clique so funciona ligado aqui.
+    document.getElementById('togglePassword').addEventListener('click', () => {
         const input = document.getElementById('password');
         const isHidden = input.type === 'password';
         input.type = isHidden ? 'text' : 'password';
         document.getElementById('eyeIconSvg').textContent = isHidden ? '🙈' : '👁️';
-    }
+    });
 </script>
