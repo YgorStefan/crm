@@ -225,6 +225,12 @@
             document.getElementById('task_due_date').value = dateStr + 'T08:00';
             document.getElementById('task_priority').value = 'medium';
             document.getElementById('task_description').value = '';
+            const assignedEl = document.getElementById('task_assigned_to');
+            if (assignedEl) {
+                for (const opt of assignedEl.options) opt.selected = opt.defaultSelected;
+                // o select customizado so troca o rotulo exibido ao receber um evento change, e mudar a opcao por codigo nao dispara nenhum.
+                assignedEl.dispatchEvent(new Event('change', { bubbles: true }));
+            }
             document.getElementById('taskActionBtns').style.display = 'none';
             document.getElementById('btnSaveTask').style.display = this.#userRole === 'viewer' ? 'none' : '';
             document.getElementById('taskClientLink').style.display = 'none';
