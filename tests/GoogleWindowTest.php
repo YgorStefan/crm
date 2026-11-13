@@ -385,6 +385,72 @@ final class GoogleWindowTest extends TestCase
         $this->assertSame([$id], self::ids($janela['tasks']));
     }
 
+    public function testParadaNoEnvioDeOutraContaNaoTentaList(): void
+    {
+        // a ana nao tem pendencia, entao o envio so passa pela bia.
+        $this->conta(self::ANA);
+        $this->conta(self::BIA);
+        $daAna = $this->tarefa();
+        $this->tarefa(['assigned_to' => self::BIA, 'created_by' => self::BIA, 'google_sync_pending' => 1]);
+        $this->http->networkDown(true);
+
+        $janela = $this->abrir();
+
+        $this->assertSame(['POST ' . self::EVENTS_URL], $this->chamadas());
+        $this->assertSame('degraded', $janela['status']);
+        $this->assertSame([$daAna], self::ids($janela['tasks']));
+        $this->assertSame([], $janela['foreign']);
+    }
+
+    public function testParadaDepoisDoEnvioDaPropriaContaNaoTentaList(): void
+    {
+        $this->conta(self::ANA);
+        $this->conta(self::BIA);
+        $daAna = $this->tarefa(['google_sync_pending' => 1]);
+        $this->inserir('google_event_deletions', ['tenant_id' => self::TENANT, 'user_id' => self::BIA, 'google_event_id' => 'evtdabia1']);
+        $this->http->respondOnce('calendar/v3', 503, 'Service Unavailable', 'DELETE');
+
+        $janela = $this->abrir();
+
+        $this->assertSame(['POST ' . self::EVENTS_URL, 'DELETE ' . self::EVENTS_URL . '/evtdabia1'], $this->chamadas());
+        $this->assertSame('degraded', $janela['status']);
+        $this->assertSame(0, (int) $this->linha($daAna)['google_sync_pending']);
+        $this->assertSame([$daAna], self::ids($janela['tasks']));
+    }
+
+    public function testReconexaoDeOutraContaNaoImpedeList(): void
+    {
+        $this->conta(self::ANA);
+        $this->conta(self::BIA);
+        $this->tarefa(['assigned_to' => self::BIA, 'created_by' => self::BIA, 'google_sync_pending' => 1]);
+        $this->evento(self::ANA, 'evtdaana1');
+        $this->http->respondOnce('calendar/v3', 403, FakeTransport::googleError(403, 'insufficientPermissions'), 'POST');
+
+        $janela = $this->abrir();
+
+        $this->assertSame('revoked', $this->contaDe(self::BIA)['status']);
+        $this->assertSame('ok', $janela['status']);
+        $this->assertCount(1, $this->pedidosDaLista());
+        $this->assertSame(['evtdaana1'], self::googleIds($janela['foreign']));
+    }
+
+    public function testParadaDoEnvioNaoPassaParaAProximaAbertura(): void
+    {
+        $this->conta(self::ANA);
+        $this->conta(self::BIA);
+        $this->tarefa(['assigned_to' => self::BIA, 'created_by' => self::BIA, 'google_sync_pending' => 1]);
+        $sync = $this->sync();
+        $this->http->networkDown(true);
+        $sync->window(self::ANA, false, $this->dia, $this->dia->modify('+7 days'), false);
+        $this->http->networkDown(false);
+        $listasAntes = count($this->pedidosDaLista());
+
+        $janela = $sync->window(self::ANA, false, $this->dia, $this->dia->modify('+7 days'), false);
+
+        $this->assertSame('ok', $janela['status']);
+        $this->assertCount($listasAntes + 1, $this->pedidosDaLista());
+    }
+
     public function testPaginaTodasAsPaginasDoList(): void
     {
         $this->conta(self::ANA);

@@ -73,6 +73,9 @@ final class GoogleCalendarSync
     private ?string $token = null;
     private bool $renewed = false;
     private bool $gotAnswer = false;
+    // com foco o drain devolve so o status da conta em foco, e a parada por
+    // rede, limite ou 5xx pode ter vindo de outra conta.
+    private bool $sendStopped = false;
 
     /** @param \Closure():float|null $now segundos, como microtime(true) */
     public function __construct(
@@ -106,6 +109,7 @@ final class GoogleCalendarSync
      */
     public function drain(array $profile, ?int $focusUserId = null): string
     {
+        $this->sendStopped = false;
         if (!$this->config->isConfigured()) {
             return 'ok';
         }
@@ -141,12 +145,16 @@ final class GoogleCalendarSync
 
         if ($this->config->isConfigured()) {
             $sent = $this->drain(self::PROFILE_FEED, $userId);
-            if ($sent === 'ok') {
+            if ($sent === 'ok' && !$this->sendStopped) {
                 [$read, $foreign] = $this->readCalendar($userId, $start, $end);
                 $status = self::worse($status, $read);
             } else {
-                // rede ou conta que parou o envio pararia a lista do mesmo jeito.
-                $status = self::worse($status, $sent);
+                // a lista e pulada se o envio parou por rede, limite ou 5xx em
+                // qualquer conta, porque o google fora do ar so somaria a espera
+                // dela, e tambem se a conta em foco nao terminou ok por qualquer
+                // motivo, falha na trava ou excecao inesperada inclusive. a
+                // reconexao de outra conta nao pula a lista.
+                $status = self::worse($status, $sent === 'ok' ? 'degraded' : $sent);
             }
         }
 
@@ -364,6 +372,7 @@ final class GoogleCalendarSync
             $result = $this->drainAccount($userId);
             if ($result === 'stop') {
                 $statuses[$userId] = 'degraded';
+                $this->sendStopped = true;
                 break;
             }
             $statuses[$userId] = $result;
