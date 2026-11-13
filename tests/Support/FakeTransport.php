@@ -19,8 +19,11 @@ final class FakeTransport implements HttpTransport
     /** @var list<array{urlContains:string, method:?string, status:int, body:string}> */
     private array $once = [];
 
-    /** @var array<string, array<string, array<string, mixed>>> token => id => evento, cancelados inclusive */
+    /** @var array<string, array<string, array<string, mixed>>> conta => id => evento, cancelados inclusive */
     private array $calendars = [];
+
+    /** @var array<string, string> token => conta; token sem cadastro e a propria conta */
+    private array $accountOf = [];
 
     /** @var list<array{method:string, url:string, headers:array<int, string>, body:?string, timeoutMs:int}> */
     private array $requests = [];
@@ -81,6 +84,20 @@ final class FakeTransport implements HttpTransport
         $this->msPerCall = $ms;
     }
 
+    /**
+     * o google guarda a agenda na conta, e o token renovado chega na mesma
+     * agenda, entao cada token cadastrado aponta para a agenda da sua conta.
+     */
+    public function tokenOf(string $account, string $token): void
+    {
+        $this->accountOf[$token] = $account;
+    }
+
+    private function accountFor(string $token): string
+    {
+        return $this->accountOf[$token] ?? $token;
+    }
+
     public function pageSize(int $size): void
     {
         $this->pageSize = $size;
@@ -98,10 +115,10 @@ final class FakeTransport implements HttpTransport
         return $this->requests;
     }
 
-    /** @return array<string, array<string, mixed>> id => evento da agenda dona do token, cancelados inclusive */
+    /** @return array<string, array<string, mixed>> id => evento da agenda da conta do token, cancelados inclusive */
     public function events(string $token): array
     {
-        return $this->calendars[$token] ?? [];
+        return $this->calendars[$this->accountFor($token)] ?? [];
     }
 
     /** @param array<string, mixed> $event precisa de id; sem etag ou status, ganha um novo e confirmed */
@@ -109,7 +126,7 @@ final class FakeTransport implements HttpTransport
     {
         $event['etag']   ??= $this->nextEtag();
         $event['status'] ??= 'confirmed';
-        $this->calendars[$token][(string) $event['id']] = $event;
+        $this->calendars[$this->accountFor($token)][(string) $event['id']] = $event;
     }
 
     public function send(string $method, string $url, array $headers, ?string $body, int $timeoutMs): array
@@ -149,7 +166,7 @@ final class FakeTransport implements HttpTransport
     }
 
     /**
-     * agenda primary em memoria, uma por token, com o que a tarefa 1 mediu:
+     * agenda primary em memoria, uma por conta, com o que a tarefa 1 mediu:
      * apagar so marca cancelled, o id apagado segue ocupado para o insert, o
      * patch com status confirmed o restaura, e start com date e dateTime juntos
      * volta 400.
@@ -168,21 +185,22 @@ final class FakeTransport implements HttpTransport
         if ($token === null || $token === '') {
             return self::error(401, 'authError');
         }
+        $account = $this->accountFor($token);
 
         $rest = substr((string) parse_url($url, PHP_URL_PATH), strlen((string) parse_url(self::EVENTS_URL, PHP_URL_PATH)));
         $id   = $rest === '' ? null : rawurldecode(ltrim($rest, '/'));
 
         if ($id === null && $method === 'GET') {
-            return $this->listEvents($token, (string) parse_url($url, PHP_URL_QUERY));
+            return $this->listEvents($account, (string) parse_url($url, PHP_URL_QUERY));
         }
         if ($id === null && $method === 'POST') {
-            return $this->insertEvent($token, $body);
+            return $this->insertEvent($account, $body);
         }
         if ($id === null) {
             throw new \LogicException("FakeTransport sem rota de agenda para {$method} {$url}");
         }
 
-        $event = $this->calendars[$token][$id] ?? null;
+        $event = $this->calendars[$account][$id] ?? null;
         if ($event === null) {
             return self::error(404, 'notFound');
         }
@@ -197,7 +215,7 @@ final class FakeTransport implements HttpTransport
                 }
                 $event['status'] = 'cancelled';
                 $event['etag']   = $this->nextEtag();
-                $this->calendars[$token][$id] = $event;
+                $this->calendars[$account][$id] = $event;
                 return ['status' => 204, 'body' => ''];
 
             case 'PATCH':
@@ -210,7 +228,7 @@ final class FakeTransport implements HttpTransport
                     return self::error(400, 'invalid');
                 }
                 $merged['etag'] = $this->nextEtag();
-                $this->calendars[$token][$id] = $merged;
+                $this->calendars[$account][$id] = $merged;
                 return self::ok($merged);
         }
 
@@ -218,7 +236,7 @@ final class FakeTransport implements HttpTransport
     }
 
     /** @return array{status:int, body:string} */
-    private function insertEvent(string $token, ?string $body): array
+    private function insertEvent(string $account, ?string $body): array
     {
         $data = json_decode((string) $body, true);
         if (!is_array($data)) {
@@ -226,7 +244,7 @@ final class FakeTransport implements HttpTransport
         }
 
         $id = isset($data['id']) ? (string) $data['id'] : 'gerado' . ($this->etags + 1);
-        if (isset($this->calendars[$token][$id])) {
+        if (isset($this->calendars[$account][$id])) {
             return self::error(409, 'duplicate');
         }
 
@@ -237,17 +255,17 @@ final class FakeTransport implements HttpTransport
             return self::error(400, 'invalid');
         }
         $event['etag'] = $this->nextEtag();
-        $this->calendars[$token][$id] = $event;
+        $this->calendars[$account][$id] = $event;
 
         return self::ok($event);
     }
 
     /** @return array{status:int, body:string} */
-    private function listEvents(string $token, string $query): array
+    private function listEvents(string $account, string $query): array
     {
         parse_str($query, $params);
         $live = array_values(array_filter(
-            $this->calendars[$token] ?? [],
+            $this->calendars[$account] ?? [],
             fn (array $event): bool => $event['status'] !== 'cancelled',
         ));
 

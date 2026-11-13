@@ -96,9 +96,17 @@ final class GoogleDrainTest extends TestCase
         return (new \DateTime($quando))->format('Y-m-d H:i:s');
     }
 
+    /** o token renovado continua na agenda da mesma conta, como no google */
+    private function renovacaoDa(int $userId): void
+    {
+        $this->http->tokenOf("conta-{$userId}", 'acesso-renovado-falso');
+        $this->http->respond('oauth2.googleapis.com/token', 200, self::respostaDaRenovacao());
+    }
+
     /** @param array<string, mixed> $campos */
     private function conta(int $userId, array $campos = []): void
     {
+        $this->http->tokenOf("conta-{$userId}", $this->token($userId));
         $this->inserir('google_accounts', array_merge([
             'user_id'                 => $userId,
             'tenant_id'               => self::TENANT,
@@ -437,7 +445,7 @@ final class GoogleDrainTest extends TestCase
         $this->conta(self::ANA);
         $id = $this->tarefa();
         $this->http->respondOnce('calendar/v3', 401, FakeTransport::googleError(401, 'authError'));
-        $this->http->respond('oauth2.googleapis.com/token', 200, self::respostaDaRenovacao());
+        $this->renovacaoDa(self::ANA);
 
         $this->assertSame('ok', $this->sync()->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE, self::ANA));
 
@@ -451,9 +459,38 @@ final class GoogleDrainTest extends TestCase
         $this->assertSame('refresh_token', $renovacao['grant_type']);
         $this->assertContains('Authorization: Bearer acesso-renovado-falso', $pedidos[2]['headers']);
 
-        $this->assertArrayHasKey($this->idDe($id), $this->http->events('acesso-renovado-falso'));
+        // a agenda e a da conta, qualquer que seja o token usado para chegar nela.
+        $this->assertArrayHasKey($this->idDe($id), $this->http->events($this->token(self::ANA)));
         $this->assertSame(0, $this->pendencia($id));
         $this->assertSame('active', $this->contaDe(self::ANA)['status']);
+    }
+
+    public function testVinculadaCom401RenovaEFazPatchNoMesmoEvento(): void
+    {
+        $this->conta(self::ANA);
+        $this->evento(self::ANA, 'evtvinculado1');
+        $id = $this->tarefa([
+            'title'           => 'Título editado',
+            'google_event_id' => 'evtvinculado1',
+            'google_owner_id' => self::ANA,
+            'google_etag'     => '"etag-velho"',
+        ]);
+        $this->http->respondOnce('calendar/v3', 401, FakeTransport::googleError(401, 'authError'));
+        $this->renovacaoDa(self::ANA);
+
+        $this->assertSame('ok', $this->sync()->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE, self::ANA));
+
+        $this->assertSame([
+            'PATCH ' . self::EVENTS_URL . '/evtvinculado1',
+            'POST ' . self::TOKEN_URL,
+            'PATCH ' . self::EVENTS_URL . '/evtvinculado1',
+        ], $this->chamadas());
+        $evento = $this->http->events($this->token(self::ANA))['evtvinculado1'];
+        $this->assertSame('Título editado', $evento['summary']);
+        $linha = $this->linha($id);
+        $this->assertSame('evtvinculado1', $linha['google_event_id']);
+        $this->assertSame($evento['etag'], $linha['google_etag']);
+        $this->assertSame(0, (int) $linha['google_sync_pending']);
     }
 
     public function testSegundo401PedeReconexao(): void
@@ -462,7 +499,7 @@ final class GoogleDrainTest extends TestCase
         $id = $this->tarefa();
         $this->http->respondOnce('calendar/v3', 401, FakeTransport::googleError(401, 'authError'));
         $this->http->respondOnce('calendar/v3', 401, FakeTransport::googleError(401, 'authError'));
-        $this->http->respond('oauth2.googleapis.com/token', 200, self::respostaDaRenovacao());
+        $this->renovacaoDa(self::ANA);
 
         $this->assertSame('reconnect', $this->sync()->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE, self::ANA));
 
@@ -479,7 +516,7 @@ final class GoogleDrainTest extends TestCase
         $this->conta(self::ANA);
         $primeira = $this->tarefa(['due_date' => $this->em('+1 day')]);
         $segunda  = $this->tarefa(['due_date' => $this->em('+2 days')]);
-        $this->http->respond('oauth2.googleapis.com/token', 200, self::respostaDaRenovacao());
+        $this->renovacaoDa(self::ANA);
         // as respostas de uma vez saem na ordem: 401 na primeira, sucesso no reenvio, 401 na segunda
         $this->http->respondOnce('calendar/v3', 401, FakeTransport::googleError(401, 'authError'));
         $this->http->respondOnce('calendar/v3', 200, ['etag' => '"etag-falso-reenvio"']);
@@ -845,7 +882,7 @@ final class GoogleDrainTest extends TestCase
     {
         // o token vencido obriga a renovar, e a renovacao entra no orcamento.
         $this->conta(self::ANA, ['access_token_expires_at' => $this->aposT0(-10)]);
-        $this->http->respond('oauth2.googleapis.com/token', 200, self::respostaDaRenovacao());
+        $this->renovacaoDa(self::ANA);
         for ($dia = 1; $dia <= 12; $dia++) {
             $this->tarefa(['due_date' => $this->em("+{$dia} days")]);
         }
