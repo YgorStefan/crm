@@ -89,7 +89,8 @@ class PrivacyPageTest extends TestCase
     {
         $html = $this->renderPage();
 
-        $this->assertStringContainsString('o endereço da foto de perfil, quando informado', $html);
+        $this->assertStringContainsString('Nome, e-mail e senha (guardada só como hash) dos usuários', $html);
+        $this->assertStringNotContainsString('foto de perfil', $html);
         $this->assertStringContainsString('registra o IP e o e-mail digitado em cada tentativa de login', $html);
         $this->assertStringContainsString('dois tokens, um de acesso e um de renovação, guardados cifrados', $html);
         $this->assertStringContainsString('Com quem os dados são compartilhados.', $html);

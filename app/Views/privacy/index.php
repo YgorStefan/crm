@@ -23,7 +23,7 @@ $headingClass     = 'font-semibold text-gray-900 dark:text-white mb-1';
 
             <section>
                 <h2 class="<?= $headingClass ?>">Dados guardados.</h2>
-                <p>Nome, e-mail, o endereço da foto de perfil, quando informado, e senha (guardada só como hash) dos usuários, e os clientes, tarefas e interações que a empresa cadastra. Por segurança, o CRM registra o IP e o e-mail digitado em cada tentativa de login e usa um cookie de sessão. O tema claro ou escuro fica só no seu navegador.</p>
+                <p>Nome, e-mail e senha (guardada só como hash) dos usuários, e os clientes, tarefas e interações que a empresa cadastra. Por segurança, o CRM registra o IP e o e-mail digitado em cada tentativa de login e usa um cookie de sessão. O tema claro ou escuro fica só no seu navegador.</p>
             </section>
 
             <section>

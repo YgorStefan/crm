@@ -39,8 +39,8 @@ class User extends Model
     public function create(array $data): int
     {
         $stmt = $this->db->prepare("
-            INSERT INTO users (tenant_id, name, email, password_hash, role, avatar)
-            VALUES (:tenant_id, :name, :email, :password_hash, :role, :avatar)
+            INSERT INTO users (tenant_id, name, email, password_hash, role)
+            VALUES (:tenant_id, :name, :email, :password_hash, :role)
         ");
         $stmt->execute([
             ':tenant_id' => $this->currentTenantId(),
@@ -48,7 +48,6 @@ class User extends Model
             ':email' => $data['email'],
             ':password_hash' => $data['password_hash'],
             ':role' => $data['role'] ?? 'seller',
-            ':avatar' => $data['avatar'] ?? null,
         ]);
         return (int) $this->db->lastInsertId();
     }
@@ -63,7 +62,7 @@ class User extends Model
      */
     public function update(int $id, array $data): bool
     {
-        $fields = ['name', 'email', 'role', 'avatar', 'is_active', 'password_must_change'];
+        $fields = ['name', 'email', 'role', 'is_active', 'password_must_change'];
         $setClauses = [];
         $params = [':id' => $id];
 
