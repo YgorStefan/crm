@@ -663,18 +663,35 @@ final class GoogleDrainTest extends TestCase
         }
     }
 
-    public function testRedeEmOutraContaDegradaOFoco(): void
+    public function testRedeComFocoDevolveDegraded(): void
     {
-        // a rede e do servidor, nao da conta: o feed nao deve tentar o list depois
         $this->conta(self::ANA);
-        $this->conta(self::BIA);
-        $daBia = $this->tarefa(['assigned_to' => self::BIA]);
+        $id = $this->tarefa();
         $this->http->networkDown(true);
 
         $this->assertSame('degraded', $this->sync()->drain(GoogleCalendarSync::PROFILE_FEED, self::ANA));
 
         $this->assertCount(1, $this->http->requests());
+        $this->assertSame(1, $this->pendencia($id));
+    }
+
+    public function testParadaEmOutraContaNaoMudaFoco(): void
+    {
+        // um item de outra conta que sempre para o envio nao pode deixar o feed
+        // de todo mundo degradado, entao o foco ve so o que aconteceu com ele.
+        $this->conta(self::ANA);
+        $this->conta(self::BIA);
+        $daAna = $this->tarefa();
+        $daBia = $this->tarefa(['assigned_to' => self::BIA]);
+        $this->http->respondOnce('calendar/v3', 200, ['etag' => '"etag-falso-ana"']);
+        $this->http->respondOnce('calendar/v3', 403, FakeTransport::googleError(403, 'motivoNovoFalso'));
+
+        $this->assertSame('ok', $this->sync()->drain(GoogleCalendarSync::PROFILE_FEED, self::ANA));
+
+        $this->assertCount(2, $this->http->requests());
+        $this->assertSame(0, $this->pendencia($daAna));
         $this->assertSame(1, $this->pendencia($daBia));
+        $this->assertSame('active', $this->contaDe(self::BIA)['status']);
     }
 
     /** @return array<string, array{int, string}> */

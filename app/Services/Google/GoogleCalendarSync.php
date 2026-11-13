@@ -59,8 +59,8 @@ final class GoogleCalendarSync
     }
 
     /**
-     * nunca lanca. com foco, o status e so daquela conta, que vai primeiro,
-     * menos a parada por rede ou limite, que vale para todas. trava ocupada
+     * nunca lanca. com foco, o status e so daquela conta, que envia primeiro,
+     * entao rede fora do ar aparece na primeira chamada dela. trava ocupada
      * conta como ok, e sem foco vale o pior status: reconnect, degraded, ok.
      *
      * @param array{items:int, budget_ms:int} $profile
@@ -130,14 +130,12 @@ final class GoogleCalendarSync
         }
 
         $statuses = [];
-        $stopped  = false;
         foreach ($userIds as $userId) {
             if ($this->itemsLeft <= 0 || $this->remainingMs() <= 0) {
                 break;
             }
             $result = $this->drainAccount($userId);
             if ($result === 'stop') {
-                $stopped = true;
                 $statuses[$userId] = 'degraded';
                 break;
             }
@@ -145,8 +143,7 @@ final class GoogleCalendarSync
         }
 
         if ($focusUserId !== null) {
-            $status = $statuses[$focusUserId] ?? 'ok';
-            return $stopped ? self::worse($status, 'degraded') : $status;
+            return $statuses[$focusUserId] ?? 'ok';
         }
 
         $status = 'ok';
