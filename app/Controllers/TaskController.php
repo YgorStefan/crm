@@ -225,6 +225,34 @@ class TaskController extends Controller
         ]);
     }
 
+    public static function assigneeForStore(mixed $posted, string $role, int $sessionUserId): int
+    {
+        // um seller que mandasse o id de um colega gravaria na agenda do google dele.
+        if ($role !== 'admin') {
+            return $sessionUserId;
+        }
+
+        return self::postedUserId($posted) ?? $sessionUserId;
+    }
+
+    public static function assigneeChange(mixed $posted, string $role, int $currentAssignee): ?int
+    {
+        if ($role !== 'admin') {
+            return null;
+        }
+
+        $newAssignee = self::postedUserId($posted);
+
+        return $newAssignee !== null && $newAssignee !== $currentAssignee ? $newAssignee : null;
+    }
+
+    private static function postedUserId(mixed $posted): ?int
+    {
+        $id = filter_var($posted, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+
+        return $id === false ? null : $id;
+    }
+
     /**
      * Cria uma nova tarefa (pode vir da tela de detalhes do cliente ou da tela de tarefas).
      */
@@ -260,7 +288,11 @@ class TaskController extends Controller
         // Converte datetime-local para MySQL
         $dueDate = str_replace('T', ' ', $dueDate) . ':00';
 
-        $assignedTo = $this->inputPost('assigned_to') ?: $_SESSION['user']['id'];
+        $assignedTo = self::assigneeForStore(
+            $this->inputPost('assigned_to'),
+            (string) ($_SESSION['user']['role'] ?? ''),
+            (int) ($_SESSION['user']['id'] ?? 0),
+        );
 
         $recurrenceType = $this->inputPost('recurrence_type', 'none');
         if (!in_array($recurrenceType, ['none', 'weekly', 'monthly', 'yearly'], true)) {
@@ -348,7 +380,21 @@ class TaskController extends Controller
             return;
         }
 
-        $this->tasks->update($id, $data);
+        $newAssignee = self::assigneeChange(
+            $this->inputPost('assigned_to'),
+            (string) ($_SESSION['user']['role'] ?? ''),
+            (int) $task['assigned_to'],
+        );
+        if ($newAssignee !== null) {
+            $data['assigned_to'] = $newAssignee;
+        }
+
+        try {
+            $this->tasks->update($id, $data);
+        } catch (\InvalidArgumentException) {
+            $this->rejectTaskUpdate('Responsável inválido.');
+            return;
+        }
 
         // Se for requisição AJAX, retorna JSON; senão, redireciona
         if ($this->isAjax()) {
