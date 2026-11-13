@@ -219,7 +219,6 @@ $googleTeam       = $googleEnabled && $googleConnection === 'active' && ($_SESSI
     </div>
 </div>
 
-<!-- Modal: evento que so existe no Google Agenda -->
 <div id="modalGoogleEvent" role="dialog" aria-modal="true" aria-labelledby="googleEventHeading"
     class="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50 p-4" style="display:none">
     <div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md sm:max-w-lg max-h-[90vh] overflow-y-auto">

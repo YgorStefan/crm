@@ -2648,8 +2648,6 @@ video {
   cursor: pointer;
 }
 
-/* Marca de calendário do Google Agenda (barra, aviso e modal), na cor do texto. */
-
 .crm-google-mark {
   display: inline-block;
   flex-shrink: 0;
@@ -2661,8 +2659,8 @@ video {
   opacity: 0.85;
 }
 
-/* Campos do modal de evento do Google em somente leitura: fundo apagado
-   mostra que não dá para editar. */
+/* o campo readonly tem a mesma cara do editavel, entao o fundo apagado mostra
+   que o evento so pode ser alterado por quem o organizou. */
 
 .crm-google-field:-moz-read-only {
   background-color: #f9fafb;
@@ -2684,8 +2682,8 @@ video {
   color: #d4d4d8;
 }
 
-/* Evento que só existe no Google Agenda: na visão Mês o ponto vira anel,
-   para separar do ponto cheio das tarefas do CRM. */
+/* na visao mes o evento do google teria o mesmo ponto cheio da tarefa, entao
+   ele vira anel para a pessoa separar os dois sem abrir. */
 
 .fc-daygrid-dot-event.crm-google-event .fc-daygrid-event-dot {
   width: 4px;
