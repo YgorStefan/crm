@@ -872,9 +872,11 @@ final class GoogleDrainTest extends TestCase
 
         $this->assertSame('ok', $this->sync()->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE, self::ANA));
 
-        // 1500 ms: a primeira sai em 0, a segunda em 800, e em 1600 o orcamento acabou
-        $this->assertCount(2, $this->http->requests());
-        $this->assertSame([0, 0, 1, 1], array_map(fn (int $id): int => $this->pendencia($id), $ids));
+        // a primeira leva 800 dos 1500 ms e a segunda sai com 700, que o curl corta
+        // no teto. o google ja respondeu neste envio, entao o corte e orcamento, nao queda.
+        $this->assertSame([1500, 700], array_column($this->http->requests(), 'timeoutMs'));
+        $this->assertSame([0, 1, 1, 1], array_map(fn (int $id): int => $this->pendencia($id), $ids));
+        $this->assertSame('active', $this->contaDe(self::ANA)['status']);
         $this->assertNull($this->contaDe(self::ANA)['drain_until']);
     }
 
@@ -892,11 +894,78 @@ final class GoogleDrainTest extends TestCase
 
         $pedidos = $this->http->requests();
         $this->assertSame(self::TOKEN_URL, $pedidos[0]['url']);
-        $this->assertCount(10, $pedidos);
-        foreach ($pedidos as $i => $pedido) {
-            $this->assertLessThanOrEqual(3000 - 300 * $i, $pedido['timeoutMs'], "chamada {$i}");
-            $this->assertGreaterThan(0, $pedido['timeoutMs'], "chamada {$i}");
-        }
+        // cada chamada leva 300 ms, entao a de indice i recebe o que sobra dos 3000.
+        $this->assertSame(
+            [3000, 2700, 2400, 2100, 1800, 1500, 1200, 900, 600, 300],
+            array_column($pedidos, 'timeoutMs'),
+        );
+    }
+
+    public function testNaoComecaChamadaComMenosQueOMinimo(): void
+    {
+        // com 200 ms a chamada quase certamente estouraria, e o corte pareceria queda do google.
+        $this->conta(self::ANA);
+        $primeira = $this->tarefa(['due_date' => $this->em('+1 day')]);
+        $segunda  = $this->tarefa(['due_date' => $this->em('+2 days')]);
+        $this->http->advanceMsPerCall(1300);
+
+        $this->assertSame('ok', $this->sync()->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE, self::ANA));
+
+        $this->assertSame([1500], array_column($this->http->requests(), 'timeoutMs'));
+        $this->assertSame(0, $this->pendencia($primeira));
+        $this->assertSame(1, $this->pendencia($segunda));
+    }
+
+    public function testPrimeiraChamadaSemRespostaDegrada(): void
+    {
+        // host bloqueado: nada responde, e o corte no teto e o google fora do ar.
+        $this->conta(self::ANA);
+        $primeira = $this->tarefa(['due_date' => $this->em('+1 day')]);
+        $segunda  = $this->tarefa(['due_date' => $this->em('+2 days')]);
+        $this->http->advanceMsPerCall(60000);
+
+        $this->assertSame('degraded', $this->sync()->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE, self::ANA));
+
+        $this->assertSame([1500], array_column($this->http->requests(), 'timeoutMs'));
+        $this->assertEqualsWithDelta(1.5, ($this->http->now())() - $this->t0, 0.001);
+        $this->assertSame(1, $this->pendencia($primeira));
+        $this->assertSame(1, $this->pendencia($segunda));
+    }
+
+    public function testRedeQueCaiNoMeioDoEnvioDegrada(): void
+    {
+        // falha sem resposta antes do fim do orcamento e queda, mesmo com o google ja tendo respondido.
+        $this->conta(self::ANA);
+        $primeira = $this->tarefa(['due_date' => $this->em('+1 day')]);
+        $segunda  = $this->tarefa(['due_date' => $this->em('+2 days')]);
+        $this->http->respondOnce('calendar/v3', 200, ['etag' => '"etag-falso-primeira"']);
+        $this->http->respondOnce('calendar/v3', 0, '');
+
+        $this->assertSame('degraded', $this->sync()->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE, self::ANA));
+
+        $this->assertCount(2, $this->http->requests());
+        $this->assertSame(0, $this->pendencia($primeira));
+        $this->assertSame(1, $this->pendencia($segunda));
+    }
+
+    public function testRenovacaoCortadaPeloOrcamentoDevolveOk(): void
+    {
+        $this->conta(self::ANA);
+        $this->conta(self::BIA, ['access_token_expires_at' => $this->aposT0(-10)]);
+        $daAna = $this->tarefa();
+        $daBia = $this->tarefa(['assigned_to' => self::BIA]);
+        $this->renovacaoDa(self::BIA);
+        $this->http->advanceMsPerCall(1000);
+
+        $this->assertSame('ok', $this->sync()->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE));
+
+        // a ana responde em 1000 ms, e a renovacao da bia sai com 500 e e cortada no teto.
+        $this->assertSame(['POST ' . self::EVENTS_URL, 'POST ' . self::TOKEN_URL], $this->chamadas());
+        $this->assertSame([1500, 500], array_column($this->http->requests(), 'timeoutMs'));
+        $this->assertSame(0, $this->pendencia($daAna));
+        $this->assertSame(1, $this->pendencia($daBia));
+        $this->assertSame('active', $this->contaDe(self::BIA)['status']);
+        $this->assertNull($this->contaDe(self::BIA)['drain_until']);
     }
 
     public function testLimiteDeItensContaRemocoes(): void

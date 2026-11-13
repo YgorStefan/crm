@@ -19,6 +19,12 @@ final class GoogleCalendarSync
     private const DONE_MARK  = '✓ ';
     private const DEFAULT_DURATION_MIN = 30;
 
+    // abaixo disto a chamada nem comeca: a ida e volta medida da vm ao google
+    // foi de 185 a 202 ms numa chamada recusada com conexao nova, uma escrita
+    // leva no minimo isso, e a chamada cortada pelo proprio orcamento pareceria
+    // google fora do ar.
+    private const MIN_CALL_MS = 300;
+
     private const STOP_REASONS      = ['rateLimitExceeded', 'userRateLimitExceeded', 'quotaExceeded', 'dailyLimitExceeded'];
     private const RECONNECT_REASONS = ['insufficientPermissions', 'ACCESS_TOKEN_SCOPE_INSUFFICIENT'];
     private const DROP_REASONS      = ['forbiddenForNonOrganizer', 'forbidden', 'requiredAccessLevel'];
@@ -35,6 +41,7 @@ final class GoogleCalendarSync
     private int $itemsLeft = 0;
     private ?string $token = null;
     private bool $renewed = false;
+    private bool $gotAnswer = false;
 
     /** @param \Closure():float|null $now segundos, como microtime(true) */
     public function __construct(
@@ -123,6 +130,7 @@ final class GoogleCalendarSync
     {
         $this->deadline  = ($this->now)() + $profile['budget_ms'] / 1000;
         $this->itemsLeft = $profile['items'];
+        $this->gotAnswer = false;
 
         $userIds = $this->accounts->userIdsWithWork();
         if ($focusUserId !== null && in_array($focusUserId, $userIds, true)) {
@@ -131,7 +139,7 @@ final class GoogleCalendarSync
 
         $statuses = [];
         foreach ($userIds as $userId) {
-            if ($this->itemsLeft <= 0 || $this->remainingMs() <= 0) {
+            if ($this->itemsLeft <= 0 || !$this->hasTime()) {
                 break;
             }
             $result = $this->drainAccount($userId);
@@ -366,13 +374,15 @@ final class GoogleCalendarSync
         if (!$this->hasTime()) {
             return null;
         }
-        $this->token ??= $this->auth->accessTokenFor($userId, $this->remainingMs());
-
-        if (!$this->hasTime()) {
-            return null;
+        if ($this->token === null) {
+            $this->token = $this->tokenFor($userId, false);
+            if ($this->token === null || !$this->hasTime()) {
+                return null;
+            }
         }
-        $response = $this->http->send($method, $url, $this->headers($body !== null), $body, $this->remainingMs());
-        if ($response['status'] !== 401 || $this->renewed) {
+
+        $response = $this->send($method, $url, $body);
+        if ($response === null || $response['status'] !== 401 || $this->renewed) {
             return $response;
         }
 
@@ -383,12 +393,53 @@ final class GoogleCalendarSync
         if (!$this->hasTime()) {
             return null;
         }
-        $this->token = $this->auth->accessTokenFor($userId, $this->remainingMs(), forceRefresh: true);
-
-        if (!$this->hasTime()) {
+        $renewed = $this->tokenFor($userId, true);
+        if ($renewed === null || !$this->hasTime()) {
             return null;
         }
-        return $this->http->send($method, $url, $this->headers($body !== null), $body, $this->remainingMs());
+        $this->token = $renewed;
+
+        return $this->send($method, $url, $body);
+    }
+
+    /** @return array{status:int, body:string}|null null quando o proprio orcamento cortou a chamada */
+    private function send(string $method, string $url, ?string $body): ?array
+    {
+        $response = $this->http->send($method, $url, $this->headers($body !== null), $body, $this->remainingMs());
+        if ($response['status'] !== 0) {
+            $this->gotAnswer = true;
+            return $response;
+        }
+        return $this->cutByBudget() ? null : $response;
+    }
+
+    /** @return string|null null quando o proprio orcamento cortou a renovacao */
+    private function tokenFor(int $userId, bool $forceRefresh): ?string
+    {
+        try {
+            $token = $this->auth->accessTokenFor($userId, $this->remainingMs(), $forceRefresh);
+        } catch (GoogleUnavailable $e) {
+            if ($this->cutByBudget()) {
+                return null;
+            }
+            throw $e;
+        }
+
+        // sem forcar, o token pode ter vindo do banco, e isso nao prova que o google responde.
+        if ($forceRefresh) {
+            $this->gotAnswer = true;
+        }
+        return $token;
+    }
+
+    /**
+     * a chamada sem resposta que termina no fim do orcamento so conta como
+     * orcamento se o google ja respondeu neste envio: a primeira que estoura
+     * pode ser host bloqueado, e ai o aviso de fora do ar tem que aparecer.
+     */
+    private function cutByBudget(): bool
+    {
+        return $this->gotAnswer && !$this->hasTime();
     }
 
     /** @return array<int, string> */
@@ -508,14 +559,18 @@ final class GoogleCalendarSync
         return self::SEVERITY[$other] > self::SEVERITY[$current] ? $other : $current;
     }
 
+    /** @phpstan-impure le o relogio, que anda a cada chamada */
     private function hasTime(): bool
     {
-        return $this->remainingMs() > 0;
+        return $this->remainingMs() >= self::MIN_CALL_MS;
     }
 
+    /** @phpstan-impure */
     private function remainingMs(): int
     {
-        return (int) floor(($this->deadline - ($this->now)()) * 1000);
+        // round e nao floor: o relogio em segundos com fracao erra no
+        // milionesimo de milissegundo, e o floor transformaria 300 em 299.
+        return (int) round(($this->deadline - ($this->now)()) * 1000);
     }
 
     /** @param array{status:int, body:string} $response */

@@ -138,6 +138,16 @@ final class FakeTransport implements HttpTransport
             'body'      => $body,
             'timeoutMs' => $timeoutMs,
         ];
+
+        // como o curl: sem teto nao ha chamada, e a que levaria mais que o teto
+        // e cortada nele, sem resposta, gastando so o teto.
+        if ($timeoutMs <= 0) {
+            return ['status' => 0, 'body' => ''];
+        }
+        if ($this->msPerCall > $timeoutMs) {
+            $this->clock += $timeoutMs / 1000;
+            return ['status' => 0, 'body' => ''];
+        }
         $this->clock += $this->msPerCall / 1000;
 
         if ($this->down) {
