@@ -42,6 +42,8 @@
                 if (btn.dataset.action === 'open-quick-task') {
                     document.getElementById('qtClientId').value = btn.dataset.clientId;
                     document.getElementById('qtClientName').textContent = btn.dataset.clientName;
+                    document.getElementById('qt_title').value = '';
+                    document.getElementById('qt_priority').value = 'medium';
                     const tomorrow = new Date();
                     tomorrow.setDate(tomorrow.getDate() + 1);
                     tomorrow.setHours(12, 0, 0, 0);

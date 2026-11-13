@@ -330,3 +330,30 @@ test.describe('Tarefas / modal da tela do cliente', () => {
         }
     });
 });
+
+test.describe('Tarefas / tarefa rápida da lista de clientes', () => {
+    test.beforeEach(async ({ page }) => {
+        await login(page);
+        await page.goto('/clients?search=' + encodeURIComponent('Cliente E2E Kanban'));
+    });
+
+    test('a tarefa rápida reaberta volta o título e a prioridade ao estado inicial, no valor e no rótulo exibido', async ({ page }) => {
+        const openQuickTask = page.locator('[data-action="open-quick-task"]').first();
+        const priority = '.cs-wrapper:has(#qt_priority)';
+
+        await openQuickTask.click();
+        await expect(page.locator('#modalQuickTask')).toBeVisible();
+        await page.locator('#qt_title').fill('Tarefa E2E rascunho');
+        await page.locator(`${priority} .cs-trigger`).click();
+        await page.locator(`${priority} .cs-option[data-value="high"]`).click();
+        await expect(page.locator(`${priority} .cs-label`)).toHaveText('Alta');
+        await page.locator('#modalQuickTask button[data-action="close-modal"]').first().click();
+        await expect(page.locator('#modalQuickTask')).toBeHidden();
+
+        await openQuickTask.click();
+        await expect(page.locator('#modalQuickTask')).toBeVisible();
+        await expect(page.locator('#qt_title')).toHaveValue('');
+        await expect(page.locator('#qt_priority')).toHaveValue('medium');
+        await expect(page.locator(`${priority} .cs-label`)).toHaveText('Média');
+    });
+});
