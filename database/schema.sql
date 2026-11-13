@@ -62,7 +62,6 @@ CREATE TABLE IF NOT EXISTS users (
     password_hash VARCHAR(255)        NOT NULL,
     role          ENUM('admin','seller','viewer')
                                       NOT NULL DEFAULT 'seller',
-    avatar        VARCHAR(255)        NULL     COMMENT 'URL http(s) da foto de perfil, informada pelo admin',
     is_active            TINYINT(1)          NOT NULL DEFAULT 1 COMMENT '0 = usuário desativado (soft-delete)',
     password_must_change TINYINT(1)          NOT NULL DEFAULT 0 COMMENT '1 = forçar troca de senha no próximo login',
     is_system_admin      TINYINT(1)          NOT NULL DEFAULT 0 COMMENT '1 = admin da plataforma (acesso a /admin/tenants)',
