@@ -19,6 +19,37 @@ final class GoogleCalendarSync
     private const DONE_MARK  = '✓ ';
     private const DEFAULT_DURATION_MIN = 30;
 
+    private const LIST_BUDGET_MS = 4000;
+    private const LIST_PAGE_SIZE = 250;
+    private const GET_BUDGET_MS  = 2000;
+    private const GET_ITEMS      = 10;
+    // a spec nao tem linha para alterar ou excluir evento do google: e uma
+    // leitura e uma escrita, que cabem com folga no orcamento do envio no feed.
+    private const EVENT_OP_BUDGET_MS = 3000;
+
+    // a coluna tasks.title e varchar(200).
+    private const TITLE_MAX_CHARS  = 200;
+    private const NO_TITLE         = '(sem título)';
+    private const DUPLICATE_KEY    = 1062;
+    private const EVENT_ID_PATTERN = '/^[A-Za-z0-9_-]{1,1024}\z/';
+    private const RFC3339_PATTERN  = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})\z/';
+    private const DATE_PATTERN     = '/^\d{4}-\d{2}-\d{2}\z/';
+    private const FORM_TIME_PATTERN = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}\z/';
+
+    private const ERR_INVALID_ID     = 'Evento inválido.';
+    private const ERR_NOT_CONFIGURED = 'A integração com o Google Agenda não está configurada.';
+    private const ERR_INVALID_TIME   = 'Data ou horário inválido.';
+    private const ERR_MIXED          = 'Para mudar entre dia inteiro e horário, envie o início e o fim.';
+    private const ERR_END_BEFORE     = 'O fim precisa ser depois do início.';
+    private const ERR_NO_CHANGE      = 'Nenhuma alteração enviada.';
+    private const ERR_TASK_EVENT     = 'Este evento é de uma tarefa do CRM. Altere pela tarefa.';
+    private const ERR_CANNOT_EDIT    = 'Este evento não pode ser alterado pelo CRM.';
+    private const ERR_NOT_FOUND      = 'Este evento não existe mais no Google Agenda.';
+    private const ERR_RECONNECT      = 'A conexão com o Google Agenda expirou. Reconecte para continuar.';
+    private const ERR_UNAVAILABLE    = 'O Google Agenda não respondeu. Tente de novo.';
+    private const ERR_REFUSED        = 'O Google Agenda recusou a alteração.';
+    private const ERR_UNEXPECTED     = 'Não foi possível concluir a operação no Google Agenda.';
+
     // abaixo disto a chamada nem comeca: a ida e volta medida da vm ao google
     // foi de 185 a 202 ms numa chamada recusada com conexao nova, uma escrita
     // leva no minimo isso, e a chamada cortada pelo proprio orcamento pareceria
@@ -35,8 +66,8 @@ final class GoogleCalendarSync
     private \Closure $now;
     private Logger $logger;
 
-    // estes campos valem so durante um drain, entao a mesma instancia nao
-    // serve a dois envios ao mesmo tempo.
+    // estes campos valem so durante um drain, uma leitura do calendario ou uma
+    // operacao em evento, entao a mesma instancia nao serve a duas ao mesmo tempo.
     private float $deadline = 0.0;
     private int $itemsLeft = 0;
     private ?string $token = null;
@@ -88,6 +119,194 @@ final class GoogleCalendarSync
     }
 
     /**
+     * nunca lanca. as tarefas saem sempre do banco, entao nenhuma some com o
+     * google fora do ar; o google acrescenta os eventos so dele e traz para as
+     * tarefas vinculadas o que mudou la.
+     *
+     * @return array{status:'ok'|'degraded'|'reconnect', tasks:list<array<string, mixed>>, team:list<array<string, mixed>>, foreign:list<array<string, mixed>>}
+     */
+    public function window(int $userId, bool $isAdmin, \DateTimeImmutable $start, \DateTimeImmutable $end, bool $team): array
+    {
+        $status  = 'ok';
+        $foreign = [];
+
+        try {
+            // as ocorrencias novas precisam existir antes do envio, senao so
+            // chegam ao google na abertura seguinte.
+            $this->tasks->materializeRecurring($userId, $isAdmin);
+        } catch (\Throwable $e) {
+            $this->logFailure('ocorrencias recorrentes', $userId, $e);
+            $status = 'degraded';
+        }
+
+        if ($this->config->isConfigured()) {
+            $sent = $this->drain(self::PROFILE_FEED, $userId);
+            if ($sent === 'ok') {
+                [$read, $foreign] = $this->readCalendar($userId, $start, $end);
+                $status = self::worse($status, $read);
+            } else {
+                // rede ou conta que parou o envio pararia a lista do mesmo jeito.
+                $status = self::worse($status, $sent);
+            }
+        }
+
+        $from = self::localDateTime($start);
+        $to   = self::localDateTime($end);
+        try {
+            $tasks     = array_values($this->tasks->findForCalendar($userId, false, $from, $to));
+            $teamTasks = $team && $isAdmin ? array_values($this->tasks->findTeamForCalendar($userId, $from, $to)) : [];
+        } catch (\Throwable $e) {
+            $this->logFailure('tarefas do calendario', $userId, $e);
+            return ['status' => self::worse($status, 'degraded'), 'tasks' => [], 'team' => [], 'foreign' => $foreign];
+        }
+
+        return ['status' => $status, 'tasks' => $tasks, 'team' => $teamTasks, 'foreign' => $foreign];
+    }
+
+    /**
+     * nunca lanca. so altera evento de que o usuario e organizador e que nao e
+     * de tarefa, com o token dele, e manda so os campos recebidos.
+     *
+     * @param array{title?:string, description?:string, start?:string, end?:string, all_day?:bool} $fields
+     *        start e end em Y-m-d\TH:i no fuso de sao paulo, ou Y-m-d no dia inteiro, com o fim exclusivo
+     * @return array{ok:bool, error?:string}
+     */
+    public function updateForeignEvent(int $userId, string $eventId, array $fields): array
+    {
+        try {
+            $allDay = $fields['all_day'] ?? null;
+            $wanted = [];
+            foreach (['start', 'end'] as $edge) {
+                if (!array_key_exists($edge, $fields)) {
+                    continue;
+                }
+                $time = self::formTime($fields[$edge]);
+                if ($time === null || ($allDay !== null && $time['all_day'] !== $allDay)) {
+                    return self::failed(self::ERR_INVALID_TIME);
+                }
+                $wanted[$edge] = $time;
+            }
+
+            $patch = [];
+            if (array_key_exists('title', $fields)) {
+                $patch['summary'] = $fields['title'];
+            }
+            if (array_key_exists('description', $fields)) {
+                $patch['description'] = $fields['description'];
+            }
+            if ($patch === [] && $wanted === [] && $allDay === null) {
+                return self::failed(self::ERR_NO_CHANGE);
+            }
+            if (isset($wanted['start'], $wanted['end'])) {
+                $error = self::rangeError($wanted['start'], $wanted['end']);
+                if ($error !== null) {
+                    return self::failed($error);
+                }
+            }
+
+            $refused = $this->refuseEventRequest($userId, $eventId);
+            if ($refused !== null) {
+                return $refused;
+            }
+
+            $this->startCalls(self::EVENT_OP_BUDGET_MS);
+            $event = $this->readOwnEvent($userId, $eventId);
+            if ($event === null) {
+                return self::failed(self::ERR_NOT_FOUND);
+            }
+            if (is_string($event)) {
+                return self::failed($event);
+            }
+            if (!self::canEdit($event)) {
+                return self::failed(self::ERR_CANNOT_EDIT);
+            }
+
+            if ($wanted !== [] || $allDay !== null) {
+                // o lado nao enviado fica como esta no google, e o evento nao
+                // pode terminar com um lado de dia inteiro e o outro com horario.
+                $current = ['start' => self::googleTime($event['start'] ?? null), 'end' => self::googleTime($event['end'] ?? null)];
+                $start   = $wanted['start'] ?? $current['start'];
+                $end     = $wanted['end'] ?? $current['end'];
+                if ($start === null || $end === null || $start['all_day'] !== $end['all_day']
+                    || ($allDay !== null && $start['all_day'] !== $allDay)) {
+                    return self::failed(self::ERR_MIXED);
+                }
+                $error = self::rangeError($start, $end);
+                if ($error !== null) {
+                    return self::failed($error);
+                }
+                foreach ($wanted as $edge => $time) {
+                    $patch[$edge] = self::patchTime($time, $current[$edge]);
+                }
+            }
+            if ($patch === []) {
+                return ['ok' => true];
+            }
+
+            $response = $this->request($userId, 'PATCH', self::eventUrl($eventId), self::encodeBody($patch));
+            return $this->writeResult($userId, $response, false);
+        } catch (GoogleReconnectRequired $e) {
+            $this->logFailure('evento do google pede reconexao', $userId, $e);
+            return self::failed(self::ERR_RECONNECT);
+        } catch (GoogleUnavailable $e) {
+            $this->logFailure('renovacao do token sem resposta', $userId, $e);
+            return self::failed(self::ERR_UNAVAILABLE);
+        } catch (\Throwable $e) {
+            $this->logFailure('alterar evento do google', $userId, $e);
+            return self::failed(self::ERR_UNEXPECTED);
+        }
+    }
+
+    /**
+     * nunca lanca. evento que ja nao existe conta como excluido.
+     *
+     * @return array{ok:bool, error?:string}
+     */
+    public function deleteForeignEvent(int $userId, string $eventId): array
+    {
+        try {
+            $refused = $this->refuseEventRequest($userId, $eventId);
+            if ($refused !== null) {
+                return $refused;
+            }
+
+            $this->startCalls(self::EVENT_OP_BUDGET_MS);
+            $event = $this->readOwnEvent($userId, $eventId);
+            if ($event === null) {
+                return ['ok' => true];
+            }
+            if (is_string($event)) {
+                return self::failed($event);
+            }
+            if (!self::canEdit($event)) {
+                return self::failed(self::ERR_CANNOT_EDIT);
+            }
+
+            $response = $this->request($userId, 'DELETE', self::eventUrl($eventId), null);
+            return $this->writeResult($userId, $response, true);
+        } catch (GoogleReconnectRequired $e) {
+            $this->logFailure('evento do google pede reconexao', $userId, $e);
+            return self::failed(self::ERR_RECONNECT);
+        } catch (GoogleUnavailable $e) {
+            $this->logFailure('renovacao do token sem resposta', $userId, $e);
+            return self::failed(self::ERR_UNAVAILABLE);
+        } catch (\Throwable $e) {
+            $this->logFailure('excluir evento do google', $userId, $e);
+            return self::failed(self::ERR_UNEXPECTED);
+        }
+    }
+
+    /** @param array<string, mixed> $googleEvent */
+    public static function canEdit(array $googleEvent): bool
+    {
+        $organizer = $googleEvent['organizer'] ?? null;
+
+        return is_array($organizer) && ($organizer['self'] ?? null) === true
+            && ($googleEvent['eventType'] ?? null) === 'default'
+            && ($googleEvent['locked'] ?? null) !== true;
+    }
+
+    /**
      * @return 'ok'|'gone'|'conflict'|'reconnect'|'stop'|'drop'
      */
     public static function classify(int $status, string $body): string
@@ -128,7 +347,7 @@ final class GoogleCalendarSync
      */
     private function drainAccounts(array $profile, ?int $focusUserId): string
     {
-        $this->deadline  = ($this->now)() + $profile['budget_ms'] / 1000;
+        $this->startBudget($profile['budget_ms']);
         $this->itemsLeft = $profile['items'];
         $this->gotAnswer = false;
 
@@ -348,6 +567,517 @@ final class GoogleCalendarSync
             $this->logResponse('remocao de tarefa cancelada recusada, saiu da fila', $userId, $taskId, $response);
         }
         return 'done';
+    }
+
+    /**
+     * passos 3 a 5 da spec: o mapa das vinculadas, a lista da janela e a
+     * reconciliacao, com os eventos so do google de volta.
+     *
+     * @return array{0:'ok'|'degraded'|'reconnect', 1:list<array<string, mixed>>}
+     */
+    private function readCalendar(int $userId, \DateTimeImmutable $start, \DateTimeImmutable $end): array
+    {
+        $foreign = [];
+        try {
+            // lido antes da lista, para uma lista velha nao desfazer o que o crm
+            // gravou enquanto ela estava no ar.
+            $linked = $this->tasks->linkMap($userId);
+
+            $this->startCalls(self::LIST_BUDGET_MS);
+            [$status, $complete, $events] = $this->listEvents($userId, $start, $end);
+            if ($status === 'reconnect') {
+                return ['reconnect', []];
+            }
+
+            $seen = [];
+            foreach ($events as $event) {
+                $eventId = (string) $event['id'];
+                if (($event['status'] ?? null) === 'cancelled') {
+                    continue;
+                }
+                if (isset($linked[$eventId])) {
+                    $seen[$eventId] = true;
+                    $status = self::worse($status, $this->applyFromGoogle($userId, $linked[$eventId], $event));
+                    continue;
+                }
+                $item = self::foreignItem($event);
+                if ($item !== null) {
+                    $foreign[] = $item;
+                }
+            }
+
+            // so a lista inteira prova que um evento saiu da janela: com parte
+            // dela, a tarefa ausente poderia estar na pagina que nao veio.
+            if ($complete) {
+                $status = self::worse($status, $this->checkMissing($userId, $linked, $seen, $start, $end));
+            }
+            return [$status, $foreign];
+        } catch (GoogleReconnectRequired $e) {
+            $this->logFailure('leitura da agenda pede reconexao', $userId, $e);
+            return ['reconnect', $foreign];
+        } catch (\Throwable $e) {
+            $this->logFailure('leitura da agenda', $userId, $e);
+            return ['degraded', $foreign];
+        }
+    }
+
+    /**
+     * @return array{0:'ok'|'degraded'|'reconnect', 1:bool, 2:list<array<string, mixed>>} status, se veio inteira, eventos
+     */
+    private function listEvents(int $userId, \DateTimeImmutable $start, \DateTimeImmutable $end): array
+    {
+        $query = [
+            'singleEvents' => 'true',
+            'timeMin'      => $start->format(DATE_RFC3339),
+            'timeMax'      => $end->format(DATE_RFC3339),
+            'maxResults'   => self::LIST_PAGE_SIZE,
+        ];
+        $events    = [];
+        $pageToken = null;
+
+        do {
+            $page     = $pageToken === null ? $query : $query + ['pageToken' => $pageToken];
+            $response = $this->request($userId, 'GET', self::EVENTS_URL . '?' . http_build_query($page), null);
+            if ($response === null) {
+                // orcamento acabado no meio da paginacao: faltam eventos na tela.
+                return ['degraded', false, $events];
+            }
+
+            $outcome = self::classify($response['status'], $response['body']);
+            if ($outcome === 'reconnect') {
+                $this->logResponse('lista da agenda pede reconexao', $userId, null, $response);
+                $this->accounts->markRevoked($userId);
+                return ['reconnect', false, $events];
+            }
+            $data = $outcome === 'ok' ? json_decode($response['body'], true) : null;
+            if (!is_array($data)) {
+                $this->logResponse('lista da agenda sem resposta util', $userId, null, $response);
+                return ['degraded', false, $events];
+            }
+
+            foreach (is_array($data['items'] ?? null) ? $data['items'] : [] as $item) {
+                if (is_array($item) && is_string($item['id'] ?? null) && $item['id'] !== '') {
+                    $events[] = $item;
+                }
+            }
+            $next      = $data['nextPageToken'] ?? null;
+            $pageToken = is_string($next) && $next !== '' ? $next : null;
+        } while ($pageToken !== null);
+
+        return ['ok', true, $events];
+    }
+
+    /**
+     * @param array<string, mixed> $row linha do Task::linkMap
+     * @param array<string, mixed> $event
+     * @return 'ok'|'degraded'
+     */
+    private function applyFromGoogle(int $userId, array $row, array $event): string
+    {
+        $taskId = (int) $row['id'];
+        try {
+            $etag = is_string($event['etag'] ?? null) ? $event['etag'] : null;
+            // com pendencia o crm ganha: o envio ainda vai levar a versao dele.
+            if ((int) $row['google_sync_pending'] > 0 || $etag === null || $etag === $row['google_etag']) {
+                return 'ok';
+            }
+
+            $etagRead = $row['google_etag'] !== null ? (string) $row['google_etag'] : null;
+            $fields   = self::fieldsFromEvent($event, (string) $row['due_date']);
+            try {
+                $this->tasks->applyGoogleChange($taskId, $etagRead, $fields, $etag);
+            } catch (\PDOException $e) {
+                if (!self::isDuplicateKey($e) || !array_key_exists('due_date', $fields)) {
+                    throw $e;
+                }
+                // a data nova e a de outra ocorrencia da mesma serie. a tarefa fica
+                // onde esta, e o etag guardado evita repetir a colisao a cada abertura.
+                unset($fields['due_date']);
+                $this->tasks->applyGoogleChange($taskId, $etagRead, $fields, $etag);
+                $this->logFailure('data do google colide com outra ocorrencia da serie', $userId, $e, $taskId);
+                return 'degraded';
+            }
+            return 'ok';
+        } catch (\Throwable $e) {
+            $this->logFailure('reconciliar tarefa', $userId, $e, $taskId);
+            return 'degraded';
+        }
+    }
+
+    /**
+     * tarefas vinculadas que nao vieram na lista: um get por evento, as de
+     * prazo mais proximo primeiro, dentro do limite e do orcamento proprios.
+     *
+     * @param array<array-key, array<string, mixed>> $linked
+     * @param array<array-key, true> $seen
+     * @return 'ok'|'degraded'|'reconnect'
+     */
+    private function checkMissing(int $userId, array $linked, array $seen, \DateTimeImmutable $start, \DateTimeImmutable $end): string
+    {
+        $from    = self::localDateTime($start);
+        $to      = self::localDateTime($end);
+        $missing = array_filter(
+            $linked,
+            fn (array $row, int|string $eventId): bool => !isset($seen[$eventId])
+                && (int) $row['google_sync_pending'] === 0
+                && (string) $row['due_date'] >= $from
+                && (string) $row['due_date'] < $to,
+            ARRAY_FILTER_USE_BOTH,
+        );
+        uasort(
+            $missing,
+            fn (array $a, array $b): int => [(string) $a['due_date'], (int) $a['id']] <=> [(string) $b['due_date'], (int) $b['id']],
+        );
+
+        $this->startBudget(self::GET_BUDGET_MS);
+        $status = 'ok';
+        foreach (array_slice($missing, 0, self::GET_ITEMS, true) as $eventId => $row) {
+            $response = $this->request($userId, 'GET', self::eventUrl((string) $eventId), null);
+            if ($response === null) {
+                // orcamento acabado: o resto fica para a proxima abertura.
+                break;
+            }
+
+            $outcome = self::classify($response['status'], $response['body']);
+            if ($outcome === 'reconnect') {
+                $this->logResponse('leitura de evento pede reconexao', $userId, (int) $row['id'], $response);
+                $this->accounts->markRevoked($userId);
+                return 'reconnect';
+            }
+            if ($outcome === 'stop') {
+                $this->logResponse('leitura de evento sem resposta', $userId, (int) $row['id'], $response);
+                return self::worse($status, 'degraded');
+            }
+            $status = self::worse($status, $this->settleMissing($userId, $row, $outcome, $response));
+        }
+        return $status;
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     * @param 'ok'|'gone'|'conflict'|'drop' $outcome
+     * @param array{status:int, body:string} $response
+     * @return 'ok'|'degraded'
+     */
+    private function settleMissing(int $userId, array $row, string $outcome, array $response): string
+    {
+        $taskId = (int) $row['id'];
+        try {
+            if ($outcome === 'gone') {
+                $this->deletedInGoogle($row);
+                return 'ok';
+            }
+            $event = $outcome === 'ok' ? json_decode($response['body'], true) : null;
+            if (!is_array($event)) {
+                $this->logResponse('leitura de evento recusada, tarefa mantida', $userId, $taskId, $response);
+                return 'ok';
+            }
+
+            if (($event['status'] ?? null) === 'cancelled') {
+                // o google mantem titulo e inicio do evento apagado pelo dono
+                // (medido na tarefa 1). so com o id, ele mudou de agenda ou o
+                // motivo e desconhecido, e a tarefa so perde o vinculo.
+                if (isset($event['summary']) || isset($event['start'])) {
+                    $this->deletedInGoogle($row);
+                } else {
+                    $this->tasks->unlinkGoogle($taskId);
+                }
+                return 'ok';
+            }
+            return $this->applyFromGoogle($userId, $row, $event);
+        } catch (\Throwable $e) {
+            $this->logFailure('tarefa ausente da lista', $userId, $e, $taskId);
+            return 'degraded';
+        }
+    }
+
+    /** @param array<string, mixed> $row */
+    private function deletedInGoogle(array $row): void
+    {
+        // o molde cancelado pararia de gerar a serie, e a concluida e historico:
+        // os dois so perdem o vinculo.
+        $isTemplate = ($row['recurrence_type'] ?? 'none') !== 'none' && $row['recurrence_parent_id'] === null;
+        $isOpen     = in_array($row['status'], ['pending', 'in_progress'], true);
+        $this->tasks->unlinkGoogle((int) $row['id'], $isOpen && !$isTemplate ? 'cancelled' : null);
+    }
+
+    /**
+     * @param array<string, mixed> $event
+     * @return array<string, mixed>
+     */
+    private static function fieldsFromEvent(array $event, string $taskDue): array
+    {
+        $fields = [];
+
+        $start = self::googleTime($event['start'] ?? null);
+        if ($start !== null) {
+            $fields['due_date'] = $start['all_day']
+                ? $start['at']->format('Y-m-d') . ' ' . (new \DateTimeImmutable($taskDue))->format('H:i:s')
+                : $start['at']->format('Y-m-d H:i:s');
+        }
+
+        $title = self::titleFromGoogle($event['summary'] ?? null);
+        if ($title !== null) {
+            $fields['title'] = $title;
+        }
+
+        // dia inteiro nao vira duracao, senao o proximo envio criaria um evento de 24 h.
+        $end = self::googleTime($event['end'] ?? null);
+        if ($start !== null && $end !== null && !$start['all_day'] && !$end['all_day']) {
+            $minutes = intdiv($end['at']->getTimestamp() - $start['at']->getTimestamp(), 60);
+            if ($minutes > 0) {
+                $fields['google_duration_min'] = $minutes;
+            }
+        }
+
+        return $fields;
+    }
+
+    private static function titleFromGoogle(mixed $summary): ?string
+    {
+        if (!is_string($summary)) {
+            return null;
+        }
+        if (str_starts_with($summary, self::DONE_MARK)) {
+            $summary = substr($summary, strlen(self::DONE_MARK));
+        }
+        $title = trim($summary);
+
+        // o corte e por caractere para nao partir um acento ao meio.
+        return $title === '' ? null : mb_substr($title, 0, self::TITLE_MAX_CHARS, 'UTF-8');
+    }
+
+    /**
+     * @param array<string, mixed> $event
+     * @return array<string, mixed>|null null quando o inicio nao e legivel
+     */
+    private static function foreignItem(array $event): ?array
+    {
+        $start = self::googleTime($event['start'] ?? null);
+        if ($start === null) {
+            return null;
+        }
+        $end = self::googleTime($event['end'] ?? null);
+        if ($end !== null && $end['all_day'] !== $start['all_day']) {
+            return null;
+        }
+        // o fim de dia inteiro do google e exclusivo e segue assim para a tela.
+        $end ??= ['all_day' => $start['all_day'], 'at' => $start['all_day'] ? $start['at']->modify('+1 day') : $start['at']];
+
+        $id      = (string) $event['id'];
+        $format  = $start['all_day'] ? 'Y-m-d' : 'Y-m-d\TH:i:s';
+        $summary = $event['summary'] ?? null;
+        $link    = $event['htmlLink'] ?? null;
+
+        return [
+            'id'          => 'g_' . $id,
+            'google_id'   => $id,
+            'title'       => is_string($summary) && trim($summary) !== '' ? $summary : self::NO_TITLE,
+            'start'       => $start['at']->format($format),
+            'end'         => $end['at']->format($format),
+            'all_day'     => $start['all_day'],
+            'recurring'   => is_string($event['recurringEventId'] ?? null) && $event['recurringEventId'] !== '',
+            'description' => is_string($event['description'] ?? null) ? $event['description'] : '',
+            // o link vira href na tela, entao so passa endereco https.
+            'html_link'   => is_string($link) && str_starts_with($link, 'https://') ? $link : null,
+            'can_edit'    => self::canEdit($event),
+        ];
+    }
+
+    /**
+     * horario de um start ou end do google; o de dia inteiro fica a meia-noite.
+     *
+     * @return array{all_day:bool, at:\DateTimeImmutable}|null at no fuso de sao paulo
+     */
+    private static function googleTime(mixed $time): ?array
+    {
+        if (!is_array($time)) {
+            return null;
+        }
+
+        $dateTime = $time['dateTime'] ?? null;
+        if (is_string($dateTime)) {
+            if (preg_match(self::RFC3339_PATTERN, $dateTime) !== 1) {
+                return null;
+            }
+            try {
+                $at = new \DateTimeImmutable($dateTime);
+            } catch (\Exception) {
+                return null;
+            }
+            return ['all_day' => false, 'at' => $at->setTimezone(self::zone())];
+        }
+
+        $date = $time['date'] ?? null;
+        if (is_string($date) && preg_match(self::DATE_PATTERN, $date) === 1) {
+            $at = self::parseLocal('Y-m-d', $date);
+            return $at === null ? null : ['all_day' => true, 'at' => $at];
+        }
+
+        return null;
+    }
+
+    /** @return array{all_day:bool, at:\DateTimeImmutable}|null */
+    private static function formTime(string $value): ?array
+    {
+        if (preg_match(self::DATE_PATTERN, $value) === 1) {
+            $at = self::parseLocal('Y-m-d', $value);
+            return $at === null ? null : ['all_day' => true, 'at' => $at];
+        }
+        if (preg_match(self::FORM_TIME_PATTERN, $value) === 1) {
+            $at = self::parseLocal('Y-m-d\TH:i', $value);
+            return $at === null ? null : ['all_day' => false, 'at' => $at];
+        }
+        return null;
+    }
+
+    private static function parseLocal(string $format, string $value): ?\DateTimeImmutable
+    {
+        // a volta ao texto recusa o dia que nao existe, que o php empurraria para o mes seguinte.
+        $at = \DateTimeImmutable::createFromFormat('!' . $format, $value, self::zone());
+        return $at !== false && $at->format($format) === $value ? $at : null;
+    }
+
+    /**
+     * @param array{all_day:bool, at:\DateTimeImmutable} $start
+     * @param array{all_day:bool, at:\DateTimeImmutable} $end
+     */
+    private static function rangeError(array $start, array $end): ?string
+    {
+        if ($start['all_day'] !== $end['all_day']) {
+            return self::ERR_MIXED;
+        }
+        return $end['at'] <= $start['at'] ? self::ERR_END_BEFORE : null;
+    }
+
+    /**
+     * @param array{all_day:bool, at:\DateTimeImmutable} $time
+     * @param array{all_day:bool, at:\DateTimeImmutable}|null $current o mesmo lado no evento lido
+     * @return array<string, string|null>
+     */
+    private static function patchTime(array $time, ?array $current): array
+    {
+        if (!$time['all_day']) {
+            return self::eventTime($time['at']);
+        }
+        // nao medido: o dateTime null tira o horario do evento que vira dia
+        // inteiro, como o date null medido na tarefa 1 faz no sentido contrario.
+        return $current !== null && !$current['all_day']
+            ? ['date' => $time['at']->format('Y-m-d'), 'dateTime' => null]
+            : ['date' => $time['at']->format('Y-m-d')];
+    }
+
+    /** @return array{ok:false, error:string}|null */
+    private function refuseEventRequest(int $userId, string $eventId): ?array
+    {
+        if (preg_match(self::EVENT_ID_PATTERN, $eventId) !== 1) {
+            return self::failed(self::ERR_INVALID_ID);
+        }
+        if (!$this->config->isConfigured()) {
+            return self::failed(self::ERR_NOT_CONFIGURED);
+        }
+        // o mesmo mapa que tira o evento da lista de eventos so do google.
+        if (array_key_exists($eventId, $this->tasks->linkMap($userId))) {
+            return self::failed(self::ERR_TASK_EVENT);
+        }
+        return null;
+    }
+
+    /**
+     * @return array<string, mixed>|string|null o evento; null se ele nao existe mais; texto do erro para a tela
+     */
+    private function readOwnEvent(int $userId, string $eventId): array|string|null
+    {
+        $response = $this->request($userId, 'GET', self::eventUrl($eventId), null);
+        if ($response === null) {
+            return self::ERR_UNAVAILABLE;
+        }
+
+        $outcome = self::classify($response['status'], $response['body']);
+        if ($outcome === 'gone') {
+            return null;
+        }
+        if ($outcome !== 'ok') {
+            return $this->failureMessage($userId, $outcome, $response);
+        }
+
+        $event = json_decode($response['body'], true);
+        if (!is_array($event)) {
+            return self::ERR_UNAVAILABLE;
+        }
+        return ($event['status'] ?? null) === 'cancelled' ? null : $event;
+    }
+
+    /**
+     * @param array{status:int, body:string}|null $response
+     * @return array{ok:bool, error?:string}
+     */
+    private function writeResult(int $userId, ?array $response, bool $goneIsDone): array
+    {
+        if ($response === null) {
+            return self::failed(self::ERR_UNAVAILABLE);
+        }
+
+        $outcome = self::classify($response['status'], $response['body']);
+        if ($outcome === 'ok' || ($outcome === 'gone' && $goneIsDone)) {
+            return ['ok' => true];
+        }
+        if ($outcome === 'gone') {
+            return self::failed(self::ERR_NOT_FOUND);
+        }
+        return self::failed($this->failureMessage($userId, $outcome, $response));
+    }
+
+    /**
+     * @param 'conflict'|'reconnect'|'stop'|'drop' $outcome
+     * @param array{status:int, body:string} $response
+     */
+    private function failureMessage(int $userId, string $outcome, array $response): string
+    {
+        $this->logResponse('evento do google recusado', $userId, null, $response);
+        if ($outcome === 'reconnect') {
+            $this->accounts->markRevoked($userId);
+            return self::ERR_RECONNECT;
+        }
+        return $outcome === 'stop' ? self::ERR_UNAVAILABLE : self::ERR_REFUSED;
+    }
+
+    /** @return array{ok:false, error:string} */
+    private static function failed(string $message): array
+    {
+        return ['ok' => false, 'error' => $message];
+    }
+
+    private static function isDuplicateKey(\PDOException $e): bool
+    {
+        return (int) ($e->errorInfo[1] ?? 0) === self::DUPLICATE_KEY;
+    }
+
+    private static function localDateTime(\DateTimeImmutable $at): string
+    {
+        return $at->setTimezone(self::zone())->format('Y-m-d H:i:s');
+    }
+
+    private static function zone(): \DateTimeZone
+    {
+        return new \DateTimeZone(self::TIME_ZONE);
+    }
+
+    /**
+     * fora do envio, a leitura e a operacao em evento usam so o token do
+     * proprio usuario: o envio pode ter terminado com o de outra conta.
+     */
+    private function startCalls(int $budgetMs): void
+    {
+        $this->token     = null;
+        $this->renewed   = false;
+        $this->gotAnswer = false;
+        $this->startBudget($budgetMs);
+    }
+
+    private function startBudget(int $budgetMs): void
+    {
+        $this->deadline = ($this->now)() + $budgetMs / 1000;
     }
 
     /**
@@ -585,10 +1315,13 @@ final class GoogleCalendarSync
         ]);
     }
 
-    private function logFailure(string $what, ?int $userId, \Throwable $e): void
+    private function logFailure(string $what, ?int $userId, \Throwable $e, ?int $taskId = null): void
     {
-        $this->logger->error("[GoogleCalendarSync] {$what}", [
-            'user_id'   => $userId,
+        $context = ['user_id' => $userId];
+        if ($taskId !== null) {
+            $context['task_id'] = $taskId;
+        }
+        $this->logger->error("[GoogleCalendarSync] {$what}", $context + [
             'exception' => $e::class,
             'message'   => $e->getMessage(),
         ]);

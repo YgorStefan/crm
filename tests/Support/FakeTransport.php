@@ -274,13 +274,17 @@ final class FakeTransport implements HttpTransport
     private function listEvents(string $account, string $query): array
     {
         parse_str($query, $params);
+        $min = is_string($params['timeMin'] ?? null) ? (new \DateTimeImmutable($params['timeMin']))->getTimestamp() : null;
+        $max = is_string($params['timeMax'] ?? null) ? (new \DateTimeImmutable($params['timeMax']))->getTimestamp() : null;
+
+        // a janela segue a regra do google: entra o evento que termina depois de
+        // timeMin e comeca antes de timeMax, entao o de varios dias que comecou
+        // antes da janela aparece nela.
         $live = array_values(array_filter(
             $this->calendars[$account] ?? [],
-            fn (array $event): bool => $event['status'] !== 'cancelled',
+            fn (array $event): bool => $event['status'] !== 'cancelled' && self::overlaps($event, $min, $max),
         ));
 
-        // timeMin e timeMax nao filtram: a lista devolve todo evento vivo, e o
-        // teste que depende da janela escolhe os eventos que poe na agenda.
         $size   = isset($params['maxResults']) ? min($this->pageSize, max(1, (int) $params['maxResults'])) : $this->pageSize;
         $offset = isset($params['pageToken']) ? (int) $params['pageToken'] : 0;
 
@@ -290,6 +294,34 @@ final class FakeTransport implements HttpTransport
         }
 
         return self::ok($page);
+    }
+
+    /** @param array<string, mixed> $event */
+    private static function overlaps(array $event, ?int $min, ?int $max): bool
+    {
+        $start = self::instant($event['start'] ?? null);
+        if ($start === null) {
+            return true;
+        }
+        // o fim de dia inteiro ja e exclusivo no google, entao a meia-noite dele basta.
+        $end = self::instant($event['end'] ?? null) ?? $start;
+
+        return ($min === null || $end > $min) && ($max === null || $start < $max);
+    }
+
+    private static function instant(mixed $time): ?int
+    {
+        if (!is_array($time)) {
+            return null;
+        }
+        if (is_string($time['dateTime'] ?? null)) {
+            return (new \DateTimeImmutable($time['dateTime']))->getTimestamp();
+        }
+        if (is_string($time['date'] ?? null)) {
+            // dia inteiro vale no fuso da agenda, que nos testes e o de sao paulo.
+            return (new \DateTimeImmutable($time['date'] . ' 00:00:00', new \DateTimeZone('America/Sao_Paulo')))->getTimestamp();
+        }
+        return null;
     }
 
     /**
