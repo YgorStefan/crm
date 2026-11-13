@@ -391,8 +391,14 @@ class TaskController extends Controller
             }
             $data['priority'] = $priority;
         }
-        if (isset($_POST['title']))
-            $data['title'] = $this->input('title');
+        if (isset($_POST['title'])) {
+            $title = $this->input('title');
+            if ($title === '') {
+                $this->rejectTaskRequest('Título é obrigatório.');
+                return;
+            }
+            $data['title'] = $title;
+        }
         if (isset($_POST['due_date'])) {
             $dueDate = self::parseDueDate((string) $this->inputPost('due_date'));
             if ($dueDate === null) {

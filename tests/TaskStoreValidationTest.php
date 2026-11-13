@@ -323,6 +323,36 @@ class TaskStoreValidationTest extends TestCase
         $this->assertRespondeuErro($this->destroyResponse(999), 404, 'Tarefa não encontrada.');
     }
 
+    public function testEdicaoComTituloEmBrancoViaAjaxRecebe422(): void
+    {
+        $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
+        $id = $this->tarefaExistente();
+        $_POST = ['title' => '   '];
+
+        $this->assertRespondeu422($this->updateResponse($id), 'Título é obrigatório.');
+        $this->assertSame('Tarefa existente', $this->unicaTarefa()['title']);
+    }
+
+    public function testEdicaoComTituloVazioViaFormularioVoltaComFlash(): void
+    {
+        $id = $this->tarefaExistente();
+        $_POST = ['title' => ''];
+
+        $this->assertVoltouComFlash($this->updateResponse($id), '/tasks', 'Título é obrigatório.');
+        $this->assertSame('Tarefa existente', $this->unicaTarefa()['title']);
+    }
+
+    public function testEdicaoSoDoStatusSemTituloContinuaAceita(): void
+    {
+        $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
+        $id = $this->tarefaExistente();
+        $_POST = ['status' => 'done'];
+
+        $this->assertSame(200, $this->updateResponse($id)->status);
+        $this->assertSame('done', $this->pdo->query('SELECT status FROM tasks')->fetchColumn());
+        $this->assertSame('Tarefa existente', $this->unicaTarefa()['title']);
+    }
+
     public function testEdicaoPorSellerSemPermissaoRecebe403AntesDeValidarOPrazo(): void
     {
         $_SERVER['HTTP_X_REQUESTED_WITH'] = 'XMLHttpRequest';
