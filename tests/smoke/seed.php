@@ -25,6 +25,20 @@ require_once __DIR__ . '/../../config/app.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../core/Database.php';
 
+// o core/bootstrap.php registra este mesmo mapeamento, mas tambem abre sessao e
+// mexe em storage, entao o seed registra so o carregamento das classes do app.
+spl_autoload_register(function (string $className): void {
+    foreach (['Core\\' => CORE_PATH, 'App\\' => APP_PATH] as $prefix => $baseDir) {
+        if (str_starts_with($className, $prefix)) {
+            $file = $baseDir . DS . str_replace('\\', DS, substr($className, strlen($prefix))) . '.php';
+            if (is_file($file)) {
+                require_once $file;
+            }
+            return;
+        }
+    }
+});
+
 const E2E_SELLER_EMAIL = 'e2e.seller@crm.local';
 const E2E_SELLER_PASSWORD = 'E2eSeller@1234';
 const E2E_CLIENT_EMAIL = 'e2e.pipeline.card@crm.local';
@@ -86,23 +100,21 @@ $stmt->execute([
 
 // 4) o spec de tarefas cria "Tarefa E2E <timestamp>" e nunca a apaga; sem esta
 //    limpeza as sobras de runs anteriores se acumulam no dia em que o spec clica.
-//    o delete direto pula o task::delete, entao os eventos vinculados ao google,
-//    inclusive os das filhas que o cascade leva junto, entram na fila de remocao
-//    aqui, senao ficariam orfaos na agenda de quem estiver conectado.
-$pdo->beginTransaction();
-$pdo->exec("
-    INSERT INTO google_event_deletions (tenant_id, user_id, google_event_id)
-    SELECT t.tenant_id, t.google_owner_id, t.google_event_id
-    FROM tasks t
-    WHERE t.tenant_id = 1
-      AND t.google_event_id IS NOT NULL
-      AND t.google_owner_id IS NOT NULL
-      AND (t.title LIKE 'Tarefa E2E %'
-           OR t.recurrence_parent_id IN (
-               SELECT p.id FROM tasks p WHERE p.tenant_id = 1 AND p.title LIKE 'Tarefa E2E %'
-           ))
-");
-$pdo->exec("DELETE FROM tasks WHERE tenant_id = 1 AND title LIKE 'Tarefa E2E %'");
-$pdo->commit();
+//    a remocao passa pelo task::delete para os eventos no google, inclusive os das
+//    filhas que o cascade leva junto, entrarem na fila pela mesma regra do app,
+//    senao ficariam orfaos na agenda de quem estiver conectado. as maes vem antes,
+//    e a filha que o cascade ja levou nao acha mais linha nem enfileira de novo.
+//    o model e escopado pela sessao, entao o seed se passa pelo tenant 1, o mesmo
+//    dos usuarios que ele cria.
+$_SESSION['tenant_id'] = 1;
+$e2eTaskIds = $pdo->query("
+    SELECT id FROM tasks
+    WHERE tenant_id = 1 AND title LIKE 'Tarefa E2E %'
+    ORDER BY recurrence_parent_id IS NOT NULL, id
+")->fetchAll(PDO::FETCH_COLUMN);
+$taskModel = new App\Models\Task();
+foreach ($e2eTaskIds as $taskId) {
+    $taskModel->delete((int) $taskId);
+}
 
 echo "[seed] OK — admin@crm.local, e2e.seller@crm.local e cliente de kanban prontos.\n";
