@@ -156,6 +156,9 @@ final class GoogleAuth
         if ($account === false || $account['status'] !== 'active') {
             throw new GoogleReconnectRequired('A conta Google não está ativa.');
         }
+        // as gravacoes abaixo conferem este texto cifrado, para nao cair numa
+        // conta google conectada depois desta leitura.
+        $readRefresh = is_string($account['refresh_token']) ? $account['refresh_token'] : null;
 
         $now = ($this->now)();
         if (!$forceRefresh) {
@@ -166,11 +169,11 @@ final class GoogleAuth
             }
         }
 
-        $refresh = $this->decrypt($account['refresh_token']);
+        $refresh = $this->decrypt($readRefresh);
         if ($refresh === null) {
             // a causa tipica e a APP_KEY trocada, e so uma nova autorizacao
             // devolve um token legivel.
-            $this->accounts->markRevoked($userId);
+            $this->accounts->markRevokedIfRefreshToken($userId, $readRefresh);
             throw new GoogleReconnectRequired('O token salvo da conta Google não pôde ser decifrado.');
         }
 
@@ -193,6 +196,7 @@ final class GoogleAuth
             // a renovacao normalmente nao traz refresh_token, e o salvo continua valendo.
             $this->accounts->storeAccessToken(
                 $userId,
+                $readRefresh,
                 $this->encrypt($renewed),
                 $this->expiresAt($now, is_int($data['expires_in'] ?? null) ? $data['expires_in'] : 0),
             );
@@ -200,7 +204,7 @@ final class GoogleAuth
         }
 
         if (($data['error'] ?? null) === 'invalid_grant') {
-            $this->accounts->markRevoked($userId);
+            $this->accounts->markRevokedIfRefreshToken($userId, $readRefresh);
             throw new GoogleReconnectRequired('O Google recusou a renovação do token (invalid_grant).');
         }
 

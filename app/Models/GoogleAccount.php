@@ -60,19 +60,45 @@ class GoogleAccount extends Model
         ]);
     }
 
-    public function storeAccessToken(int $userId, string $encAccess, string $expiresAt): void
+    /**
+     * so grava se a linha ainda guarda o refresh_token cifrado que a renovacao
+     * leu: uma conta google conectada no meio do pedido tem outro texto
+     * cifrado, porque o iv e aleatorio, e nao recebe o token da conta antiga.
+     */
+    public function storeAccessToken(int $userId, ?string $readRefresh, string $encAccess, string $expiresAt): void
     {
         // so conta ativa: uma renovacao que termina depois do desconectar nao
         // pode devolver credencial a uma conta ja limpa.
         $stmt = $this->db->prepare(
             "UPDATE google_accounts SET access_token = :access, access_token_expires_at = :expires
-             WHERE user_id = :user_id AND tenant_id = :tenant_id AND status = 'active'"
+             WHERE user_id = :user_id AND tenant_id = :tenant_id AND status = 'active'
+               AND refresh_token <=> :read_refresh"
         );
         $stmt->execute([
-            ':access'    => $encAccess,
-            ':expires'   => $expiresAt,
-            ':user_id'   => $userId,
-            ':tenant_id' => $this->currentTenantId(),
+            ':access'       => $encAccess,
+            ':expires'      => $expiresAt,
+            ':user_id'      => $userId,
+            ':tenant_id'    => $this->currentTenantId(),
+            ':read_refresh' => $readRefresh,
+        ]);
+    }
+
+    /**
+     * o markRevoked da renovacao, que so revoga a conta cujo refresh_token
+     * cifrado ainda e o lido, pelo mesmo motivo do storeAccessToken. o <=>
+     * casa tambem o refresh_token nulo, que a falha ao decifrar revoga.
+     */
+    public function markRevokedIfRefreshToken(int $userId, ?string $readRefresh): void
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE google_accounts SET status = 'revoked'
+             WHERE user_id = :user_id AND tenant_id = :tenant_id AND status = 'active'
+               AND refresh_token <=> :read_refresh"
+        );
+        $stmt->execute([
+            ':user_id'      => $userId,
+            ':tenant_id'    => $this->currentTenantId(),
+            ':read_refresh' => $readRefresh,
         ]);
     }
 

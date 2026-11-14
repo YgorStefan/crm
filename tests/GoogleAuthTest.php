@@ -60,6 +60,36 @@ final class GoogleAuthTest extends TestCase
         return new GoogleAuth($this->config, $this->http, now: $this->http->now());
     }
 
+    /**
+     * a conta google b conecta logo depois de a renovacao ler a conta a, no
+     * intervalo em que o pedido ao google ainda esta no ar.
+     */
+    private function authComOutraContaConectandoDepoisDaLeitura(): GoogleAuth
+    {
+        $conectarOutraConta = function (): void {
+            $this->auth()->completeConnection(self::ANA, $this->trocado('sub-falso-conta-b'));
+        };
+        $contas = new class ($conectarOutraConta) extends GoogleAccount {
+            public function __construct(private ?\Closure $depoisDaLeitura)
+            {
+                parent::__construct();
+            }
+
+            public function findForUser(int $userId): array|false
+            {
+                $conta = parent::findForUser($userId);
+                $acao = $this->depoisDaLeitura;
+                $this->depoisDaLeitura = null;
+                if ($acao !== null) {
+                    $acao();
+                }
+                return $conta;
+            }
+        };
+
+        return new GoogleAuth($this->config, $this->http, accounts: $contas, now: $this->http->now());
+    }
+
     /** horario relativo ao relogio do transporte falso, no formato da coluna */
     private function aposT0(int $segundos): string
     {
@@ -677,6 +707,64 @@ final class GoogleAuthTest extends TestCase
         $this->assertSame([], $this->http->requests());
     }
 
+    public function testContaAtivaSemRefreshTokenPedeReconexao(): void
+    {
+        $this->conta(self::ANA, ['refresh_token' => null, 'access_token_expires_at' => $this->aposT0(-10)]);
+
+        $erro = $this->capturar(fn () => $this->auth()->accessTokenFor(self::ANA, 1500));
+
+        $this->assertInstanceOf(GoogleReconnectRequired::class, $erro);
+        $this->assertSame('revoked', $this->contaDe(self::ANA)['status']);
+        $this->assertSame([], $this->http->requests());
+    }
+
+    public function testRenovacaoNaoGravaTokenNaContaQueConectouDuranteOPedido(): void
+    {
+        $this->conta(self::ANA, ['access_token_expires_at' => $this->aposT0(-10)]);
+        $this->http->respond('oauth2.googleapis.com/token', 200, self::respostaDaRenovacao());
+
+        $this->authComOutraContaConectandoDepoisDaLeitura()->accessTokenFor(self::ANA, 1500);
+
+        $this->assertSame('refresh-falso', self::formulario($this->http->requests()[0]['body'])['refresh_token']);
+        $conta = $this->contaDe(self::ANA);
+        $this->assertSame('sub-falso-conta-b', $conta['google_sub']);
+        $this->assertSame('active', $conta['status']);
+        $this->assertSame('acesso-novo-falso', $this->decifrado($conta['access_token']));
+        $this->assertSame('refresh-novo-falso', $this->decifrado($conta['refresh_token']));
+    }
+
+    public function testInvalidGrantNaoRevogaContaQueConectouDuranteOPedido(): void
+    {
+        $this->conta(self::ANA, ['access_token_expires_at' => $this->aposT0(-10)]);
+        $this->http->respond('oauth2.googleapis.com/token', 400, [
+            'error' => 'invalid_grant', 'error_description' => 'Token has been expired or revoked.',
+        ]);
+
+        $erro = $this->capturar(fn () => $this->authComOutraContaConectandoDepoisDaLeitura()->accessTokenFor(self::ANA, 1500));
+
+        $this->assertInstanceOf(GoogleReconnectRequired::class, $erro);
+        $conta = $this->contaDe(self::ANA);
+        $this->assertSame('sub-falso-conta-b', $conta['google_sub']);
+        $this->assertSame('active', $conta['status']);
+    }
+
+    public function testFalhaAoDecifrarNaoRevogaContaQueConectouDepoisDaLeitura(): void
+    {
+        $this->conta(self::ANA, [
+            'refresh_token'           => self::cifradoComOutraChave('refresh-falso'),
+            'access_token'            => self::cifradoComOutraChave('acesso-falso'),
+            'access_token_expires_at' => $this->aposT0(3600),
+        ]);
+
+        $erro = $this->capturar(fn () => $this->authComOutraContaConectandoDepoisDaLeitura()->accessTokenFor(self::ANA, 1500));
+
+        $this->assertInstanceOf(GoogleReconnectRequired::class, $erro);
+        $conta = $this->contaDe(self::ANA);
+        $this->assertSame('sub-falso-conta-b', $conta['google_sub']);
+        $this->assertSame('active', $conta['status']);
+        $this->assertSame([], $this->http->requests());
+    }
+
     /** @return array<string, array{?string}> */
     public static function contasQueNaoEstaoAtivas(): array
     {
@@ -792,7 +880,8 @@ final class GoogleAuthTest extends TestCase
         $contas = new GoogleAccount();
 
         // uma renovacao que termina depois do desconectar nao pode devolver credencial a conta
-        $contas->storeAccessToken(self::ANA, $this->cifrado('acesso-falso'), $this->aposT0(3600));
+        $contas->storeAccessToken(self::ANA, null, $this->cifrado('acesso-falso'), $this->aposT0(3600));
+        $contas->markRevokedIfRefreshToken(self::ANA, null);
         $contas->markRevoked(self::ANA);
 
         $conta = $this->contaDe(self::ANA);
