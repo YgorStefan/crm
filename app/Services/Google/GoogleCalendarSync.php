@@ -100,8 +100,10 @@ final class GoogleCalendarSync
     }
 
     /**
-     * nunca lanca. com foco, o status e so daquela conta, que envia primeiro,
-     * entao rede fora do ar aparece na primeira chamada dela. trava ocupada
+     * nunca lanca. com foco, o status e so daquela conta, que envia primeiro
+     * quando tem trabalho na fila, e so entao a rede fora do ar aparece na
+     * primeira chamada dela. sem trabalho dela, a parada por rede em outra
+     * conta devolve ok, e quem precisa saber le o sendStopped. trava ocupada
      * conta como ok, e sem foco vale o pior status: reconnect, degraded, ok.
      *
      * @param array{items:int, budget_ms:int} $profile
