@@ -258,12 +258,12 @@ CREATE TABLE IF NOT EXISTS tasks (
     recurrence_parent_id INT UNSIGNED NULL COMMENT 'FK para tasks.id — NULL = task-pai ou não recorrente',
     created_by  INT UNSIGNED    NOT NULL COMMENT 'Usuário que criou a tarefa',
     tenant_id   INT UNSIGNED    NOT NULL DEFAULT 1 COMMENT 'Isolamento multi-tenant',
-    -- google_sync_pending e um contador: marcar soma 1, e o envio so zera se o
-    -- valor nao mudou desde a leitura, para nao perder edicao feita no meio.
     google_event_id     VARCHAR(255)    NULL,
     google_owner_id     INT UNSIGNED    NULL,
     google_etag         VARCHAR(100)    NULL,
     google_duration_min INT UNSIGNED    NULL,
+    -- google_sync_pending e um contador: marcar soma 1, e o envio so zera se o
+    -- valor nao mudou desde a leitura, para nao perder edicao feita no meio.
     google_sync_pending INT UNSIGNED    NOT NULL DEFAULT 1,
     created_at  TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at  TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP
