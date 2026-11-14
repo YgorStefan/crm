@@ -53,8 +53,13 @@ export default defineConfig({
     command: `php -S localhost:${PORT} -t public router.php`,
     url: `${BASE_URL}/login`,
     // o Playwright soma este env ao process.env; o .env so preenche o que o ambiente nao trouxe.
+    // as GOOGLE_* vazias desligam a integracao no servidor que o Playwright sobe, mesmo com
+    // as credenciais reais no .env, para as tarefas do E2E nunca irem a uma agenda de verdade.
+    // nao cobre um servidor que ja estava no ar, que o reuseExistingServer reaproveita.
     env: {
       APP_URL: `http://localhost:${PORT}`,
+      GOOGLE_CLIENT_ID: '',
+      GOOGLE_CLIENT_SECRET: '',
       ...(E2E_DB_NAME ? { DB_NAME: E2E_DB_NAME } : {}),
     },
     // true (não `!process.env.CI`) de propósito: no CI o servidor já é
