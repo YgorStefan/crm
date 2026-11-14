@@ -50,6 +50,40 @@ async function openNewTaskModalOnDay(page: Page, day = 10): Promise<string> {
     return dateStr;
 }
 
+// cria a tarefa pelo servidor e abre a edicao dela no calendario do mes seguinte.
+async function openEditOfNewTask(page: Page, day: number): Promise<{ id: string; title: string }> {
+    const title = `Tarefa E2E ${Date.now()}`;
+    expect(await postFromPage(page, '/tasks/store', {
+        title, due_date: `${nextMonthDate(day)}T09:00`, priority: 'medium', description: 'Descrição E2E',
+    })).toBe(true);
+
+    await page.reload();
+    await expect(page.locator('#fc-calendar')).toBeVisible();
+    await page.locator('.fc-next-button').click();
+    await page.getByText(title).click();
+    await expect(page.locator('#modalTaskTitle')).toHaveText('Editar Tarefa');
+    await expect(page.locator('#task_title')).toHaveValue(title);
+    return { id: await page.locator('#task_id').inputValue(), title };
+}
+
+// clica em salvar e devolve os campos que o modal mandou, sem o token de csrf.
+async function saveAndCaptureFields(page: Page, taskId: string): Promise<Record<string, string>> {
+    const sent = page.waitForRequest((r) => r.url().endsWith(`/tasks/${taskId}/update`) && r.method() === 'POST');
+    const answered = page.waitForResponse((r) => r.url().endsWith(`/tasks/${taskId}/update`) && r.request().method() === 'POST');
+    await page.locator('#btnSaveTask').click();
+    const fields = Object.fromEntries(new URLSearchParams((await sent).postData() ?? '').entries());
+    expect((await answered).ok()).toBeTruthy();
+    delete fields._csrf_token;
+    return fields;
+}
+
+async function readTask(page: Page, taskId: string): Promise<Record<string, string>> {
+    return page.evaluate(async (id) => {
+        const appUrl = document.querySelector<HTMLMetaElement>('meta[name="app-url"]')!.content;
+        return (await fetch(appUrl + '/api/tasks/' + id)).json();
+    }, taskId);
+}
+
 async function openKanbanClientPage(page: Page): Promise<void> {
     await page.goto('/clients?search=' + encodeURIComponent('Cliente E2E Kanban'));
     await page.getByRole('link', { name: 'Cliente E2E Kanban', exact: true }).first().click();
@@ -250,6 +284,42 @@ test.describe('Tarefas / Calendário', () => {
 
         await expect.poll(() => alerts).toEqual(['Tarefa não encontrada.']);
         await expect(page.locator('#modalTask')).toBeVisible();
+    });
+
+    test('a edição que muda só a prioridade manda só a prioridade', async ({ page }) => {
+        const task = await openEditOfNewTask(page, 24);
+
+        await page.locator('#task_priority').selectOption('high');
+        expect(await saveAndCaptureFields(page, task.id)).toEqual({ priority: 'high' });
+
+        await expect(page.locator('#modalTask')).toBeHidden();
+        const saved = await readTask(page, task.id);
+        expect(saved.priority).toBe('high');
+        expect(saved.title).toBe(task.title);
+        expect(saved.due_date).toBe(`${nextMonthDate(24)} 09:00:00`);
+        expect(saved.description).toBe('Descrição E2E');
+    });
+
+    test('a edição que muda só o prazo manda só o prazo', async ({ page }) => {
+        const task = await openEditOfNewTask(page, 26);
+
+        await page.locator('#task_due_date').fill(`${nextMonthDate(27)}T14:30`);
+        expect(await saveAndCaptureFields(page, task.id)).toEqual({ due_date: `${nextMonthDate(27)}T14:30` });
+
+        await expect(page.locator('#modalTask')).toBeHidden();
+        const saved = await readTask(page, task.id);
+        expect(saved.due_date).toBe(`${nextMonthDate(27)} 14:30:00`);
+        expect(saved.priority).toBe('medium');
+        expect(saved.description).toBe('Descrição E2E');
+    });
+
+    test('a edição sem mudança manda o pedido sem campos e fecha o modal como antes', async ({ page }) => {
+        const task = await openEditOfNewTask(page, 28);
+
+        expect(await saveAndCaptureFields(page, task.id)).toEqual({});
+
+        await expect(page.locator('#modalTask')).toBeHidden();
+        expect((await readTask(page, task.id)).due_date).toBe(`${nextMonthDate(28)} 09:00:00`);
     });
 
     test('nova tarefa mostra a mensagem do servidor quando o responsável foi desativado depois de a tela abrir', async ({ page }) => {

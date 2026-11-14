@@ -84,6 +84,7 @@
         #feedRequest = 0;
         #googleBarState = null;
         #googleEvent = null;
+        #editInitial = null;
 
         constructor(el) {
             this.#calendarEl = el.querySelector('#fc-calendar');
@@ -577,6 +578,7 @@
                 document.getElementById('task_description').value = task.description || '';
                 const assignedEl = document.getElementById('task_assigned_to');
                 if (assignedEl && task.assigned_to) assignedEl.value = task.assigned_to;
+                this.#editInitial = this.#taskFormValues();
 
                 const canEdit = this.#userRole === 'admin' ||
                     (this.#userRole === 'seller' && (task.assigned_to == this.#userId || task.created_by == this.#userId));
@@ -611,20 +613,33 @@
             }
         }
 
+        #taskFormValues() {
+            const values = {
+                title:       document.getElementById('task_title').value,
+                due_date:    document.getElementById('task_due_date').value,
+                priority:    document.getElementById('task_priority').value,
+                description: document.getElementById('task_description').value,
+            };
+            const assignedEl = document.getElementById('task_assigned_to');
+            if (assignedEl) values.assigned_to = assignedEl.value;
+            return values;
+        }
+
         async #saveTask() {
             const taskId = document.getElementById('task_id').value;
             const url = taskId
                 ? this.#appUrl + '/tasks/' + taskId + '/update'
                 : this.#appUrl + '/tasks/store';
 
-            const body = new URLSearchParams({
-                title:       document.getElementById('task_title').value,
-                due_date:    document.getElementById('task_due_date').value,
-                priority:    document.getElementById('task_priority').value,
-                description: document.getElementById('task_description').value,
-            });
-            const assignedEl = document.getElementById('task_assigned_to');
-            if (assignedEl) body.append('assigned_to', assignedEl.value);
+            // na edicao vai so o que a pessoa mudou desde a abertura: um campo
+            // reenviado com o valor lido ao abrir desfaria o que mudou depois, como
+            // uma remarcacao trazida do google. sem mudanca o pedido vai sem campos
+            // e o servidor responde como antes, inclusive com a tarefa ja removida.
+            const initial = taskId ? this.#editInitial : null;
+            const body = new URLSearchParams();
+            for (const [field, value] of Object.entries(this.#taskFormValues())) {
+                if (!initial || value !== initial[field]) body.append(field, value);
+            }
             const recurCheckbox = document.getElementById('task_recur_enabled');
             if (!taskId && recurCheckbox && recurCheckbox.checked) {
                 body.append('recurrence_type', document.getElementById('task_recurrence_type').value);
