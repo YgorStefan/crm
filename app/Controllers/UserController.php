@@ -3,30 +3,19 @@
 namespace App\Controllers;
 
 use Core\Controller;
+use Core\Logger;
 use Core\Middleware\CsrfMiddleware;
+use App\Models\GoogleAccount;
 use App\Models\User;
+use App\Services\Google\CurlTransport;
+use App\Services\Google\GoogleAuth;
+use App\Services\Google\GoogleConfig;
 
 class UserController extends Controller
 {
     public function __construct(
         private User $users = new User(),
     ) {}
-
-    /**
-     * Valida que o avatar é uma URL http(s) bem formada; caso contrário
-     * descarta (retorna null) — evita esquemas como javascript:/data: ou
-     * strings arbitrárias sendo persistidas no campo.
-     */
-    private function validAvatarUrl(string $avatar): ?string
-    {
-        if ($avatar === '') {
-            return null;
-        }
-        if (!filter_var($avatar, FILTER_VALIDATE_URL) || !preg_match('#^https?://#i', $avatar)) {
-            return null;
-        }
-        return $avatar;
-    }
 
     /**
      * Lista todos os usuários (somente admin).
@@ -36,7 +25,6 @@ class UserController extends Controller
         $this->requireRole('admin');
 
         $this->render('admin/users/index', [
-            'pageTitle' => 'Usuários',
             'title' => 'Usuários — ' . APP_NAME,
             'users' => $this->users->findAll(),
         ]);
@@ -52,7 +40,6 @@ class UserController extends Controller
     {
         $this->requireRole('admin');
         $this->render('admin/users/create', [
-            'pageTitle' => 'Novo Usuário',
             'title' => 'Novo Usuário — ' . APP_NAME,
             'csrf_token' => CsrfMiddleware::getToken(),
         ]);
@@ -86,14 +73,12 @@ class UserController extends Controller
             return;
         }
 
-        $avatar = $this->validAvatarUrl(trim($_POST['avatar'] ?? ''));
         $this->users->create([
             'name' => $name,
             'email' => $email,
             // Aplica o hash bcrypt — nunca armazene senhas em texto puro
             'password_hash' => password_hash($password, PASSWORD_BCRYPT, ['cost' => 12]),
             'role' => in_array($role, ['admin', 'seller', 'viewer']) ? $role : 'seller',
-            'avatar' => $avatar,
         ]);
 
         $this->flash('success', "Usuário \"{$name}\" criado com sucesso!");
@@ -118,7 +103,6 @@ class UserController extends Controller
         }
 
         $this->render('admin/users/edit', [
-            'pageTitle' => 'Editar: ' . $user['name'],
             'title' => 'Editar Usuário — ' . APP_NAME,
             'user' => $user,
             'csrf_token' => CsrfMiddleware::getToken(),
@@ -150,7 +134,6 @@ class UserController extends Controller
             'email' => $email,
             'role' => in_array($requestedRole, ['admin', 'seller', 'viewer'], true) ? $requestedRole : 'seller',
             'is_active' => isset($_POST['is_active']) ? 1 : 0,
-            'avatar' => $this->validAvatarUrl(trim($_POST['avatar'] ?? '')),
         ];
 
         // Atualiza senha apenas se foi preenchida
@@ -165,13 +148,15 @@ class UserController extends Controller
         }
 
         $this->users->update($id, $data);
+        if (self::editRemovesGoogle($data)) {
+            $this->disconnectGoogle($id);
+        }
 
         // Atualiza a sessão se o admin editou o próprio perfil
         if ($id === (int) ($_SESSION['user']['id'] ?? 0)) {
             $_SESSION['user']['name']   = $data['name'];
             $_SESSION['user']['email']  = $data['email'];
             $_SESSION['user']['role']   = $data['role'];
-            $_SESSION['user']['avatar'] = $data['avatar'];
         }
 
         $this->flash('success', 'Usuário atualizado com sucesso!');
@@ -194,8 +179,42 @@ class UserController extends Controller
         }
 
         $this->users->update($id, ['is_active' => 0]);
+        $this->disconnectGoogle($id);
 
         $this->flash('success', 'Usuário desativado com sucesso.');
         $this->redirect('/admin/users');
+    }
+
+    /**
+     * leitor nao tem a barra do google para desconectar, e o envio nao olha o
+     * papel, entao rebaixar a leitor desconecta como desativar.
+     *
+     * @param array{is_active:int, role:string} $data o que a edicao gravou
+     */
+    public static function editRemovesGoogle(array $data): bool
+    {
+        return $data['is_active'] === 0 || $data['role'] === 'viewer';
+    }
+
+    // usuario desativado ou rebaixado a leitor nao deixa credencial do google
+    // guardada. a edicao ja foi gravada, entao a falha aqui so fica registrada.
+    private function disconnectGoogle(int $userId): void
+    {
+        try {
+            $config = GoogleConfig::fromEnv();
+            if ($config->isConfigured()) {
+                (new GoogleAuth($config, new CurlTransport()))->disconnect($userId);
+            } else {
+                // com a integracao desligada o crm nao chama o google, entao so
+                // os tokens guardados saem, sem a revogacao.
+                (new GoogleAccount())->markDisconnected($userId);
+            }
+        } catch (\Throwable $e) {
+            (new Logger())->error('[UserController] desconectar o google do usuario desativado ou rebaixado a leitor', [
+                'user_id'   => $userId,
+                'exception' => $e::class,
+                'message'   => $e->getMessage(),
+            ]);
+        }
     }
 }

@@ -17,6 +17,9 @@ $router->get('/login', 'AuthController', 'loginForm', [], public: true);
 $router->post('/login', 'AuthController', 'login', ['RateLimitMiddleware', 'CsrfMiddleware'], public: true);
 $router->get('/logout', 'AuthController', 'logout');
 
+// a politica de privacidade fica publica porque o google confere essa url, sem login, ao publicar o app oauth do google agenda.
+$router->get('/privacidade', 'PrivacyController', 'index', [], public: true);
+
 // ---- Troca de senha obrigatória (AuthMiddleware libera mesmo com password_must_change) ----
 $router->get('/profile/change-password', 'ProfileController', 'changePasswordForm');
 $router->post('/profile/change-password', 'ProfileController', 'changePassword', ['CsrfMiddleware']);
@@ -66,6 +69,17 @@ $router->post('/tasks/{id}/cancel-recurrence', 'TaskController', 'cancelRecurren
 $router->get('/api/tasks/upcoming', 'TaskController', 'upcoming');
 $router->get('/api/tasks/calendar', 'TaskController', 'calendarFeed');
 $router->get('/api/tasks/{id}', 'TaskController', 'getTask');
+
+// ---- Google Agenda ----
+$router->get('/google/connect', 'GoogleController', 'connect');
+// o google volta sem o cookie samesite strict da sessao, entao esta rota e
+// publica e so repassa a query ao finish, que ja chega com o cookie.
+$router->get('/google/callback', 'GoogleController', 'callback', [], public: true);
+$router->get('/google/callback/finish', 'GoogleController', 'finish');
+$router->post('/google/disconnect', 'GoogleController', 'disconnect', ['CsrfMiddleware']);
+// {google_id} e nao {id}, porque o {id} so casa digitos e o id do google tem letras.
+$router->post('/api/google/events/{google_id}/update', 'GoogleController', 'updateEvent', ['CsrfMiddleware']);
+$router->post('/api/google/events/{google_id}/delete', 'GoogleController', 'deleteEvent', ['CsrfMiddleware']);
 
 // ---- API AJAX — dados para gráficos do dashboard ----
 $router->get('/api/dashboard/stats', 'DashboardController', 'stats');

@@ -98,7 +98,6 @@ class AuthController extends Controller
             'name' => $user['name'],
             'email' => $user['email'],
             'role' => $user['role'],
-            'avatar' => $user['avatar'],
             // AuthMiddleware usa esta flag para forçar a troca de senha antes de
             // liberar qualquer outra rota — precisa vir da sessão, não só do banco.
             'password_must_change' => !empty($user['password_must_change']),

@@ -6,7 +6,8 @@ $csrf_token = $csrf_token ?? '';
 $_jsV = static fn(string $f): string => is_file(__DIR__ . '/../../../public/assets/js/' . $f)
     ? (string) filemtime(__DIR__ . '/../../../public/assets/js/' . $f) : '0';
 $pageScripts =
-    '<script nonce="' . CSP_NONCE . '" defer src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>' .
+    '<script nonce="' . CSP_NONCE . '" defer src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"' .
+    ' integrity="sha384-EnyY0/GSHQGSxSgMwaIPzSESbqoOLSexfnSMN2AP+39Ckmn92stwABZynq1JyzdT" crossorigin="anonymous"></script>' .
     '<script nonce="' . CSP_NONCE . '" defer src="' . APP_URL . '/assets/js/cold-contacts.js?v=' . $_jsV('cold-contacts.js') . '"></script>';
 unset($_jsV);
 $_canEdit = in_array($_SESSION['user']['role'] ?? '', ['admin', 'seller']) ? '1' : '0';

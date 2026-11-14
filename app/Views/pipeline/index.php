@@ -68,8 +68,7 @@
                 <!-- Nome (+ avatar inline quando nao ha valor) e empresa -->
                 <div class="flex items-center justify-between gap-2">
                     <a href="<?= APP_URL ?>/clients/<?= $client['id'] ?>"
-                       class="block font-semibold text-gray-800 dark:text-white text-sm hover:text-indigo-700 dark:hover:text-indigo-400 truncate flex-1 min-w-0"
-                       onclick="event.stopPropagation()">
+                       class="block font-semibold text-gray-800 dark:text-white text-sm hover:text-indigo-700 dark:hover:text-indigo-400 truncate flex-1 min-w-0">
                         <?= htmlspecialchars($client['name'], ENT_QUOTES, 'UTF-8') ?>
                     </a>
                     <?php if (!$hasValue && $client['assigned_name']): ?>

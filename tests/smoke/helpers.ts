@@ -12,6 +12,36 @@ export const E2E_SELLER_PASSWORD = 'E2eSeller@1234';
 export const DEFAULT_ADMIN_EMAIL = 'admin@crm.local';
 export const DEFAULT_ADMIN_PASSWORD = 'Admin@1234';
 
+export const E2E_ASSIGNEE_NAME = 'E2E Responsável Desativado';
+
+// fora do spec que o usa o responsavel fica desativado, para nao entrar no select dos outros specs.
+export async function setE2eAssigneeActive(active: boolean): Promise<void> {
+    await execFileAsync('php', [path.join(__dirname, 'e2e-assignee.php'), active ? 'on' : 'off']);
+}
+
+// o script de cada tela e defer e so liga os handlers depois de baixar os scripts que vem
+// antes dele, inclusive os de cdn; depois de uma navegacao por clique, o primeiro elemento
+// visivel ja aceita clique sem handler nenhum. o domcontentloaded so dispara depois que
+// todos os scripts defer rodaram, entao quem vai clicar em seguida espera por ele.
+export async function waitForScreenScripts(page: Page): Promise<void> {
+    await page.waitForLoadState('domcontentloaded');
+}
+
+// cada confirm e respondido na hora com a proxima resposta da fila (e recusado quando a fila
+// acaba), porque com o dialogo aberto a pagina para e nenhuma verificacao seguinte roda.
+export function answerDialogs(page: Page, answers: boolean[]): string[] {
+    const messages: string[] = [];
+    page.on('dialog', async (dialog) => {
+        messages.push(dialog.message());
+        if (answers.shift()) {
+            await dialog.accept();
+        } else {
+            await dialog.dismiss();
+        }
+    });
+    return messages;
+}
+
 /**
  * Limpa as tentativas de login registradas para o IP local (ver comentário
  * em tests/smoke/reset-rate-limit.php). Chamar antes de qualquer teste que

@@ -343,6 +343,10 @@
                 if (inpTitle)  inpTitle.value  = '';
                 if (inpDue)    inpDue.value    = todayAt8();
                 if (selPrio)   selPrio.value   = 'medium';
+                if (selAssign) {
+                    for (const opt of selAssign.options) opt.selected = opt.defaultSelected;
+                    window.CRMSelect?.sync?.(selAssign);
+                }
                 if (inpDesc)   inpDesc.value   = '';
                 if (recurChk)  recurChk.checked = false;
                 if (recurWrap) recurWrap.classList.add('hidden');
@@ -415,7 +419,7 @@
 
                 try {
                     const { ok, data } = await CRM.api.post(this.#appUrl + '/tasks/store', body);
-                    if (!ok || !data?.success) { this.#notify('Erro ao salvar tarefa.', 'error'); return; }
+                    if (!ok || !data?.success) { this.#notify(data?.error || 'Erro ao salvar tarefa.', 'error'); return; }
                     appendTaskRow({ title, due_date: due, priority: selPrio?.value || 'medium' });
                     closeModal();
                     this.#notify('Tarefa criada com sucesso!', 'success');

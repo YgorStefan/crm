@@ -64,6 +64,13 @@ class RateLimitMiddleware
         (new Logger())->warning($logMessage);
         $_SESSION['flash'] = ['type' => 'error', 'message' => $userMessage];
         header('Location: ' . APP_URL . '/login');
+        $this->terminate();
+    }
+
+    // o exit fica num metodo proprio porque o teste chama o middleware no mesmo processo
+    // do phpunit, e um exit ali encerraria a suite com codigo 0 e sem resumo.
+    protected function terminate(): void
+    {
         exit;
     }
 

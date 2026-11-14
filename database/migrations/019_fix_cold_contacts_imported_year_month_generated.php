@@ -4,12 +4,13 @@
  *
  * Por que existe:
  *   schema.sql e a migration 010 declaram imported_year_month como coluna
- *   GENERATED ALWAYS AS (DATE_FORMAT(imported_at, '%Y-%m')) STORED, mas em
- *   bancos provisionados antes da migration 010 ela pode ter ficado como
- *   VARCHAR(7) comum (drift de schema). Como MySQL/MariaDB rejeitam INSERT
- *   com valor explicito em coluna GENERATED, o codigo (App\Models\ColdContact)
- *   so pode confiar na auto-geracao se a coluna realmente for GENERATED em
- *   TODOS os ambientes — por isso esta migration normaliza o schema.
+ *   GENERATED ALWAYS AS (CONCAT(YEAR(imported_at), '-', LPAD(MONTH(imported_at),
+ *   2, '0'))) STORED, mas em bancos provisionados antes da migration 010 ela
+ *   pode ter ficado como VARCHAR(7) comum (drift de schema). Como MySQL/MariaDB
+ *   rejeitam INSERT com valor explicito em coluna GENERATED, o codigo
+ *   (App\Models\ColdContact) so pode confiar na auto-geracao se a coluna
+ *   realmente for GENERATED em TODOS os ambientes — por isso esta migration
+ *   normaliza o schema.
  *
  *   Se a coluna ja existir e ja for GENERATED, nao faz nada. Se existir como
  *   coluna comum, recria como GENERATED (o valor e 100% derivavel de
@@ -55,7 +56,7 @@ if ($extra !== false && !$isGenerated) {
 $pdo->exec("
     ALTER TABLE cold_contacts
         ADD COLUMN imported_year_month
-            CHAR(7) GENERATED ALWAYS AS (DATE_FORMAT(imported_at, '%Y-%m')) STORED
+            CHAR(7) GENERATED ALWAYS AS (CONCAT(YEAR(imported_at), '-', LPAD(MONTH(imported_at), 2, '0'))) STORED
 ");
 
 $idx = $pdo->query("SHOW INDEX FROM cold_contacts WHERE Key_name = 'idx_cc_year_month'")->fetch();

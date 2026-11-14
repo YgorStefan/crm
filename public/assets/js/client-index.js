@@ -34,18 +34,22 @@
                     document.getElementById('qiClientId').value = btn.dataset.clientId;
                     document.getElementById('qiClientName').textContent = btn.dataset.clientName;
                     const now = new Date();
-                    now.setSeconds(0, 0);
-                    document.getElementById('qiOccurredAt').value = now.toISOString().slice(0, 16);
+                    const pad = n => String(n).padStart(2, '0');
+                    document.getElementById('qiOccurredAt').value = now.getFullYear() + '-' + pad(now.getMonth() + 1)
+                        + '-' + pad(now.getDate()) + 'T' + pad(now.getHours()) + ':' + pad(now.getMinutes());
                     document.getElementById('modalQuickInteraction').classList.remove('hidden');
                 }
 
                 if (btn.dataset.action === 'open-quick-task') {
                     document.getElementById('qtClientId').value = btn.dataset.clientId;
                     document.getElementById('qtClientName').textContent = btn.dataset.clientName;
+                    document.getElementById('qt_title').value = '';
+                    document.getElementById('qt_priority').value = 'medium';
                     const tomorrow = new Date();
                     tomorrow.setDate(tomorrow.getDate() + 1);
-                    tomorrow.setHours(12, 0, 0, 0);
-                    document.getElementById('qt_due_date').value = tomorrow.toISOString().slice(0, 16);
+                    const pad = n => String(n).padStart(2, '0');
+                    document.getElementById('qt_due_date').value = tomorrow.getFullYear() + '-' + pad(tomorrow.getMonth() + 1)
+                        + '-' + pad(tomorrow.getDate()) + 'T12:00';
                     // Reset recorrência
                     const chk = document.getElementById('qt_recur_enabled');
                     const wrap = document.getElementById('qt_recur_select_wrap');

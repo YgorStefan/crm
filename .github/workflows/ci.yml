@@ -26,15 +26,18 @@ jobs:
     timeout-minutes: 20
 
     services:
-      mysql:
-        image: mysql:8.0
+      # o mesmo motor de producao: com o mysql no ci, o que so ele aceita (como a
+      # coluna gerada com DATE_FORMAT, erro 1901 no mariadb) chegava a producao
+      # sem nenhum teste quebrar.
+      mariadb:
+        image: mariadb:11
         env:
-          MYSQL_ROOT_PASSWORD: root
-          MYSQL_DATABASE: crm_db
+          MARIADB_ROOT_PASSWORD: root
+          MARIADB_DATABASE: crm_db
         ports:
           - 3306:3306
         options: >-
-          --health-cmd="mysqladmin ping -proot"
+          --health-cmd="healthcheck.sh --connect --innodb_initialized"
           --health-interval=5s
           --health-timeout=5s
           --health-retries=10
@@ -61,7 +64,7 @@ jobs:
 
       # Cedo de propósito: é o passo mais barato do job e não precisa de banco,
       # navegador nem CSS compilado — falha de tipo aparece em segundos em vez
-      # de depois de subir MySQL e Playwright.
+      # de depois de subir MariaDB e Playwright.
       - name: Análise estática (PHPStan)
         run: composer analyse
 
@@ -93,21 +96,38 @@ jobs:
       - name: Criar config/database.php (gitignored — lê credenciais do .env)
         run: cp config/database.php.example config/database.php
 
-      - name: Aguardar MySQL ficar pronto
+      # os passos de shell usam o cliente de dentro do container, da mesma versao
+      # do servidor, em vez do mysql que vem instalado no runner.
+      - name: Aguardar MariaDB ficar pronto
+        env:
+          MARIADB_ID: ${{ job.services.mariadb.id }}
         run: |
           for i in $(seq 1 30); do
-            mysqladmin ping -h127.0.0.1 -uroot -proot --silent && break
+            docker exec "$MARIADB_ID" mariadb-admin ping -uroot -proot --silent && break
             sleep 2
           done
 
       - name: Importar schema do banco
-        run: mysql -h127.0.0.1 -uroot -proot crm_db < database/schema.sql
+        env:
+          MARIADB_ID: ${{ job.services.mariadb.id }}
+        run: docker exec -i "$MARIADB_ID" mariadb -uroot -proot crm_db < database/schema.sql
 
       - name: Registrar baseline das migrations
         run: php bin/migrate.php --baseline
 
+      # teste de integracao sem banco vira skip, entao o skip derruba o job: sem
+      # isto, um ci que nao alcance o mariadb sairia verde sem rodar a integracao.
+      # o --fail-on-skipped do phpunit 11.5 nao conta o skip lancado no
+      # setUpBeforeClass (medido), e por isso o resumo tambem e conferido. o
+      # shell bash liga o pipefail, para o tee nao esconder a saida do phpunit.
       - name: Rodar testes PHPUnit (unitário + integração)
-        run: composer test
+        shell: bash
+        run: |
+          composer test -- --fail-on-skipped | tee "$RUNNER_TEMP/phpunit.txt"
+          if grep -q "Skipped:" "$RUNNER_TEMP/phpunit.txt"; then
+            echo "Teste pulado: o banco de teste nao respondeu?"
+            exit 1
+          fi
 
       - name: Subir servidor PHP embutido em background
         run: |

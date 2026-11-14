@@ -157,22 +157,13 @@ $assetV = static function (string $rel): string {
                 <div class="section-line section-line-right"></div>
             </div>
             <div class="sidebar-user-footer flex items-center gap-3 px-2 py-2 rounded-lg">
-                <?php $__avatar = $_SESSION['user']['avatar'] ?? ''; ?>
                 <a href="<?= $safeAppUrl ?>/logout" title="Sair"
                     class="sidebar-avatar-logout w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-sm font-bold text-white flex-shrink-0 hover:ring-2 hover:ring-red-400 transition-all overflow-hidden"
                     style="display:none">
-                    <?php if ($__avatar): ?>
-                        <img src="<?= htmlspecialchars($__avatar, ENT_QUOTES, 'UTF-8') ?>" alt="" class="w-full h-full object-cover">
-                    <?php else: ?>
-                        <?= strtoupper(substr($_SESSION['user']['name'] ?? 'U', 0, 1)) ?>
-                    <?php endif; ?>
+                    <?= strtoupper(substr($_SESSION['user']['name'] ?? 'U', 0, 1)) ?>
                 </a>
                 <div class="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-sm font-bold text-white flex-shrink-0 sidebar-avatar-normal overflow-hidden">
-                    <?php if ($__avatar): ?>
-                        <img src="<?= htmlspecialchars($__avatar, ENT_QUOTES, 'UTF-8') ?>" alt="" class="w-full h-full object-cover">
-                    <?php else: ?>
-                        <?= strtoupper(substr($_SESSION['user']['name'] ?? 'U', 0, 1)) ?>
-                    <?php endif; ?>
+                    <?= strtoupper(substr($_SESSION['user']['name'] ?? 'U', 0, 1)) ?>
                 </div>
                 <div class="user-info flex-1 min-w-0">
                     <p class="text-sm font-medium text-gray-700 dark:text-zinc-200 truncate">
@@ -206,10 +197,6 @@ $assetV = static function (string $rel): string {
                 class="lg:hidden text-gray-500 hover:text-gray-700 dark:text-zinc-400 dark:hover:text-zinc-200 p-1 rounded-lg hover:bg-gray-100 dark:hover:bg-zinc-800 transition-colors">
                 ☰
             </button>
-
-            <h2 class="text-base font-semibold text-gray-700 dark:text-zinc-200 truncate flex-1">
-                <?= htmlspecialchars($pageTitle ?? '', ENT_QUOTES, 'UTF-8') ?>
-            </h2>
 
             <!-- Ações do topbar -->
             <div class="flex items-center gap-2 ml-auto">
@@ -276,7 +263,7 @@ $assetV = static function (string $rel): string {
             <div id="flashMsg"
                 class="mx-4 sm:mx-6 mt-4 px-4 py-3 rounded border-l-4 <?= $flashColor ?> flex items-center justify-between">
                 <span class="text-sm"><?= htmlspecialchars($flash['message'], ENT_QUOTES, 'UTF-8') ?></span>
-                <button onclick="document.getElementById('flashMsg').remove()"
+                <button data-flash-close
                     class="ml-4 text-lg font-bold opacity-60 hover:opacity-100">&times;</button>
             </div>
         <?php endif; ?>

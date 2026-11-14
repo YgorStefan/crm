@@ -356,6 +356,36 @@
     cursor: pointer;
 }
 
+.crm-google-mark {
+    display: inline-block;
+    flex-shrink: 0;
+    width: 0.875rem;
+    height: 0.875rem;
+    border: 1.5px solid currentColor;
+    border-top-width: 4px;
+    border-radius: 3px;
+    opacity: 0.85;
+}
+
+/* o campo readonly tem a mesma cara do editavel, entao o fundo apagado mostra
+   que o evento so pode ser alterado por quem o organizou. */
+.crm-google-field:read-only {
+    background-color: #f9fafb;
+    color: #4b5563;
+}
+.dark .crm-google-field:read-only {
+    background-color: #18181b;
+    color: #d4d4d8;
+}
+
+/* na visao mes o evento do google teria o mesmo ponto cheio da tarefa, entao
+   ele vira anel para a pessoa separar os dois sem abrir. */
+.fc-daygrid-dot-event.crm-google-event .fc-daygrid-event-dot {
+    width: 4px;
+    height: 4px;
+    border-width: 2px;
+}
+
 /* Toolbar (prev/next/hoje + título + mês/semana) quebra em telas estreitas
    (tablet 12.1" em retrato, ~1024px com sidebar) em vez de comprimir os
    botões ou estourar a largura do card. */

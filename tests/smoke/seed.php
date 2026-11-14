@@ -25,6 +25,20 @@ require_once __DIR__ . '/../../config/app.php';
 require_once __DIR__ . '/../../config/database.php';
 require_once __DIR__ . '/../../core/Database.php';
 
+// o core/bootstrap.php registra este mesmo mapeamento, mas tambem abre sessao e
+// mexe em storage, entao o seed registra so o carregamento das classes do app.
+spl_autoload_register(function (string $className): void {
+    foreach (['Core\\' => CORE_PATH, 'App\\' => APP_PATH] as $prefix => $baseDir) {
+        if (str_starts_with($className, $prefix)) {
+            $file = $baseDir . DS . str_replace('\\', DS, substr($className, strlen($prefix))) . '.php';
+            if (is_file($file)) {
+                require_once $file;
+            }
+            return;
+        }
+    }
+});
+
 const E2E_SELLER_EMAIL = 'e2e.seller@crm.local';
 const E2E_SELLER_PASSWORD = 'E2eSeller@1234';
 const E2E_CLIENT_EMAIL = 'e2e.pipeline.card@crm.local';
@@ -83,5 +97,48 @@ $stmt->execute([
     'stage_id_insert' => $firstStageId,
     'stage_id_update' => $firstStageId,
 ]);
+
+// 4) o spec de tarefas cria "Tarefa E2E <timestamp>" e nunca a apaga; sem esta
+//    limpeza as sobras de runs anteriores se acumulam no dia em que o spec clica.
+//    a remocao passa pelo task::delete para os eventos no google, inclusive os das
+//    filhas que o cascade leva junto, entrarem na fila pela mesma regra do app,
+//    senao ficariam orfaos na agenda de quem estiver conectado. as maes vem antes,
+//    e a filha que o cascade ja levou nao acha mais linha nem enfileira de novo.
+//    o model e escopado pela sessao, entao o seed se passa pelo tenant 1, o mesmo
+//    dos usuarios que ele cria.
+$_SESSION['tenant_id'] = 1;
+$e2eTaskIds = $pdo->query("
+    SELECT id FROM tasks
+    WHERE tenant_id = 1 AND title LIKE 'Tarefa E2E %'
+    ORDER BY recurrence_parent_id IS NOT NULL, id
+")->fetchAll(PDO::FETCH_COLUMN);
+$taskModel = new App\Models\Task();
+foreach ($e2eTaskIds as $taskId) {
+    $taskModel->delete((int) $taskId);
+}
+
+// 5) o spec de clientes cria "Cliente E2E <timestamp>" e so um dos testes o remove, e por soft
+//    delete; as sobras ativas de runs anteriores enchem a listagem paginada e o cliente novo
+//    cai na pagina 2. o padrao exige so digitos depois do prefixo para nao pegar o "Cliente
+//    E2E Kanban" fixo do passo 3. a tarefa vinculada passa pelo task::delete pelo mesmo motivo
+//    do passo 4, ja que a fk de tasks.client_id so zera o vinculo e deixaria a tarefa solta
+//    na agenda; interacoes e cotas saem sozinhas pelo cascade da fk.
+$e2eClientIds = $pdo->query("
+    SELECT id FROM clients
+    WHERE tenant_id = 1 AND name REGEXP '^Cliente E2E [0-9]+\$'
+")->fetchAll(PDO::FETCH_COLUMN);
+$clientTaskStmt = $pdo->prepare('
+    SELECT id FROM tasks
+    WHERE tenant_id = 1 AND client_id = :client_id
+    ORDER BY recurrence_parent_id IS NOT NULL, id
+');
+$deleteClientStmt = $pdo->prepare('DELETE FROM clients WHERE id = :id AND tenant_id = 1');
+foreach ($e2eClientIds as $clientId) {
+    $clientTaskStmt->execute(['client_id' => $clientId]);
+    foreach ($clientTaskStmt->fetchAll(PDO::FETCH_COLUMN) as $taskId) {
+        $taskModel->delete((int) $taskId);
+    }
+    $deleteClientStmt->execute(['id' => $clientId]);
+}
 
 echo "[seed] OK — admin@crm.local, e2e.seller@crm.local e cliente de kanban prontos.\n";

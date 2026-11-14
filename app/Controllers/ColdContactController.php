@@ -60,7 +60,6 @@ class ColdContactController extends Controller
         ];
 
         $this->render('cold-contacts/index', [
-            'pageTitle'        => 'Contatos Frios',
             'title'            => 'Contatos Frios — ' . APP_NAME,
             'summaries'        => $summaries,
             'csrf_token'       => CsrfMiddleware::getToken(),

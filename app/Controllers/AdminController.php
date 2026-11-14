@@ -34,7 +34,6 @@ class AdminController extends Controller
         }
 
         $data = [
-            'pageTitle'  => 'Administracao',
             'title'      => 'Administracao — ' . APP_NAME,
             'activeTab'  => $tab,
             'csrf_token' => CsrfMiddleware::getToken(),

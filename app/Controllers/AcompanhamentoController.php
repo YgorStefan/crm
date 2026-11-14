@@ -38,7 +38,6 @@ class AcompanhamentoController extends Controller
         $abordados = $this->coldContacts->countByMonth($mes);
 
         $this->render('acompanhamento/index', [
-            'pageTitle' => 'Acompanhamento',
             'title'     => 'Acompanhamento — ' . APP_NAME,
             'stages'    => $stages,
             'abordados' => $abordados,

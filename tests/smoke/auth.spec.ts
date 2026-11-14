@@ -56,6 +56,21 @@ test.describe('Autenticação', () => {
         await expect(page).toHaveURL(/\/dashboard/);
     });
 
+    test('o botão de mostrar senha alterna a visibilidade da senha', async ({ page }) => {
+        await page.goto('/login');
+        const password = page.locator('#password');
+        const toggle = page.getByTitle('Mostrar/ocultar senha');
+
+        await password.fill('senha-qualquer');
+        await expect(password).toHaveAttribute('type', 'password');
+
+        await toggle.click();
+        await expect(password).toHaveAttribute('type', 'text');
+
+        await toggle.click();
+        await expect(password).toHaveAttribute('type', 'password');
+    });
+
     test('logout encerra a sessão e bloqueia acesso a rotas protegidas', async ({ page }) => {
         await login(page);
         await page.goto('/logout');

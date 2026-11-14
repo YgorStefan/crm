@@ -94,6 +94,12 @@ class Router
         // Método HTTP da requisição (GET, POST)
         $method = strtoupper($_SERVER['REQUEST_METHOD']);
 
+        // o head casa a rota get correspondente, com os mesmos middlewares e a
+        // mesma action, porque quem descarta o corpo da resposta e o servidor.
+        if ($method === 'HEAD') {
+            $method = 'GET';
+        }
+
         // URI sem a query string (ex.: '/clients/5/edit')
         $uri = strtok($_SERVER['REQUEST_URI'], '?');
 
@@ -161,6 +167,13 @@ class Router
         } else {
             echo '<h1>404 — Página não encontrada</h1>';
         }
+        $this->terminate();
+    }
+
+    // o exit fica num metodo proprio porque o teste do router despacha no mesmo processo
+    // do phpunit, e um exit ali encerraria a suite com codigo 0 e sem resumo.
+    protected function terminate(): void
+    {
         exit;
     }
 }

@@ -18,6 +18,7 @@
     'use strict';
 
     var idCounter = 0;
+    const labelSyncers = new WeakMap();
 
     function uid() { return 'csel-' + (++idCounter); }
 
@@ -234,6 +235,19 @@
 
         // Sincroniza com mudancas externas no <select>
         select.addEventListener('change', syncLabel);
+        labelSyncers.set(select, syncLabel);
+
+        // atribuir value ou selectedIndex por codigo nao dispara change, entao o select
+        // ganha setters proprios que repassam ao nativo e depois atualizam o rotulo.
+        ['value', 'selectedIndex'].forEach(function (prop) {
+            const native = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, prop);
+            Object.defineProperty(select, prop, {
+                configurable: true,
+                enumerable: native.enumerable,
+                get: function () { return native.get.call(select); },
+                set: function (v) { native.set.call(select, v); syncLabel(); },
+            });
+        });
 
         // Insere o wrapper antes do select e move o select para dentro
         select.parentNode.insertBefore(wrapper, select);
@@ -248,7 +262,14 @@
         (root || document).querySelectorAll('select:not([multiple]):not([data-no-custom])').forEach(enhance);
     }
 
-    window.CRMSelect = { enhance: enhance, enhanceAll: enhanceAll };
+    // marcar option.selected direto nao passa pelos setters do select, entao quem
+    // muda o valor assim chama sync para o rotulo acompanhar o valor que sera enviado.
+    function sync(select) {
+        const syncLabel = labelSyncers.get(select);
+        if (syncLabel) syncLabel();
+    }
+
+    window.CRMSelect = { enhance: enhance, enhanceAll: enhanceAll, sync: sync };
 
     if (document.readyState === 'loading') {
         document.addEventListener('DOMContentLoaded', function () { enhanceAll(); });

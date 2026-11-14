@@ -2,11 +2,32 @@
 
 namespace App\Models;
 
+use App\Services\Google\GoogleConfig;
 use Core\Model;
 
 class Task extends Model
 {
     protected string $table = 'tasks';
+
+    public const INVALID_ASSIGNEE = 1;
+    public const INVALID_CLIENT   = 2;
+
+    // bits de google_changed_fields: o que vai ao google e mudou no crm desde o
+    // ultimo envio, para o patch levar so isso e nao desfazer o que mudou la.
+    public const GOOGLE_TITLE       = 1;
+    public const GOOGLE_DESCRIPTION = 2;
+    public const GOOGLE_DUE_DATE    = 4;
+    public const GOOGLE_STATUS      = 8;
+
+    private const CALENDAR_COLUMNS = "
+        t.id, t.title, t.due_date, t.priority, t.status, t.client_id,
+        t.description, t.assigned_to, t.created_by,
+        t.recurrence_type, t.recurrence_parent_id,
+        t.google_event_id, t.google_owner_id, t.google_etag,
+        t.google_duration_min, t.google_sync_pending,
+        c.name AS client_name";
+
+    private const DELETION_COLUMNS = 'id, assigned_to, google_event_id, google_owner_id, google_sync_pending';
 
     /**
      * Constrói cláusulas SQL e parâmetros para filtros de tarefas.
@@ -99,22 +120,25 @@ class Task extends Model
         $tenantId   = $this->currentTenantId();
         $assignedTo = (int) $data['assigned_to'];
 
-        $check = $this->db->prepare(
-            "SELECT id FROM users WHERE id = :uid AND tenant_id = :tenant_id_u"
-        );
-        $check->execute([':uid' => $assignedTo, ':tenant_id_u' => $tenantId]);
-        if (!$check->fetch()) {
-            throw new \InvalidArgumentException("assigned_to não pertence ao tenant atual.");
-        }
-
+        // o cliente vem antes do responsavel porque o taskcontroller so devolve o
+        // formulario para a tela do cliente quando o erro e do responsavel, o que
+        // pressupoe o cliente ja aprovado aqui.
         if (!empty($data['client_id'])) {
             $checkClient = $this->db->prepare(
                 "SELECT id FROM clients WHERE id = :cid AND tenant_id = :tenant_id_c AND is_active = 1"
             );
             $checkClient->execute([':cid' => (int) $data['client_id'], ':tenant_id_c' => $tenantId]);
             if (!$checkClient->fetch()) {
-                throw new \InvalidArgumentException("client_id não pertence ao tenant atual.");
+                throw new \InvalidArgumentException("client_id não pertence ao tenant atual.", self::INVALID_CLIENT);
             }
+        }
+
+        $check = $this->db->prepare(
+            "SELECT id FROM users WHERE id = :uid AND tenant_id = :tenant_id_u AND is_active = 1"
+        );
+        $check->execute([':uid' => $assignedTo, ':tenant_id_u' => $tenantId]);
+        if (!$check->fetch()) {
+            throw new \InvalidArgumentException("assigned_to não pertence ao tenant atual.", self::INVALID_ASSIGNEE);
         }
 
         $stmt = $this->db->prepare("
@@ -152,11 +176,11 @@ class Task extends Model
 
         if (array_key_exists('assigned_to', $data)) {
             $check = $this->db->prepare(
-                "SELECT id FROM users WHERE id = :uid AND tenant_id = :tenant_id_u"
+                "SELECT id FROM users WHERE id = :uid AND tenant_id = :tenant_id_u AND is_active = 1"
             );
             $check->execute([':uid' => (int) $data['assigned_to'], ':tenant_id_u' => $tenantId]);
             if (!$check->fetch()) {
-                throw new \InvalidArgumentException("assigned_to não pertence ao tenant atual.");
+                throw new \InvalidArgumentException("assigned_to não pertence ao tenant atual.", self::INVALID_ASSIGNEE);
             }
         }
 
@@ -170,11 +194,168 @@ class Task extends Model
         if (empty($setClauses))
             return false;
 
-        $sql = "UPDATE tasks SET " . implode(', ', $setClauses) .
-               " WHERE id = :id AND tenant_id = :tenant_id_u";
-        $stmt = $this->db->prepare($sql);
-        $stmt->execute($params);
-        return $stmt->rowCount() > 0;
+        $this->db->beginTransaction();
+        try {
+            // a linha travada e a base da comparacao: so o que muda de valor vai
+            // ao google, porque quem chama pode reenviar o valor que leu antes,
+            // e isso nao e mudanca nenhuma.
+            $stmt = $this->db->prepare(
+                "SELECT title, description, due_date, status, " . self::DELETION_COLUMNS . " FROM tasks
+                 WHERE id = :id AND tenant_id = :tenant_id
+                 FOR UPDATE"
+            );
+            $stmt->execute([':id' => $id, ':tenant_id' => $tenantId]);
+            $row = $stmt->fetch();
+            if (!$row) {
+                $this->db->commit();
+                return false;
+            }
+
+            $changedFields = self::googleFieldsChanged($row, $data);
+            $reassigned    = array_key_exists('assigned_to', $data) && (int) $row['assigned_to'] !== (int) $data['assigned_to'];
+            if ($reassigned) {
+                $setClauses = array_merge($setClauses, $this->releaseGoogleEventOnReassign($tenantId, $row));
+            }
+            if ($changedFields !== 0 || $reassigned) {
+                // soma em vez de marcar 1 porque o envio so zera se o contador ainda
+                // for o que ele leu, e assim uma edicao feita durante o envio nao se perde.
+                $setClauses[] = 'google_sync_pending = google_sync_pending + 1';
+                $setClauses[] = 'google_changed_fields = google_changed_fields | :changed_fields';
+                $params[':changed_fields'] = $changedFields;
+            }
+
+            $sql = "UPDATE tasks SET " . implode(', ', $setClauses) .
+                   " WHERE id = :id AND tenant_id = :tenant_id_u";
+            $this->db->prepare($sql)->execute($params);
+            $this->db->commit();
+            return true;
+        } catch (\Throwable $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * bits de google_changed_fields dos campos que mudam de valor. o prazo do
+     * formulario chega sem segundos, e a descricao vazia e a nula sao a mesma
+     * para o google, que recebe a descricao sem os espacos das pontas.
+     *
+     * @param array<string, mixed> $row  linha travada
+     * @param array<string, mixed> $data campos recebidos
+     */
+    private static function googleFieldsChanged(array $row, array $data): int
+    {
+        $changed = 0;
+        if (array_key_exists('title', $data) && (string) $data['title'] !== (string) $row['title']) {
+            $changed |= self::GOOGLE_TITLE;
+        }
+        if (array_key_exists('description', $data)
+            && trim((string) ($data['description'] ?? '')) !== trim((string) ($row['description'] ?? ''))) {
+            $changed |= self::GOOGLE_DESCRIPTION;
+        }
+        if (array_key_exists('due_date', $data)
+            && self::comparableDue($data['due_date']) !== self::comparableDue($row['due_date'])) {
+            $changed |= self::GOOGLE_DUE_DATE;
+        }
+        if (array_key_exists('status', $data) && (string) $data['status'] !== (string) $row['status']) {
+            $changed |= self::GOOGLE_STATUS;
+        }
+        return $changed;
+    }
+
+    private static function comparableDue(mixed $value): string
+    {
+        $text = str_replace('T', ' ', trim((string) $value));
+        // em utc o texto sai como entrou, sem o horario de verao empurrar uma hora.
+        foreach (['!Y-m-d H:i:s', '!Y-m-d H:i'] as $format) {
+            $parsed = \DateTimeImmutable::createFromFormat($format, $text, new \DateTimeZone('UTC'));
+            if ($parsed !== false && $parsed->format(substr($format, 1)) === $text) {
+                return $parsed->format('Y-m-d H:i:s');
+            }
+        }
+        return $text;
+    }
+
+    /**
+     * @param array<string, mixed> $row linha travada pelo update, com as colunas de DELETION_COLUMNS
+     * @return list<string> clausulas que limpam o vinculo, vazia quando nao ha evento salvo
+     */
+    private function releaseGoogleEventOnReassign(int $tenantId, array $row): array
+    {
+        // o evento mora na agenda do dono antigo, inclusive o de um insert sem
+        // resposta: sai de la pela mesma regra do delete, e o envio cria outro
+        // na agenda do novo responsavel.
+        $this->enqueueGoogleDeletions($tenantId, [$row]);
+        return $row['google_event_id'] !== null
+            ? ['google_event_id = NULL', 'google_owner_id = NULL', 'google_etag = NULL']
+            : [];
+    }
+
+    public function delete(int $id): bool
+    {
+        $tenantId = $this->currentTenantId();
+
+        $this->db->beginTransaction();
+        try {
+            // as filhas somem junto pelo cascade da fk, entao os eventos delas
+            // precisam entrar na fila aqui, antes do delete.
+            $stmt = $this->db->prepare(
+                "SELECT " . self::DELETION_COLUMNS . " FROM tasks
+                 WHERE tenant_id = :tenant_id
+                   AND (id = :id OR recurrence_parent_id = :parent_id)
+                 FOR UPDATE"
+            );
+            $stmt->execute([':tenant_id' => $tenantId, ':id' => $id, ':parent_id' => $id]);
+            $this->enqueueGoogleDeletions($tenantId, $stmt->fetchAll());
+
+            $stmt = $this->db->prepare("DELETE FROM tasks WHERE id = :id AND tenant_id = :tenant_id");
+            $stmt->execute([':id' => $id, ':tenant_id' => $tenantId]);
+            $deleted = $stmt->rowCount() > 0;
+            $this->db->commit();
+            return $deleted;
+        } catch (\Throwable $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
+
+    /**
+     * roda dentro da transacao de quem chama, com as linhas ja travadas, para a
+     * copia e o delete enxergarem as mesmas linhas.
+     *
+     * @param  array<int, array<string, mixed>>  $rows  colunas de DELETION_COLUMNS
+     */
+    private function enqueueGoogleDeletions(int $tenantId, array $rows): void
+    {
+        $deletions     = new GoogleEventDeletion();
+        $accounts      = new GoogleAccount();
+        $config        = null;
+        $activeAccount = [];
+
+        foreach ($rows as $row) {
+            if ($row['google_event_id'] !== null && $row['google_owner_id'] !== null) {
+                $deletions->enqueue((int) $row['google_owner_id'], (string) $row['google_event_id']);
+                continue;
+            }
+
+            // sem id salvo, um insert que estourou o tempo pode ter criado o
+            // evento no google mesmo assim, e ele so pode estar na agenda do
+            // responsavel, com o id deterministico. so com a conta ativa: a fila
+            // de conta parada ninguem processa, e na reconexao essas remocoes
+            // sairiam todas antes das tarefas, quase sempre com 404.
+            if ((int) $row['google_sync_pending'] === 0) {
+                continue;
+            }
+            $assignee = (int) $row['assigned_to'];
+            if (!array_key_exists($assignee, $activeAccount)) {
+                $account = $accounts->findForUser($assignee);
+                $activeAccount[$assignee] = $account !== false && $account['status'] === 'active';
+            }
+            if ($activeAccount[$assignee]) {
+                $config ??= GoogleConfig::fromEnv();
+                $deletions->enqueue($assignee, $config->eventIdFor($tenantId, (int) $row['id']));
+            }
+        }
     }
 
     /**
@@ -258,10 +439,7 @@ class Task extends Model
         $this->ensureRecurringInstancesGenerated($tenantId, $userId, $isAdmin);
 
         $sql = "
-            SELECT t.id, t.title, t.due_date, t.priority, t.status, t.client_id,
-                   t.description, t.assigned_to, t.created_by,
-                   t.recurrence_type, t.recurrence_parent_id,
-                   c.name AS client_name
+            SELECT " . self::CALENDAR_COLUMNS . "
             FROM tasks t
             LEFT JOIN clients c ON c.id = t.client_id AND c.tenant_id = :tenant_id_c
             WHERE t.status NOT IN ('cancelled')
@@ -286,6 +464,47 @@ class Task extends Model
         return $stmt->fetchAll();
     }
 
+    public function findTeamForCalendar(int $userId, ?string $start, ?string $end): array
+    {
+        $tenantId = $this->currentTenantId();
+        // materializa as series do tenant inteiro, porque as filhas de outro
+        // responsavel so nascem quando alguem abre o calendario.
+        $this->ensureRecurringInstancesGenerated($tenantId, $userId, true);
+
+        $sql = "
+            SELECT " . self::CALENDAR_COLUMNS . ", u.name AS assigned_name
+            FROM tasks t
+            LEFT JOIN clients c ON c.id = t.client_id AND c.tenant_id = :tenant_id_c
+            LEFT JOIN users   u ON u.id = t.assigned_to AND u.tenant_id = :tenant_id_us
+            WHERE t.status NOT IN ('cancelled')
+              AND t.tenant_id = :tenant_id_u
+              AND t.assigned_to <> :uid
+        ";
+        $params = [
+            ':tenant_id_c'  => $tenantId,
+            ':tenant_id_us' => $tenantId,
+            ':tenant_id_u'  => $tenantId,
+            ':uid'          => $userId,
+        ];
+        if ($start !== null) {
+            $sql .= " AND t.due_date >= :start";
+            $params[':start'] = $start;
+        }
+        if ($end !== null) {
+            $sql .= " AND t.due_date < :end";
+            $params[':end'] = $end;
+        }
+        $sql .= " ORDER BY CASE WHEN t.status = 'done' THEN 1 ELSE 0 END ASC, t.due_date ASC";
+        $stmt = $this->db->prepare($sql);
+        $stmt->execute($params);
+        return $stmt->fetchAll();
+    }
+
+    public function materializeRecurring(int $userId, bool $isAdmin): void
+    {
+        $this->ensureRecurringInstancesGenerated($this->currentTenantId(), $userId, $isAdmin);
+    }
+
     /**
      * Garante que as próximas instâncias de tarefas recorrentes (até 12 meses
      * à frente) já estão materializadas. Opera só sobre os "moldes"
@@ -294,17 +513,21 @@ class Task extends Model
      */
     private function ensureRecurringInstancesGenerated(int $tenantId, int $userId, bool $isAdmin): void
     {
+        // molde de responsavel inativo fica de fora, entao a serie para de gerar
+        // ocorrencias e volta sozinha quando um admin a passa para alguem ativo.
         $sql = "
-            SELECT id, client_id, assigned_to, title, description, due_date, priority, created_by, recurrence_type
-            FROM tasks
-            WHERE tenant_id = :tenant_id
-              AND recurrence_type != 'none'
-              AND recurrence_parent_id IS NULL
-              AND status NOT IN ('cancelled')
+            SELECT t.id, t.client_id, t.assigned_to, t.title, t.description, t.due_date,
+                   t.priority, t.created_by, t.recurrence_type
+            FROM tasks t
+            JOIN users u ON u.id = t.assigned_to AND u.tenant_id = :tenant_id_u AND u.is_active = 1
+            WHERE t.tenant_id = :tenant_id
+              AND t.recurrence_type != 'none'
+              AND t.recurrence_parent_id IS NULL
+              AND t.status NOT IN ('cancelled')
         ";
-        $params = [':tenant_id' => $tenantId];
+        $params = [':tenant_id' => $tenantId, ':tenant_id_u' => $tenantId];
         if (!$isAdmin) {
-            $sql .= " AND assigned_to = :uid";
+            $sql .= " AND t.assigned_to = :uid";
             $params[':uid'] = $userId;
         }
         $stmt = $this->db->prepare($sql);
@@ -363,12 +586,12 @@ class Task extends Model
             ? (new \DateTime($latestDate))->add($interval)
             : (clone $parentDate)->add($interval);
 
-        // On first generation, skip past instances to avoid flooding calendar with overdue rows
-        if (!$latestDate) {
-            $now = new \DateTime();
-            while ($next < $now) {
-                $next->add($interval);
-            }
+        // tanto a primeira geracao quanto a volta de uma serie parada (responsavel que
+        // ficou inativo) comecam na primeira ocorrencia a partir de agora, senao o
+        // calendario recebe de uma vez as ocorrencias do periodo parado, ja vencidas.
+        $now = new \DateTime();
+        while ($next < $now) {
+            $next->add($interval);
         }
 
         if ($next > $horizon) return false;
@@ -409,20 +632,256 @@ class Task extends Model
     {
         $tenantId = $this->currentTenantId();
 
-        $stmt = $this->db->prepare(
-            "DELETE FROM tasks
-             WHERE recurrence_parent_id = :pid
-               AND status = 'pending'
-               AND tenant_id = :tn"
-        );
-        $stmt->execute([':pid' => $parentId, ':tn' => $tenantId]);
+        $this->db->beginTransaction();
+        try {
+            $stmt = $this->db->prepare(
+                "SELECT " . self::DELETION_COLUMNS . " FROM tasks
+                 WHERE recurrence_parent_id = :pid
+                   AND status = 'pending'
+                   AND tenant_id = :tn
+                 FOR UPDATE"
+            );
+            $stmt->execute([':pid' => $parentId, ':tn' => $tenantId]);
+            $this->enqueueGoogleDeletions($tenantId, $stmt->fetchAll());
 
+            $stmt = $this->db->prepare(
+                "DELETE FROM tasks
+                 WHERE recurrence_parent_id = :pid
+                   AND status = 'pending'
+                   AND tenant_id = :tn"
+            );
+            $stmt->execute([':pid' => $parentId, ':tn' => $tenantId]);
+
+            $stmt = $this->db->prepare(
+                "UPDATE tasks SET recurrence_type = 'none'
+                 WHERE id = :id
+                   AND tenant_id = :tn"
+            );
+            $stmt->execute([':id' => $parentId, ':tn' => $tenantId]);
+
+            $this->db->commit();
+        } catch (\Throwable $e) {
+            $this->db->rollBack();
+            throw $e;
+        }
+    }
+
+    public function pendingForUser(int $userId, int $limit): array
+    {
+        $tenantId = $this->currentTenantId();
+        // tarefa vencida sem evento nao vale o envio, mas a que ja tem evento
+        // precisa levar a edicao ao google. concluida e cancelada entram, porque
+        // o envio marca uma e remove o evento da outra.
+        $stmt = $this->db->prepare("
+            SELECT t.*, c.name AS client_name
+            FROM tasks t
+            LEFT JOIN clients c ON c.id = t.client_id AND c.tenant_id = :tenant_id_c
+            WHERE t.tenant_id = :tenant_id_u
+              AND t.assigned_to = :uid
+              AND t.google_sync_pending > 0
+              AND (t.google_event_id IS NOT NULL OR t.due_date >= CURDATE())
+            ORDER BY t.due_date ASC, t.id ASC
+            LIMIT :limit
+        ");
+        $stmt->bindValue(':tenant_id_c', $tenantId, \PDO::PARAM_INT);
+        $stmt->bindValue(':tenant_id_u', $tenantId, \PDO::PARAM_INT);
+        $stmt->bindValue(':uid', $userId, \PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, \PDO::PARAM_INT);
+        $stmt->execute();
+        return $stmt->fetchAll();
+    }
+
+    /**
+     * @param  array<string, mixed>  $fromGoogle  title, due_date e google_duration_min que o google
+     *         tem nos campos que o patch nao levou; title e due_date so quando diferem da tarefa
+     *         lida para o envio. aplicados so com o contador visto
+     * @return bool  true so quando zerou a pendencia
+     */
+    public function markSynced(
+        int $id,
+        int $seenPending,
+        string $eventId,
+        int $ownerId,
+        ?string $etag,
+        int $durationMin,
+        array $fromGoogle = [],
+    ): bool {
+        $params = [
+            ':event_id'     => $eventId,
+            ':owner_id'     => $ownerId,
+            ':etag'         => $etag,
+            ':duration_min' => $fromGoogle['google_duration_min'] ?? $durationMin,
+            ':id'           => $id,
+            ':tenant_id'    => $this->currentTenantId(),
+            ':seen'         => $seenPending,
+        ];
+
+        // as marcas zeram junto com o contador e sob a mesma guarda, entao a
+        // edicao feita durante o envio mantem as dela para o proximo.
+        $setClauses = [
+            'google_event_id = :event_id', 'google_owner_id = :owner_id', 'google_etag = :etag',
+            'google_duration_min = :duration_min', 'google_sync_pending = 0', 'google_changed_fields = 0',
+        ];
+        $synced = $params;
+        foreach (['title', 'due_date'] as $field) {
+            if (array_key_exists($field, $fromGoogle)) {
+                $setClauses[] = "{$field} = :{$field}";
+                $synced[":{$field}"] = $fromGoogle[$field];
+            }
+        }
         $stmt = $this->db->prepare(
-            "UPDATE tasks SET recurrence_type = 'none'
-             WHERE id = :id
-               AND tenant_id = :tn"
+            "UPDATE tasks SET " . implode(', ', $setClauses) . "
+             WHERE id = :id AND tenant_id = :tenant_id AND google_sync_pending = :seen"
         );
-        $stmt->execute([':id' => $parentId, ':tn' => $tenantId]);
+        $stmt->execute($synced);
+        if ($stmt->rowCount() > 0) {
+            return true;
+        }
+
+        // com o contador mudado o vinculo ainda e gravado, senao uma tarefa
+        // movida para o passado durante o envio sairia da fila sem id e o
+        // evento ficaria na data antiga. com outro responsavel nada e gravado,
+        // porque o id e de uma agenda que nao e mais a dele. os campos do google
+        // ficam para o proximo envio, cuja resposta traz o evento de novo, porque
+        // aqui a edicao do meio pode ter mudado os mesmos campos. se o google
+        // mudou titulo ou inicio em relacao a tarefa lida para o envio, o etag
+        // antigo fica: com o proximo envio recusado, so um etag diferente leva a
+        // abertura seguinte a trazer a remarcacao feita la. uma mudanca so do crm
+        // no meio do envio nao conta, porque nao ha nada do google a trazer.
+        $params[':assignee'] = $ownerId;
+        $setClauses = ['google_event_id = :event_id', 'google_owner_id = :owner_id', 'google_duration_min = :duration_min'];
+        if (array_key_exists('title', $fromGoogle) || array_key_exists('due_date', $fromGoogle)) {
+            unset($params[':etag']);
+        } else {
+            $setClauses[] = 'google_etag = :etag';
+        }
+        $stmt = $this->db->prepare(
+            "UPDATE tasks SET " . implode(', ', $setClauses) . "
+             WHERE id = :id AND tenant_id = :tenant_id
+               AND google_sync_pending <> :seen
+               AND assigned_to = :assignee"
+        );
+        $stmt->execute($params);
+        return false;
+    }
+
+    public function dropFromQueue(int $id, int $seenPending): void
+    {
+        // marca que sobrasse iria junto com uma edicao futura de outro campo e
+        // regravaria no google algo que o crm nao mudou.
+        $stmt = $this->db->prepare(
+            "UPDATE tasks SET google_sync_pending = 0, google_changed_fields = 0
+             WHERE id = :id AND tenant_id = :tenant_id AND google_sync_pending = :seen"
+        );
+        $stmt->execute([':id' => $id, ':tenant_id' => $this->currentTenantId(), ':seen' => $seenPending]);
+    }
+
+    /**
+     * @return array<string, array<string, mixed>> google_event_id => linha
+     */
+    public function linkMap(int $userId): array
+    {
+        $stmt = $this->db->prepare(
+            "SELECT id, title, due_date, status, recurrence_type, recurrence_parent_id,
+                    google_event_id, google_etag, google_duration_min, google_sync_pending
+             FROM tasks
+             WHERE tenant_id = :tenant_id
+               AND google_owner_id = :uid
+               AND google_event_id IS NOT NULL
+               AND status <> 'cancelled'"
+        );
+        $stmt->execute([':tenant_id' => $this->currentTenantId(), ':uid' => $userId]);
+
+        $map = [];
+        foreach ($stmt->fetchAll() as $row) {
+            $map[(string) $row['google_event_id']] = $row;
+        }
+        return $map;
+    }
+
+    public function applyGoogleChange(int $id, ?string $etagRead, array $fields, string $newEtag): bool
+    {
+        $setClauses = ['google_etag = :new_etag'];
+        $params = [
+            ':new_etag'  => $newEtag,
+            ':id'        => $id,
+            ':tenant_id' => $this->currentTenantId(),
+            ':etag_read' => $etagRead,
+        ];
+        foreach (['title', 'due_date', 'google_duration_min'] as $field) {
+            if (array_key_exists($field, $fields)) {
+                $setClauses[] = "{$field} = :{$field}";
+                $params[":{$field}"] = $fields[$field];
+            }
+        }
+
+        // nao soma na fila, senao o envio devolveria ao google o que veio dele.
+        // a pendencia e o etag no where fazem a edicao do crm e uma leitura mais
+        // nova ganharem desta escrita.
+        $stmt = $this->db->prepare(
+            "UPDATE tasks SET " . implode(', ', $setClauses) . "
+             WHERE id = :id AND tenant_id = :tenant_id
+               AND google_sync_pending = 0
+               AND google_etag <=> :etag_read"
+        );
+        $stmt->execute($params);
+        return $stmt->rowCount() > 0;
+    }
+
+    /**
+     * @return bool  true so quando a linha mudou
+     */
+    public function unlinkGoogle(int $id, ?int $ownerRead, ?string $etagRead, ?string $newStatus = null): bool
+    {
+        $setClauses = ['google_event_id = NULL', 'google_owner_id = NULL', 'google_etag = NULL'];
+        $params = [
+            ':id'         => $id,
+            ':tenant_id'  => $this->currentTenantId(),
+            ':owner_read' => $ownerRead,
+            ':etag_read'  => $etagRead,
+        ];
+        if ($newStatus !== null) {
+            $setClauses[] = 'status = :status';
+            $params[':status'] = $newStatus;
+        }
+
+        // nao soma, senao o envio recriaria o evento que sumiu do google. com
+        // pendencia a mudanca do crm ganha e o vinculo fica para o envio refazer
+        // o evento, em vez de a tarefa recem editada ser cancelada. o dono e o
+        // etag lidos barram a troca de responsavel feita depois da leitura, cujo
+        // envio ja levou a tarefa para a agenda de outra pessoa.
+        $stmt = $this->db->prepare(
+            "UPDATE tasks SET " . implode(', ', $setClauses) . "
+             WHERE id = :id AND tenant_id = :tenant_id AND google_sync_pending = 0
+               AND google_owner_id <=> :owner_read AND google_etag <=> :etag_read"
+        );
+        $stmt->execute($params);
+        return $stmt->rowCount() > 0;
+    }
+
+    public function clearGoogleLinksForUser(int $userId): void
+    {
+        $stmt = $this->db->prepare(
+            "UPDATE tasks SET google_event_id = NULL, google_owner_id = NULL, google_etag = NULL
+             WHERE tenant_id = :tenant_id AND google_owner_id = :uid"
+        );
+        $stmt->execute([':tenant_id' => $this->currentTenantId(), ':uid' => $userId]);
+    }
+
+    public function markOpenUnlinkedPending(int $userId): int
+    {
+        // as vinculadas ficam de fora porque reconectar nao pode sobrescrever o
+        // que mudou no google desde o ultimo envio.
+        $stmt = $this->db->prepare(
+            "UPDATE tasks SET google_sync_pending = google_sync_pending + 1
+             WHERE tenant_id = :tenant_id
+               AND assigned_to = :uid
+               AND status IN ('pending', 'in_progress')
+               AND due_date >= CURDATE()
+               AND google_event_id IS NULL"
+        );
+        $stmt->execute([':tenant_id' => $this->currentTenantId(), ':uid' => $userId]);
+        return $stmt->rowCount();
     }
 
     /**

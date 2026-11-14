@@ -6,7 +6,7 @@ use PHPUnit\Framework\TestCase;
 
 /**
  * Garante o invariante central do app: tarefas de um tenant nunca vazam
- * para outro. Usa um banco MySQL descartavel (crm_test) injetado no
+ * para outro. Usa um banco MySQL descartavel (crm_test, ou o de DB_TEST_NAME) injetado no
  * singleton Database via reflexao. Se nao houver MySQL acessivel, o teste
  * e pulado (nao quebra a suite em ambientes sem banco).
  */
@@ -23,6 +23,7 @@ class TaskTenantIsolationTest extends TestCase
         $port = getenv('DB_PORT') ?: '3306';
         $user = getenv('DB_USER') ?: 'root';
         $pass = ($p = getenv('DB_PASS')) !== false ? $p : '';
+        $dbName = testDatabaseName();
 
         try {
             $pdo = new \PDO("mysql:host={$host};port={$port};charset=utf8mb4", $user, $pass, [
@@ -30,8 +31,8 @@ class TaskTenantIsolationTest extends TestCase
                 \PDO::ATTR_DEFAULT_FETCH_MODE => \PDO::FETCH_ASSOC,
                 \PDO::ATTR_EMULATE_PREPARES   => false,
             ]);
-            $pdo->exec('CREATE DATABASE IF NOT EXISTS crm_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci');
-            $pdo->exec('USE crm_test');
+            $pdo->exec("CREATE DATABASE IF NOT EXISTS `{$dbName}` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci");
+            $pdo->exec("USE `{$dbName}`");
         } catch (\Throwable $e) {
             self::markTestSkipped('MySQL indisponivel para teste de integracao: ' . $e->getMessage());
         }
@@ -39,7 +40,7 @@ class TaskTenantIsolationTest extends TestCase
         $pdo->exec('DROP TABLE IF EXISTS tasks');
         $pdo->exec('DROP TABLE IF EXISTS clients');
         $pdo->exec('DROP TABLE IF EXISTS users');
-        $pdo->exec('CREATE TABLE users (id INT UNSIGNED PRIMARY KEY, name VARCHAR(100), tenant_id INT UNSIGNED) ENGINE=InnoDB');
+        $pdo->exec('CREATE TABLE users (id INT UNSIGNED PRIMARY KEY, name VARCHAR(100), tenant_id INT UNSIGNED, is_active TINYINT(1) NOT NULL DEFAULT 1) ENGINE=InnoDB');
         $pdo->exec('CREATE TABLE clients (id INT UNSIGNED PRIMARY KEY, name VARCHAR(100), tenant_id INT UNSIGNED, is_active TINYINT(1) DEFAULT 1) ENGINE=InnoDB');
         $pdo->exec(
             'CREATE TABLE tasks (
@@ -47,7 +48,11 @@ class TaskTenantIsolationTest extends TestCase
                 client_id INT UNSIGNED NULL, assigned_to INT UNSIGNED, title VARCHAR(200),
                 description TEXT NULL, due_date DATETIME, priority VARCHAR(20), status VARCHAR(20),
                 recurrence_type VARCHAR(20) DEFAULT "none", recurrence_parent_id INT UNSIGNED NULL,
-                created_by INT UNSIGNED, tenant_id INT UNSIGNED
+                created_by INT UNSIGNED, tenant_id INT UNSIGNED,
+                google_event_id VARCHAR(255) NULL, google_owner_id INT UNSIGNED NULL,
+                google_etag VARCHAR(100) NULL, google_duration_min INT UNSIGNED NULL,
+                google_sync_pending INT UNSIGNED NOT NULL DEFAULT 1,
+                google_changed_fields TINYINT UNSIGNED NOT NULL DEFAULT 0
             ) ENGINE=InnoDB'
         );
 

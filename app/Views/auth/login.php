@@ -4,14 +4,15 @@ $csrf_token = $csrf_token ?? '';
 $timeout    = $timeout ?? false;
 $error      = $error ?? '';
 ?>
-<div class="w-full max-w-xs bg-white dark:bg-zinc-900 rounded-2xl shadow-xl overflow-hidden">
+<div class="w-full max-w-xs">
+<div class="bg-white dark:bg-zinc-900 rounded-2xl shadow-xl overflow-hidden">
 
     <!-- Cabeçalho colorido -->
     <div class="bg-indigo-600 dark:bg-indigo-700 px-6 py-5 text-center">
         <div class="flex justify-center mb-2 text-3xl">
             👤
         </div>
-        <h1 class="text-xl font-bold text-white"><?= APP_NAME ?></h1>
+        <h1 class="text-xl font-bold text-white"><?= htmlspecialchars(APP_NAME, ENT_QUOTES, 'UTF-8') ?></h1>
         <p class="text-indigo-200 text-xs mt-1">Acesse sua conta para continuar</p>
     </div>
 
@@ -29,7 +30,7 @@ $error      = $error ?? '';
         </div>
         <?php endif; ?>
 
-        <form method="POST" action="<?= APP_URL ?>/login" novalidate>
+        <form method="POST" action="<?= htmlspecialchars(APP_URL, ENT_QUOTES, 'UTF-8') ?>/login" novalidate>
             <input type="hidden" name="_csrf_token" value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
 
             <div class="mb-4">
@@ -54,7 +55,7 @@ $error      = $error ?? '';
                                bg-white dark:bg-zinc-800 text-gray-800 dark:text-white
                                placeholder-gray-400 dark:placeholder-zinc-600
                                focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-colors pr-10">
-                    <button type="button" onclick="togglePassword()"
+                    <button type="button" id="togglePassword"
                         class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 transition-colors"
                         title="Mostrar/ocultar senha">
                         <span id="eyeIconSvg">👁️</span>
@@ -72,11 +73,18 @@ $error      = $error ?? '';
     </div>
 </div>
 
+<p class="mt-4 text-center text-xs">
+    <a href="<?= htmlspecialchars(APP_URL, ENT_QUOTES, 'UTF-8') ?>/privacidade"
+        class="text-gray-500 dark:text-zinc-400 hover:text-indigo-600 dark:hover:text-indigo-400 hover:underline underline-offset-2 transition-colors">Política de privacidade</a>
+</p>
+</div>
+
 <script nonce="<?= CSP_NONCE ?>">
-    function togglePassword() {
+    // a csp bloqueia atributo onclick, entao o clique so funciona ligado aqui.
+    document.getElementById('togglePassword').addEventListener('click', () => {
         const input = document.getElementById('password');
         const isHidden = input.type === 'password';
         input.type = isHidden ? 'text' : 'password';
         document.getElementById('eyeIconSvg').textContent = isHidden ? '🙈' : '👁️';
-    }
+    });
 </script>

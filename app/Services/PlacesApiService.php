@@ -182,4 +182,34 @@ class PlacesApiService
         $ciphertext = openssl_encrypt($apiKey, 'aes-256-cbc', $key, 0, $iv);
         return base64_encode($iv) . ':' . $ciphertext;
     }
+
+    /** null quando o valor nao decifra, inclusive o cifrado com outra APP_KEY. */
+    public static function decryptKey(string $stored, string $appKey): ?string
+    {
+        // a derivacao repete a do encryptKey, e as duas precisam mudar juntas
+        // para o que ja foi cifrado continuar legivel.
+        if (str_starts_with($appKey, 'base64:')) {
+            $raw = base64_decode(substr($appKey, 7));
+            $key = strlen($raw) === 32 ? $raw : hash('sha256', $appKey, true);
+        } else {
+            $key = hash('sha256', $appKey, true);
+        }
+
+        $parts = explode(':', $stored, 2);
+        if (count($parts) !== 2) {
+            return null;
+        }
+
+        // o openssl_decrypt emite warning com iv de tamanho errado, entao o
+        // formato e conferido antes, e a cifra vai decodificada em modo estrito.
+        $iv         = base64_decode($parts[0], true);
+        $ciphertext = base64_decode($parts[1], true);
+        if ($iv === false || $ciphertext === false || $ciphertext === ''
+            || strlen($iv) !== openssl_cipher_iv_length('aes-256-cbc')) {
+            return null;
+        }
+
+        $plain = openssl_decrypt($ciphertext, 'aes-256-cbc', $key, OPENSSL_RAW_DATA, $iv);
+        return $plain === false ? null : $plain;
+    }
 }

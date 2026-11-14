@@ -24,6 +24,7 @@
             this.#initTheme();
             this.#initSidebar();
             this.#initFlash();
+            this.#initConfirmForms();
         }
 
         applyTheme(isDark) {
@@ -147,7 +148,20 @@
         }
 
         #initFlash() {
-            setTimeout(() => document.getElementById('flashMsg')?.remove(), 5000);
+            const flash = document.getElementById('flashMsg');
+            if (!flash) return;
+            flash.querySelector('[data-flash-close]')?.addEventListener('click', () => flash.remove());
+            setTimeout(() => flash.remove(), 5000);
+        }
+
+        // a csp bloqueia onsubmit e onclick escritos no atributo, entao a pergunta dos
+        // formularios com data-confirm e feita por este listener, que vale para todas as telas.
+        #initConfirmForms() {
+            document.addEventListener('submit', e => {
+                const form = e.target;
+                if (!(form instanceof HTMLFormElement) || form.dataset.confirm === undefined) return;
+                if (!confirm(form.dataset.confirm)) e.preventDefault();
+            });
         }
     }
 

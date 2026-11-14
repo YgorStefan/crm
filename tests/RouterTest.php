@@ -48,6 +48,18 @@ use Core\Middleware\SpyRouteMiddleware;
 use Core\Router;
 use PHPUnit\Framework\TestCase;
 
+// o exit do fim da resposta encerraria o processo do phpunit com codigo 0 e sem resumo,
+// e a suite pareceria verde com testes que nem rodaram; aqui ele so marca que a resposta acabou.
+class RouterSemSaida extends Router
+{
+    public bool $terminou = false;
+
+    protected function terminate(): void
+    {
+        $this->terminou = true;
+    }
+}
+
 class RouterTest extends TestCase
 {
     protected function setUp(): void
@@ -56,12 +68,30 @@ class RouterTest extends TestCase
         SpyMiddlewareBase::$executionLog = [];
     }
 
-    private function dispatch(string $method, string $uri): Router
+    protected function tearDown(): void
+    {
+        http_response_code(200);
+    }
+
+    private function dispatch(string $method, string $uri): RouterSemSaida
     {
         $_SERVER['REQUEST_METHOD'] = $method;
         $_SERVER['REQUEST_URI'] = $uri;
-        $router = new Router();
+        $router = new RouterSemSaida();
         return $router;
+    }
+
+    public function testRotaInexistenteResponde404SemEncerrarOProcesso(): void
+    {
+        $router = $this->dispatch('GET', '/crm/public/rota-que-nao-existe');
+        $router->get('/clients', 'RouterSpyController', 'index');
+
+        $this->expectOutputRegex('/Página não encontrada/');
+        $router->dispatch();
+
+        $this->assertSame(404, http_response_code());
+        $this->assertTrue($router->terminou);
+        $this->assertNull(RouterSpyController::$calledAction);
     }
 
     public function testRotaSimplesChamaActionCorreta(): void
@@ -140,6 +170,52 @@ class RouterTest extends TestCase
     public function testRotaPublicaNaoExecutaMiddlewareDefault(): void
     {
         $router = $this->dispatch('GET', '/crm/public/login');
+        $router->setDefaultMiddlewares(['SpyDefaultMiddleware']);
+        $router->setGlobalMiddlewares(['SpyGlobalMiddleware']);
+        $router->get('/login', 'RouterSpyController', 'loginForm', [], public: true);
+        $router->dispatch();
+
+        $this->assertSame([SpyGlobalMiddleware::class], SpyMiddlewareBase::$executionLog);
+        $this->assertSame('loginForm', RouterSpyController::$calledAction);
+    }
+
+    public function testHeadChamaAActionDaRotaGet(): void
+    {
+        $router = $this->dispatch('HEAD', '/crm/public/privacidade');
+        $router->get('/privacidade', 'RouterSpyController', 'index', [], public: true);
+        $router->dispatch();
+
+        $this->assertSame('index', RouterSpyController::$calledAction);
+    }
+
+    public function testHeadNaoCasaRotaPostComOMesmoPadrao(): void
+    {
+        $router = $this->dispatch('HEAD', '/crm/public/clients/store');
+        $router->post('/clients/store', 'RouterSpyController', 'store');
+        $router->get('/clients/store', 'RouterSpyController', 'show');
+        $router->dispatch();
+
+        $this->assertSame('show', RouterSpyController::$calledAction);
+    }
+
+    public function testHeadEmRotaProtegidaExecutaOsMesmosMiddlewaresDoGet(): void
+    {
+        $router = $this->dispatch('HEAD', '/crm/public/clients');
+        $router->setDefaultMiddlewares(['SpyDefaultMiddleware']);
+        $router->setGlobalMiddlewares(['SpyGlobalMiddleware']);
+        $router->get('/clients', 'RouterSpyController', 'index', ['SpyRouteMiddleware']);
+        $router->dispatch();
+
+        $this->assertSame(
+            [SpyDefaultMiddleware::class, SpyRouteMiddleware::class, SpyGlobalMiddleware::class],
+            SpyMiddlewareBase::$executionLog
+        );
+        $this->assertSame('index', RouterSpyController::$calledAction);
+    }
+
+    public function testHeadEmRotaPublicaNaoExecutaMiddlewareDefault(): void
+    {
+        $router = $this->dispatch('HEAD', '/crm/public/login');
         $router->setDefaultMiddlewares(['SpyDefaultMiddleware']);
         $router->setGlobalMiddlewares(['SpyGlobalMiddleware']);
         $router->get('/login', 'RouterSpyController', 'loginForm', [], public: true);

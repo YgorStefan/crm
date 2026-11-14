@@ -42,6 +42,11 @@ abstract class Controller
         };
         $content = $renderView($viewFile, $data);
 
+        // o layout roda no escopo deste metodo, e nao no da view, entao so enxerga
+        // o que for repassado aqui; o resto do $data fica de fora para nao
+        // sobrescrever $content nem $layoutFile.
+        $title = $data['title'] ?? null;
+
         // Carrega o layout que envolve a view (header + sidebar + footer)
         $layoutFile = VIEW_PATH . DS . 'layouts' . DS . $layout . '.php';
         if (file_exists($layoutFile)) {

@@ -4,13 +4,24 @@ namespace App\Controllers;
 
 use Core\Controller;
 use Core\Http\ApiResponse;
+use Core\Logger;
 use Core\Middleware\CsrfMiddleware;
+use App\Models\GoogleAccount;
 use App\Models\Task;
 use App\Models\User;
 use App\Models\Client;
+use App\Services\Google\GoogleCalendarSync;
+use App\Services\Google\GoogleConfig;
 
 class TaskController extends Controller
 {
+    private const GOOGLE_EVENT_COLOR = '#64748b';
+    // o fullcalendar manda a janela com o offset do navegador, e sem ele a
+    // lista do google pediria horarios deslocados.
+    private const FEED_INSTANT_PATTERN = '/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2}(\.\d+)?)?(Z|[+-]\d{2}:\d{2})\z/';
+
+    private ?GoogleCalendarSync $sync = null;
+
     public function __construct(
         private Task   $tasks   = new Task(),
         private Client $clients = new Client(),
@@ -23,35 +34,180 @@ class TaskController extends Controller
     public function calendarFeed(array $params = []): void
     {
         $userId = (int) ($_SESSION['user']['id'] ?? 0);
-        $isAdmin = ($_SESSION['user']['role'] ?? '') === 'admin';
+        $role = (string) ($_SESSION['user']['role'] ?? '');
+        $isAdmin = $role === 'admin';
+
+        $googleStatus = null;
+        // a spec manda qualquer falha nao prevista do lado do google cair no
+        // feed de sempre, com o aviso de degradado.
+        try {
+            $connection = self::googleBarState(
+                GoogleConfig::fromEnv()->isConfigured(),
+                $role,
+                static fn (): array|false => (new GoogleAccount())->findForUser($userId),
+            )['connection'];
+            $window = self::parseFeedWindow($_GET['start'] ?? null, $_GET['end'] ?? null);
+
+            if ($connection === 'active' && $window !== null) {
+                $sync = $this->sync();
+                // o google pode levar segundos, e a sessao aberta seguraria as
+                // outras requisicoes deste usuario ate o feed terminar.
+                session_write_close();
+                $result = $sync->window($userId, $isAdmin, $window[0], $window[1], ($_GET['team'] ?? '') === '1');
+
+                header('X-CRM-Google-Status: ' . $result['status']);
+                $this->json([
+                    ...array_map(self::calendarTaskEvent(...), $result['tasks']),
+                    ...array_map(self::calendarTeamEvent(...), $result['team']),
+                    ...array_map(self::calendarGoogleEvent(...), $result['foreign']),
+                ]);
+                return;
+            }
+
+            // a conta revogada nao chama o google, mas a tela precisa do pedido de reconexao.
+            if ($connection === 'revoked') {
+                $googleStatus = 'reconnect';
+            }
+        } catch (\Throwable $e) {
+            (new Logger())->error('[TaskController] feed do calendario sem o google', [
+                'user_id'   => $userId,
+                'exception' => $e::class,
+                'message'   => $e->getMessage(),
+            ]);
+            $googleStatus = 'degraded';
+        }
+
+        if ($googleStatus !== null) {
+            header('X-CRM-Google-Status: ' . $googleStatus);
+        }
+
         // FullCalendar envia start/end (janela visível) automaticamente
         // quando "events" é configurado como URL — antes ignorados, o que
         // fazia esse endpoint carregar TODAS as tarefas do tenant a cada abertura.
-        $start = $this->parseCalendarDate($_GET['start'] ?? null);
-        $end   = $this->parseCalendarDate($_GET['end'] ?? null);
+        $start = self::parseCalendarDate($_GET['start'] ?? null);
+        $end   = self::parseCalendarDate($_GET['end'] ?? null);
         $tasks = $this->tasks->findForCalendar($userId, $isAdmin, $start, $end);
 
-        $events = array_map(fn($t) => [
-            'id'    => $t['id'],
-            'title' => (($t['recurrence_type'] !== 'none' || $t['recurrence_parent_id'] !== null) ? '↻ ' : '')
-                       . htmlspecialchars($t['title'], ENT_QUOTES, 'UTF-8'),
-            'start' => $t['due_date'],
-            'color' => match ($t['priority']) {
+        $this->json(array_map(self::calendarTaskEvent(...), $tasks));
+    }
+
+    /**
+     * @param array<string, mixed> $task linha do Task::findForCalendar
+     * @return array<string, mixed>
+     */
+    public static function calendarTaskEvent(array $task): array
+    {
+        // o titulo vai cru porque o fullcalendar, o tooltip e a lista de conflito o
+        // poem como texto, e escapar aqui mostraria &amp; na tela.
+        return [
+            'id'    => $task['id'],
+            'title' => (($task['recurrence_type'] !== 'none' || $task['recurrence_parent_id'] !== null) ? '↻ ' : '')
+                       . $task['title'],
+            'start' => $task['due_date'],
+            'color' => match ($task['priority']) {
                 'high'   => '#ef4444',
                 'medium' => '#f59e0b',
                 default  => '#6366f1',
             },
             'extendedProps' => [
-                'status'               => $t['status'],
-                'priority'             => $t['priority'],
-                'client_id'            => $t['client_id'] ? (int) $t['client_id'] : null,
-                'client_name'          => $t['client_name'] ?? null,
-                'recurrence_type'      => $t['recurrence_type'],
-                'recurrence_parent_id' => $t['recurrence_parent_id'] !== null ? (int) $t['recurrence_parent_id'] : null,
+                'status'               => $task['status'],
+                'priority'             => $task['priority'],
+                'client_id'            => $task['client_id'] ? (int) $task['client_id'] : null,
+                'client_name'          => $task['client_name'] ?? null,
+                'recurrence_type'      => $task['recurrence_type'],
+                'recurrence_parent_id' => $task['recurrence_parent_id'] !== null ? (int) $task['recurrence_parent_id'] : null,
             ],
-        ], $tasks);
+        ];
+    }
 
-        $this->json($events);
+    /**
+     * @param array<string, mixed> $task linha do Task::findTeamForCalendar
+     * @return array<string, mixed>
+     */
+    public static function calendarTeamEvent(array $task): array
+    {
+        $event = self::calendarTaskEvent($task);
+        $event['extendedProps']['assigned_name'] = $task['assigned_name'] ?? null;
+
+        return $event;
+    }
+
+    /**
+     * o titulo vai sem escape porque a tela o poe como texto.
+     *
+     * @param array<string, mixed> $item item foreign do GoogleCalendarSync::window
+     * @return array<string, mixed>
+     */
+    public static function calendarGoogleEvent(array $item): array
+    {
+        $allDay = $item['all_day'] === true;
+        $event  = [
+            'id'    => $item['id'],
+            'title' => $item['title'],
+            'start' => $item['start'],
+            'end'   => $item['end'],
+            'color' => self::GOOGLE_EVENT_COLOR,
+        ];
+        if ($allDay) {
+            $event['allDay'] = true;
+        }
+        $event['extendedProps'] = [
+            'source'      => 'google',
+            'google_id'   => $item['google_id'],
+            'can_edit'    => $item['can_edit'] === true,
+            'recurring'   => $item['recurring'] === true,
+            'html_link'   => $item['html_link'],
+            'description' => $item['description'],
+            'all_day'     => $allDay,
+        ];
+
+        return $event;
+    }
+
+    /** @return array{0:\DateTimeImmutable,1:\DateTimeImmutable}|null */
+    public static function parseFeedWindow(mixed $start, mixed $end): ?array
+    {
+        $from = self::parseFeedInstant($start);
+        $to   = self::parseFeedInstant($end);
+
+        return $from !== null && $to !== null && $to > $from ? [$from, $to] : null;
+    }
+
+    private static function parseFeedInstant(mixed $raw): ?\DateTimeImmutable
+    {
+        if (!is_string($raw) || preg_match(self::FEED_INSTANT_PATTERN, $raw) !== 1) {
+            return null;
+        }
+        try {
+            $at = new \DateTimeImmutable($raw);
+        } catch (\Exception) {
+            return null;
+        }
+        // o php aceita o dia 31 de fevereiro e o empurra para marco com um aviso.
+        $errors = \DateTimeImmutable::getLastErrors();
+
+        return $errors === false || $errors['warning_count'] === 0 ? $at : null;
+    }
+
+    private function sync(): GoogleCalendarSync
+    {
+        return $this->sync ??= GoogleCalendarSync::default();
+    }
+
+    private function drainAfterSave(): void
+    {
+        // a tarefa ja foi gravada, e um erro aqui levaria a pessoa a salvar de novo.
+        try {
+            if (GoogleConfig::fromEnv()->isConfigured()) {
+                $this->sync()->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE, (int) ($_SESSION['user']['id'] ?? 0));
+            }
+        } catch (\Throwable $e) {
+            (new Logger())->error('[TaskController] envio ao google depois de salvar', [
+                'user_id'   => (int) ($_SESSION['user']['id'] ?? 0),
+                'exception' => $e::class,
+                'message'   => $e->getMessage(),
+            ]);
+        }
     }
 
     /**
@@ -59,9 +215,10 @@ class TaskController extends Controller
      * visível) para o formato DATETIME do MySQL. Retorna null se ausente
      * ou inválida (nesse caso a consulta simplesmente não filtra por data).
      */
-    private function parseCalendarDate(?string $raw): ?string
+    public static function parseCalendarDate(mixed $raw): ?string
     {
-        if (empty($raw)) return null;
+        // a query aceita start[]=x, e o array derrubaria o feed com erro 500.
+        if (!is_string($raw) || empty($raw)) return null;
         try {
             return (new \DateTime($raw))->format('Y-m-d H:i:s');
         } catch (\Throwable) {
@@ -214,15 +371,74 @@ class TaskController extends Controller
         $overdue = $this->tasks->findOverdue($isAdmin ? null : (int) $_SESSION['user']['id']);
         $users = $this->users->findAllActive();
 
+        $userId = (int) $_SESSION['user']['id'];
+        $google = self::googleBarState(
+            \App\Services\Google\GoogleConfig::fromEnv()->isConfigured(),
+            (string) ($_SESSION['user']['role'] ?? ''),
+            static fn (): array|false => (new \App\Models\GoogleAccount())->findForUser($userId),
+        );
+
         $this->render('tasks/index', [
-            'pageTitle' => 'Tarefas',
             'title' => 'Tarefas — ' . APP_NAME,
             'tasks' => $tasks,
             'overdue' => $overdue,
             'users' => $users,
             'filters' => $filters,
             'csrf_token' => CsrfMiddleware::getToken(),
+            'googleEnabled' => $google['enabled'],
+            'googleConnection' => $google['connection'],
+            'googleEmail' => $google['email'],
         ]);
+    }
+
+    /**
+     * @param \Closure(): (array|false) $findAccount
+     * @return array{enabled: bool, connection: ?string, email: ?string}
+     */
+    public static function googleBarState(bool $configured, string $role, \Closure $findAccount): array
+    {
+        $none = ['enabled' => false, 'connection' => null, 'email' => null];
+        if (!$configured || !in_array($role, ['admin', 'seller'], true)) {
+            return $none;
+        }
+
+        // conta desconectada guarda o google_email para comparar na proxima
+        // conexao, entao so o status diz se ela ainda esta ligada.
+        $account = $findAccount();
+        $status = is_array($account) ? ($account['status'] ?? null) : null;
+        if ($status !== 'active' && $status !== 'revoked') {
+            return ['enabled' => true, 'connection' => null, 'email' => null];
+        }
+
+        return ['enabled' => true, 'connection' => $status, 'email' => (string) ($account['google_email'] ?? '')];
+    }
+
+    public static function assigneeForStore(mixed $posted, string $role, int $sessionUserId): int
+    {
+        // um seller que mandasse o id de um colega gravaria na agenda do google dele.
+        if ($role !== 'admin') {
+            return $sessionUserId;
+        }
+
+        return self::postedUserId($posted) ?? $sessionUserId;
+    }
+
+    public static function assigneeChange(mixed $posted, string $role, int $currentAssignee): ?int
+    {
+        if ($role !== 'admin') {
+            return null;
+        }
+
+        $newAssignee = self::postedUserId($posted);
+
+        return $newAssignee !== null && $newAssignee !== $currentAssignee ? $newAssignee : null;
+    }
+
+    private static function postedUserId(mixed $posted): ?int
+    {
+        $id = filter_var($posted, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
+
+        return $id === false ? null : $id;
     }
 
     /**
@@ -237,46 +453,57 @@ class TaskController extends Controller
         $clientId = $this->inputPost('client_id');
 
         if (empty($title) || empty($dueDate)) {
-            $this->flash('error', 'Título e prazo são obrigatórios.');
-            // Redireciona para a tela de tarefas (Referer header é forjável)
-            $clientId = $this->inputPost('client_id');
-            if ($clientId) {
-                $this->redirect('/clients/' . (int) $clientId);
-            } else {
-                $this->redirect('/tasks');
-            }
+            $this->rejectTaskRequest('Título e prazo são obrigatórios.');
             return;
         }
 
-        // client_id é opcional, mas se enviado precisa pertencer ao tenant
-        // atual (Client::findById() já é escopado) — sem isso, uma tarefa
-        // podia ser criada apontando para o cliente de outro tenant.
-        if (!empty($clientId) && !$this->clients->findById((int) $clientId)) {
-            $this->flash('error', 'Cliente inválido.');
-            $this->redirect('/tasks');
+        $dueDate = self::parseDueDate((string) $dueDate);
+        if ($dueDate === null) {
+            $this->rejectTaskRequest('Prazo inválido.');
             return;
         }
 
-        // Converte datetime-local para MySQL
-        $dueDate = str_replace('T', ' ', $dueDate) . ':00';
+        $priority = $this->inputPost('priority', 'medium');
+        if (!in_array($priority, ['low', 'medium', 'high'], true)) {
+            $this->rejectTaskRequest('Prioridade inválida.');
+            return;
+        }
 
-        $assignedTo = $this->inputPost('assigned_to') ?: $_SESSION['user']['id'];
+        $assignedTo = self::assigneeForStore(
+            $this->inputPost('assigned_to'),
+            (string) ($_SESSION['user']['role'] ?? ''),
+            (int) ($_SESSION['user']['id'] ?? 0),
+        );
 
         $recurrenceType = $this->inputPost('recurrence_type', 'none');
         if (!in_array($recurrenceType, ['none', 'weekly', 'monthly', 'yearly'], true)) {
             $recurrenceType = 'none';
         }
 
-        $this->tasks->create([
-            'client_id'       => $clientId ?: null,
-            'assigned_to'     => $assignedTo,
-            'title'           => $title,
-            'description'     => $this->input('description'),
-            'due_date'        => $dueDate,
-            'priority'        => $this->inputPost('priority', 'medium'),
-            'recurrence_type' => $recurrenceType,
-            'created_by'      => $_SESSION['user']['id'],
-        ]);
+        try {
+            $this->tasks->create([
+                'client_id'       => $clientId ?: null,
+                'assigned_to'     => $assignedTo,
+                'title'           => $title,
+                'description'     => $this->input('description'),
+                'due_date'        => $dueDate,
+                'priority'        => $priority,
+                'recurrence_type' => $recurrenceType,
+                'created_by'      => $_SESSION['user']['id'],
+            ]);
+        } catch (\InvalidArgumentException $e) {
+            if ($e->getCode() === Task::INVALID_CLIENT) {
+                $this->rejectTaskRequest('Cliente inválido.');
+            } elseif ($e->getCode() === Task::INVALID_ASSIGNEE) {
+                // o task::create confere o cliente antes do responsavel, entao aqui o cliente ja e valido.
+                $this->rejectTaskRequest('Responsável inválido.', $clientId ? '/clients/' . (int) $clientId : '/tasks');
+            } else {
+                throw $e;
+            }
+            return;
+        }
+
+        $this->drainAfterSave();
 
         if ($this->isAjax()) {
             $this->json(ApiResponse::success(token: true));
@@ -293,17 +520,30 @@ class TaskController extends Controller
         }
     }
 
-    /**
-     * Responde a uma validação inválida em update(): JSON para AJAX,
-     * flash + redirect para submissão de formulário normal.
-     */
-    private function rejectTaskUpdate(string $message): void
+    // o espaco no lugar do t continua aceito porque o cadastro ja aceitava as duas
+    // formas antes, e o que nao casar o banco recusaria com erro 500. o utc so serve
+    // para guardar o texto como veio: no fuso do app, um horario que nao existe por
+    // causa do horario de verao seria empurrado uma hora para frente.
+    private static function parseDueDate(string $raw): ?string
+    {
+        $parsed = \DateTimeImmutable::createFromFormat('!Y-m-d H:i', str_replace('T', ' ', $raw), new \DateTimeZone('UTC'));
+        $errors = \DateTimeImmutable::getLastErrors();
+        if ($parsed === false || ($errors !== false && $errors['warning_count'] + $errors['error_count'] > 0)) {
+            return null;
+        }
+
+        return $parsed->format('Y-m-d H:i:s');
+    }
+
+    // o ajax recebe o erro em json e nunca redirect, porque o fetch segue o 302,
+    // chega a um 200 e a tela fecharia o modal como se a tarefa tivesse sido salva.
+    private function rejectTaskRequest(string $message, string $redirectTo = '/tasks', int $status = 422): void
     {
         if ($this->isAjax()) {
-            $this->json(ApiResponse::error($message), 422);
+            $this->json(ApiResponse::error($message), $status);
         } else {
             $this->flash('error', $message);
-            $this->redirect('/tasks');
+            $this->redirect($redirectTo);
         }
     }
 
@@ -314,33 +554,9 @@ class TaskController extends Controller
     {
         $id = (int) ($params['id'] ?? 0);
 
-        $data = [];
-        if (isset($_POST['status'])) {
-            $status = $this->inputPost('status');
-            if (!in_array($status, ['pending', 'in_progress', 'done', 'cancelled'], true)) {
-                $this->rejectTaskUpdate('Status inválido.');
-                return;
-            }
-            $data['status'] = $status;
-        }
-        if (isset($_POST['priority'])) {
-            $priority = $this->inputPost('priority');
-            if (!in_array($priority, ['low', 'medium', 'high'], true)) {
-                $this->rejectTaskUpdate('Prioridade inválida.');
-                return;
-            }
-            $data['priority'] = $priority;
-        }
-        if (isset($_POST['title']))
-            $data['title'] = $this->input('title');
-        if (isset($_POST['due_date']))
-            $data['due_date'] = str_replace('T', ' ', $this->inputPost('due_date')) . ':00';
-        if (isset($_POST['description']))
-            $data['description'] = $this->input('description');
-
         $task = $this->tasks->findById($id);
         if (!$task) {
-            $this->redirect('/tasks');
+            $this->rejectTaskRequest('Tarefa não encontrada.', '/tasks', 404);
             return;
         }
 
@@ -348,7 +564,62 @@ class TaskController extends Controller
             return;
         }
 
-        $this->tasks->update($id, $data);
+        $data = [];
+        if (isset($_POST['status'])) {
+            $status = $this->inputPost('status');
+            if (!in_array($status, ['pending', 'in_progress', 'done', 'cancelled'], true)) {
+                $this->rejectTaskRequest('Status inválido.');
+                return;
+            }
+            $data['status'] = $status;
+        }
+        if (isset($_POST['priority'])) {
+            $priority = $this->inputPost('priority');
+            if (!in_array($priority, ['low', 'medium', 'high'], true)) {
+                $this->rejectTaskRequest('Prioridade inválida.');
+                return;
+            }
+            $data['priority'] = $priority;
+        }
+        if (isset($_POST['title'])) {
+            $title = $this->input('title');
+            if ($title === '') {
+                $this->rejectTaskRequest('Título é obrigatório.');
+                return;
+            }
+            $data['title'] = $title;
+        }
+        if (isset($_POST['due_date'])) {
+            $dueDate = self::parseDueDate((string) $this->inputPost('due_date'));
+            if ($dueDate === null) {
+                $this->rejectTaskRequest('Prazo inválido.');
+                return;
+            }
+            $data['due_date'] = $dueDate;
+        }
+        if (isset($_POST['description']))
+            $data['description'] = $this->input('description');
+
+        $newAssignee = self::assigneeChange(
+            $this->inputPost('assigned_to'),
+            (string) ($_SESSION['user']['role'] ?? ''),
+            (int) $task['assigned_to'],
+        );
+        if ($newAssignee !== null) {
+            $data['assigned_to'] = $newAssignee;
+        }
+
+        try {
+            $this->tasks->update($id, $data);
+        } catch (\InvalidArgumentException $e) {
+            if ($e->getCode() !== Task::INVALID_ASSIGNEE) {
+                throw $e;
+            }
+            $this->rejectTaskRequest('Responsável inválido.');
+            return;
+        }
+
+        $this->drainAfterSave();
 
         // Se for requisição AJAX, retorna JSON; senão, redireciona
         if ($this->isAjax()) {
@@ -371,7 +642,7 @@ class TaskController extends Controller
 
         $task = $this->tasks->findById($id);
         if (!$task) {
-            $this->redirect('/tasks');
+            $this->rejectTaskRequest('Tarefa não encontrada.', '/tasks', 404);
             return;
         }
 
@@ -380,6 +651,7 @@ class TaskController extends Controller
         }
 
         $this->tasks->delete($id);
+        $this->drainAfterSave();
 
         if ($this->isAjax()) {
             $this->json(ApiResponse::success(token: true));
@@ -408,6 +680,7 @@ class TaskController extends Controller
             : $id;
 
         $this->tasks->cancelRecurrence($parentId);
+        $this->drainAfterSave();
         $this->json(ApiResponse::success(token: true));
     }
 }

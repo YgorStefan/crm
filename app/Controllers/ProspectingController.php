@@ -25,7 +25,6 @@ class ProspectingController extends Controller
         $row = $stmt->fetch();
 
         $this->render('prospecting/index', [
-            'pageTitle'     => 'Prospecção de Leads',
             'title'         => 'Prospecção — ' . APP_NAME,
             'has_gmaps_key' => !empty($row['google_maps_api_key']),
             'csrf_token'    => CsrfMiddleware::getToken(),

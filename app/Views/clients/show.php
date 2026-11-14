@@ -275,7 +275,7 @@ unset($_jsV);
 
                                 <!-- Botão deletar (sempre visível, estado view) -->
                                 <form method="POST" action="<?= APP_URL ?>/interactions/<?= $inter['id'] ?>/delete"
-                                    onsubmit="return confirm('Remover esta interação?')">
+                                    data-confirm="Remover esta interação?">
                                     <input type="hidden" name="_csrf_token"
                                         value="<?= htmlspecialchars($csrf_token, ENT_QUOTES, 'UTF-8') ?>">
                                     <button type="submit" class="w-9 h-9 inline-flex items-center justify-center rounded-md text-gray-300 hover:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 text-sm inter-delete-btn"
