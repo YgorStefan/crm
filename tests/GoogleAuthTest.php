@@ -549,6 +549,92 @@ final class GoogleAuthTest extends TestCase
         $this->assertSame([], $this->http->requests());
     }
 
+    private const TRAVA_DO_TENANT = 'crm-google-connect-1';
+
+    private function travaLivre(): bool
+    {
+        return (int) $this->pdo->query("SELECT IS_FREE_LOCK('" . self::TRAVA_DO_TENANT . "')")->fetchColumn() === 1;
+    }
+
+    /** outra sessao do banco, como a de outra requisicao */
+    private function outraSessao(): \PDO
+    {
+        $host = getenv('DB_HOST') ?: '127.0.0.1';
+        $port = getenv('DB_PORT') ?: '3306';
+        $pass = ($p = getenv('DB_PASS')) !== false ? $p : '';
+        return new \PDO("mysql:host={$host};port={$port};charset=utf8mb4", getenv('DB_USER') ?: 'root', $pass, [
+            \PDO::ATTR_ERRMODE => \PDO::ERRMODE_EXCEPTION,
+        ]);
+    }
+
+    public function testConexaoGravaComATravaDoTenantNaMesmaSessao(): void
+    {
+        $travadaNoUpsert = null;
+        $contas = new class ($travadaNoUpsert) extends GoogleAccount {
+            public function __construct(private ?bool &$travada)
+            {
+                parent::__construct();
+            }
+
+            public function upsertConnected(int $userId, string $email, string $sub, string $encRefresh, string $encAccess, string $expiresAt): bool
+            {
+                $this->travada = (bool) $this->db->query(
+                    "SELECT IS_USED_LOCK('crm-google-connect-1') = CONNECTION_ID()"
+                )->fetchColumn();
+                return parent::upsertConnected($userId, $email, $sub, $encRefresh, $encAccess, $expiresAt);
+            }
+        };
+        $auth = new GoogleAuth($this->config, $this->http, accounts: $contas, now: $this->http->now());
+
+        $this->assertTrue($auth->completeConnection(self::ANA, $this->trocado()));
+
+        $this->assertTrue($travadaNoUpsert);
+        $this->assertTrue($this->travaLivre());
+    }
+
+    public function testTravaFicaLivreDepoisDaRecusa(): void
+    {
+        $this->conta(self::BIA, ['google_sub' => 'sub-da-mesma-conta']);
+
+        $erro = $this->capturar(fn () => $this->auth()->completeConnection(self::ANA, $this->trocado('sub-da-mesma-conta')));
+
+        $this->assertInstanceOf(GoogleAccountInUse::class, $erro);
+        $this->assertTrue($this->travaLivre());
+    }
+
+    public function testTravaFicaLivreDepoisDeErroNoMeio(): void
+    {
+        $contas = new class extends GoogleAccount {
+            public function upsertConnected(int $userId, string $email, string $sub, string $encRefresh, string $encAccess, string $expiresAt): bool
+            {
+                throw new \RuntimeException('falha de banco falsa');
+            }
+        };
+        $auth = new GoogleAuth($this->config, $this->http, accounts: $contas, now: $this->http->now());
+
+        $erro = $this->capturar(fn () => $auth->completeConnection(self::ANA, $this->trocado()));
+
+        $this->assertSame('falha de banco falsa', $erro->getMessage());
+        $this->assertTrue($this->travaLivre());
+    }
+
+    public function testSemATravaEmCincoSegundosFalhaSemGravar(): void
+    {
+        // outra conexao do mesmo tenant esta no meio da dela.
+        $outra = $this->outraSessao();
+        $this->assertSame(1, (int) $outra->query("SELECT GET_LOCK('" . self::TRAVA_DO_TENANT . "', 0)")->fetchColumn());
+        try {
+            $erro = $this->capturar(fn () => $this->auth()->completeConnection(self::ANA, $this->trocado()));
+        } finally {
+            $outra->query("SELECT RELEASE_LOCK('" . self::TRAVA_DO_TENANT . "')");
+        }
+
+        $this->assertInstanceOf(\RuntimeException::class, $erro);
+        $this->assertNotInstanceOf(GoogleAccountInUse::class, $erro);
+        $this->assertFalse($this->contaDe(self::ANA));
+        $this->assertSame([], $this->http->requests());
+    }
+
     public function testContaDesconectadaDeOutroUsuarioNaoBloqueia(): void
     {
         $this->conta(self::BIA, [

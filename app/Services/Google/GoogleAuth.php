@@ -117,25 +117,34 @@ final class GoogleAuth
     public function completeConnection(int $userId, array $exchanged): bool
     {
         $db = Database::getInstance();
-        $db->beginTransaction();
-        try {
-            // o id do evento nao leva o dono, entao duas pessoas do crm na mesma
-            // conta google dividiriam a agenda, e uma troca de responsavel entre
-            // elas apagaria o evento e cancelaria a tarefa. o token recebido nao
-            // e revogado: a revogacao vale para a conta google no projeto
-            // inteiro, e derrubaria a conexao dela em outro tenant e no cliente de dev.
-            if (!$this->accounts->subUsedByOtherUser($userId, $exchanged['sub'])) {
-                return $this->storeConnection($db, $userId, $exchanged);
-            }
-            $db->rollBack();
-        } catch (\Throwable $e) {
-            if ($db->inTransaction()) {
-                $db->rollBack();
-            }
-            throw $e;
+        if (!$this->accounts->lockConnections()) {
+            throw new \RuntimeException('A trava das conexões do Google Agenda não foi obtida a tempo.');
         }
+        // a trava e da sessao do banco, nao da transacao, e por isso sai no
+        // finally, inclusive depois de um rollback.
+        try {
+            $db->beginTransaction();
+            try {
+                // o id do evento nao leva o dono, entao duas pessoas do crm na mesma
+                // conta google dividiriam a agenda, e uma troca de responsavel entre
+                // elas apagaria o evento e cancelaria a tarefa. o token recebido nao
+                // e revogado: a revogacao vale para a conta google no projeto
+                // inteiro, e derrubaria a conexao dela em outro tenant e no cliente de dev.
+                if (!$this->accounts->subUsedByOtherUser($userId, $exchanged['sub'])) {
+                    return $this->storeConnection($db, $userId, $exchanged);
+                }
+                $db->rollBack();
+            } catch (\Throwable $e) {
+                if ($db->inTransaction()) {
+                    $db->rollBack();
+                }
+                throw $e;
+            }
 
-        throw new GoogleAccountInUse('A conta Google já está conectada a outro usuário.');
+            throw new GoogleAccountInUse('A conta Google já está conectada a outro usuário.');
+        } finally {
+            $this->accounts->unlockConnections();
+        }
     }
 
     /**

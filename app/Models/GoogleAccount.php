@@ -12,6 +12,8 @@ class GoogleAccount extends Model
 {
     protected string $table = 'google_accounts';
 
+    private const CONNECTION_LOCK_TIMEOUT_S = 5;
+
     public function findForUser(int $userId): array|false
     {
         $stmt = $this->db->prepare(
@@ -38,10 +40,35 @@ class GoogleAccount extends Model
     }
 
     /**
+     * trava com nome, por tenant, em volta da conferencia e da gravacao da
+     * conexao: duas conexoes ao mesmo tempo nao passam as duas com a mesma conta
+     * google. um for update na leitura travaria a faixa do indice do tenant, e
+     * conexoes de contas diferentes dariam deadlock (medido na revisao).
+     */
+    public function lockConnections(): bool
+    {
+        $stmt = $this->db->prepare('SELECT GET_LOCK(:name, :timeout_s)');
+        $stmt->bindValue(':name', $this->connectionLockName());
+        $stmt->bindValue(':timeout_s', self::CONNECTION_LOCK_TIMEOUT_S, \PDO::PARAM_INT);
+        $stmt->execute();
+        return (int) $stmt->fetchColumn() === 1;
+    }
+
+    public function unlockConnections(): void
+    {
+        $stmt = $this->db->prepare('SELECT RELEASE_LOCK(:name)');
+        $stmt->execute([':name' => $this->connectionLockName()]);
+    }
+
+    private function connectionLockName(): string
+    {
+        return 'crm-google-connect-' . $this->currentTenantId();
+    }
+
+    /**
      * outro usuario do tenant tem a mesma conta google ativa ou revogada. a
-     * desconectada fica de fora, porque quem a tinha ja a soltou. o for update
-     * vale dentro da transacao de quem chama e segura as contas do tenant ate o
-     * fim dela, para duas conexoes ao mesmo tempo nao passarem as duas.
+     * desconectada fica de fora, porque quem a tinha ja a soltou. quem chama
+     * segura o lockConnections, que faz as conexoes do tenant esperarem a vez.
      */
     public function subUsedByOtherUser(int $userId, string $sub): bool
     {
@@ -49,8 +76,7 @@ class GoogleAccount extends Model
             "SELECT 1 FROM google_accounts
              WHERE tenant_id = :tenant_id AND google_sub = :sub AND user_id <> :user_id
                AND status IN ('active', 'revoked')
-             LIMIT 1
-             FOR UPDATE"
+             LIMIT 1"
         );
         $stmt->execute([':tenant_id' => $this->currentTenantId(), ':sub' => $sub, ':user_id' => $userId]);
         return $stmt->fetchColumn() !== false;
