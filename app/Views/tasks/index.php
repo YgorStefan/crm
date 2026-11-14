@@ -109,6 +109,11 @@ $googleTeam       = $googleEnabled && $googleConnection === 'active' && ($_SESSI
                         class="flex-shrink-0 px-3 py-1 rounded-md font-medium bg-indigo-600 text-white hover:bg-indigo-700 transition-colors">
                         Reconectar
                     </a>
+                    <?php // a conta revogada ainda prende a conta google, e outro usuario so a conecta depois que ela e solta. ?>
+                    <button type="button" data-google-disconnect
+                        class="flex-shrink-0 px-2 py-1 rounded-md font-medium text-gray-500 hover:text-red-700 hover:bg-red-50 dark:text-zinc-400 dark:hover:text-red-300 dark:hover:bg-red-900/30 transition-colors">
+                        Desconectar
+                    </button>
                 <?php else: ?>
                     <a href="<?= $googleConnectUrl ?>"
                         class="inline-flex items-center gap-2 px-3 py-1 rounded-md font-medium border border-indigo-200 bg-white text-indigo-700 hover:bg-indigo-50

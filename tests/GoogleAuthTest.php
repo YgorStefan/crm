@@ -746,6 +746,18 @@ final class GoogleAuthTest extends TestCase
         $this->assertSame(['token' => 'refresh-falso'], self::formulario($pedidos[0]['body']));
     }
 
+    public function testDesconectarContaRevogadaSoltaAContaParaOutroUsuario(): void
+    {
+        $this->conta(self::ANA, ['google_sub' => 'sub-da-mesma-conta', 'status' => 'revoked']);
+        $this->http->respond('oauth2.googleapis.com/revoke', 200, '');
+
+        $this->auth()->disconnect(self::ANA);
+
+        $this->assertSame('disconnected', $this->contaDe(self::ANA)['status']);
+        $this->assertTrue($this->auth()->completeConnection(self::BIA, $this->trocado('sub-da-mesma-conta')));
+        $this->assertSame('active', $this->contaDe(self::BIA)['status']);
+    }
+
     public function testDesconectarSemRedeNaoLancaEApagaTokens(): void
     {
         $this->conta(self::ANA);

@@ -101,13 +101,14 @@ class TaskCalendarViewTest extends TestCase
         $this->assertStringNotContainsString('x"><b>@example.com', $html);
     }
 
-    public function testContaRevogadaPedeReconectar(): void
+    public function testContaRevogadaPedeReconectarEDeixaDesconectar(): void
     {
         $html = $this->renderTasks('seller', true, 'revoked', 'pessoa@example.com');
 
         $this->assertStringContainsString('Reconectar', $html);
         $this->assertStringContainsString('href="http://localhost/crm/public/google/connect"', $html);
-        $this->assertStringNotContainsString('data-google-disconnect', $html);
+        $this->assertStringContainsString('data-google-disconnect', $html);
+        $this->assertStringContainsString('Desconectar', $html);
     }
 
     public function testEquipeSoParaAdminConectado(): void

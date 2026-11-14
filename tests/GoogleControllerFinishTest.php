@@ -147,7 +147,7 @@ final class GoogleControllerFinishTest extends TestCase
         $this->assertSame('/tasks', $controller->destino);
         $this->assertSame([
             'type'    => 'warning',
-            'message' => 'Esta conta Google já está conectada a outro usuário.',
+            'message' => 'Esta conta Google já está conectada a outro usuário. Peça para essa pessoa desconectar antes.',
         ], $_SESSION['flash']);
         $this->assertSame(1, $this->contas());
         $this->assertSame(['https://oauth2.googleapis.com/token'], array_column($http->requests(), 'url'));
