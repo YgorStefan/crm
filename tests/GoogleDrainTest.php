@@ -13,6 +13,7 @@ use PHPUnit\Framework\TestCase;
 
 require_once __DIR__ . '/Support/GoogleTestDb.php';
 require_once __DIR__ . '/Support/FakeTransport.php';
+require_once __DIR__ . '/Support/TestLogDir.php';
 
 final class GoogleDrainTest extends TestCase
 {
@@ -35,6 +36,8 @@ final class GoogleDrainTest extends TestCase
 
     protected function setUp(): void
     {
+        // antes do banco, que pula o teste quando nao responde e o tearDown roda mesmo assim.
+        $this->logDir = TestLogDir::path('drain');
         $this->pdo = GoogleTestDb::setUp();
         $this->chave = 'base64:' . base64_encode(str_repeat('k', 32));
         $this->config = new GoogleConfig(
@@ -42,7 +45,6 @@ final class GoogleDrainTest extends TestCase
         );
         $this->http = new FakeTransport();
         $this->t0 = ($this->http->now())();
-        $this->logDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'crm-drain-log-' . bin2hex(random_bytes(6));
         $_SESSION['tenant_id'] = self::TENANT;
 
         $this->pdo->exec("INSERT INTO users (id, name, tenant_id, is_active) VALUES
@@ -57,12 +59,7 @@ final class GoogleDrainTest extends TestCase
             $this->pdo = null;
         }
         unset($_SESSION['tenant_id']);
-        foreach (glob($this->logDir . DIRECTORY_SEPARATOR . '*') ?: [] as $arquivo) {
-            unlink($arquivo);
-        }
-        if (is_dir($this->logDir)) {
-            rmdir($this->logDir);
-        }
+        TestLogDir::remove($this->logDir);
     }
 
     private function sync(?Task $tasks = null, ?GoogleConfig $config = null): GoogleCalendarSync

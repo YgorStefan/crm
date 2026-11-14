@@ -13,6 +13,7 @@ use PHPUnit\Framework\TestCase;
 
 require_once __DIR__ . '/Support/GoogleTestDb.php';
 require_once __DIR__ . '/Support/FakeTransport.php';
+require_once __DIR__ . '/Support/TestLogDir.php';
 
 final class GoogleWindowTest extends TestCase
 {
@@ -34,6 +35,8 @@ final class GoogleWindowTest extends TestCase
 
     protected function setUp(): void
     {
+        // antes do banco, que pula o teste quando nao responde e o tearDown roda mesmo assim.
+        $this->logDir = TestLogDir::path('window');
         $this->pdo = GoogleTestDb::setUp();
         $this->chave = 'base64:' . base64_encode(str_repeat('k', 32));
         $this->config = new GoogleConfig(
@@ -41,7 +44,6 @@ final class GoogleWindowTest extends TestCase
         );
         $this->http = new FakeTransport();
         $this->t0 = ($this->http->now())();
-        $this->logDir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'crm-window-log-' . bin2hex(random_bytes(6));
         $_SESSION['tenant_id'] = self::TENANT;
         // a janela comeca a meia-noite de sao paulo de um dia futuro, longe o bastante para o envio aceitar as tarefas.
         $this->dia = (new \DateTimeImmutable('today', new \DateTimeZone(self::SP)))->modify('+10 days');
@@ -58,12 +60,7 @@ final class GoogleWindowTest extends TestCase
             $this->pdo = null;
         }
         unset($_SESSION['tenant_id']);
-        foreach (glob($this->logDir . DIRECTORY_SEPARATOR . '*') ?: [] as $arquivo) {
-            unlink($arquivo);
-        }
-        if (is_dir($this->logDir)) {
-            rmdir($this->logDir);
-        }
+        TestLogDir::remove($this->logDir);
     }
 
     private function sync(?Task $tasks = null): GoogleCalendarSync
