@@ -152,6 +152,30 @@ test.describe('Tarefas / Calendário', () => {
     });
 
 
+    test('na visão Mês, clicar no dia abre a nova tarefa às 08:00 daquele dia', async ({ page }) => {
+        await page.locator('.fc-next-button').click();
+        const dateStr = await openNewTaskModalOnDay(page, 15);
+
+        await expect(page.locator('#modalTaskTitle')).toHaveText('Nova Tarefa');
+        await expect(page.locator('#task_due_date')).toHaveValue(`${dateStr}T08:00`);
+    });
+
+    test('na visão Dia, clicar num horário abre a nova tarefa com a data e a hora do horário', async ({ page }) => {
+        await page.getByRole('button', { name: 'Dia', exact: true }).click();
+        await expect(page.locator('.fc-timeGridDay-view')).toBeVisible();
+        await page.locator('.fc-next-button').click();
+        const day = await page.locator('.fc-timegrid-col[data-date]').first().getAttribute('data-date');
+
+        await page.locator('.fc-timegrid-slot-lane[data-time="14:30:00"]').click();
+        await expect(page.locator('#modalTask:visible, #modalDayConflict:visible')).toBeVisible();
+        if (await page.locator('#modalDayConflict').isVisible()) {
+            await page.locator('#btnConflictCreate').click();
+        }
+
+        await expect(page.locator('#modalTaskTitle')).toHaveText('Nova Tarefa');
+        await expect(page.locator('#task_due_date')).toHaveValue(`${day}T14:30`);
+    });
+
     test('nova tarefa volta o responsável para o usuário logado depois de editar a de um colega', async ({ page }) => {
         const taskTitle = `Tarefa E2E ${Date.now()}`;
         const { me, colega } = await loggedUserAndColega(page);

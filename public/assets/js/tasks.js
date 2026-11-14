@@ -80,6 +80,7 @@
         #filterPriority = 'all';
         #applyingFilters = false;
         #selectedDate  = null;
+        #selectedDue   = null;
         #teamMode = false;
         #feedRequest = 0;
         #googleBarState = null;
@@ -160,7 +161,7 @@
                 events:          (info, ok, fail) => { this.#fetchEvents(info).then(ok, fail); },
                 dayMaxEventRows: 3,
                 moreLinkText:    n => '+' + n + ' mais',
-                dateClick:       info => this.handleDateClick(info.dateStr),
+                dateClick:       info => this.handleDateClick(info.date, info.allDay),
                 eventClick:      info => {
                     info.jsEvent.preventDefault();
                     if (info.event.extendedProps.source === 'google') {
@@ -286,7 +287,7 @@
             });
             document.getElementById('btnConflictCreate').addEventListener('click', () => {
                 document.getElementById('modalDayConflict').style.display = 'none';
-                this.openNewTaskModal(this.#selectedDate);
+                this.openNewTaskModal(this.#selectedDue);
             });
             document.getElementById('btnSaveTask').addEventListener('click', e => { e.preventDefault(); this.#saveTask(); });
             document.getElementById('btnDeleteTask').addEventListener('click', () => this.#deleteTask());
@@ -518,11 +519,14 @@
             }
         }
 
-        handleDateClick(dateStr) {
-            this.#selectedDate = dateStr;
-            // o dateStr do dia clicado e a data local, entao o evento entra pela data local dele.
+        handleDateClick(date, allDay) {
+            // o dateStr do fullcalendar so e uma data na celula de dia inteiro, e na de
+            // horario traz hora e fuso, entao data e hora saem do date, no fuso do navegador.
+            const day = localDate(date);
+            this.#selectedDate = day;
+            this.#selectedDue = allDay ? day + 'T08:00' : localDateTime(date);
             const eventsOnDate = this.#calendar.getEvents().filter(e =>
-                e.start && localDate(e.start) === dateStr
+                e.start && localDate(e.start) === day
             );
             if (eventsOnDate.length > 0) {
                 const list = document.getElementById('conflictEventsList');
@@ -535,15 +539,16 @@
                 });
                 document.getElementById('modalDayConflict').style.display = 'flex';
             } else {
-                this.openNewTaskModal(dateStr);
+                this.openNewTaskModal(this.#selectedDue);
             }
         }
 
-        openNewTaskModal(dateStr) {
+        /** @param {string} dueLocal prazo no formato do campo datetime-local */
+        openNewTaskModal(dueLocal) {
             document.getElementById('modalTaskTitle').textContent = 'Nova Tarefa';
             document.getElementById('task_id').value = '';
             document.getElementById('task_title').value = '';
-            document.getElementById('task_due_date').value = dateStr + 'T08:00';
+            document.getElementById('task_due_date').value = dueLocal;
             document.getElementById('task_priority').value = 'medium';
             document.getElementById('task_description').value = '';
             const assignedEl = document.getElementById('task_assigned_to');
