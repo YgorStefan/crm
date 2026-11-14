@@ -736,12 +736,9 @@ final class GoogleDrainTest extends TestCase
         $this->assertSame('Ligar para a Ana', $linha['title']);
     }
 
-    public function testEdicaoDuranteOEnvioMantemAsMarcasParaOProximo(): void
+    /** a edicao do titulo chega depois do patch e antes de o envio gravar o resultado */
+    private function tarefasQueEditamNoMeio(int $id): Task
     {
-        $this->conta(self::ANA);
-        $this->movidoNoGoogle('evtvinculado1');
-        $id = $this->enviada('evtvinculado1');
-        // a edicao do titulo chega depois do patch e antes de o envio gravar o resultado.
         $tarefas = new class extends Task {
             public ?int $editarNoMeio = null;
 
@@ -755,6 +752,37 @@ final class GoogleDrainTest extends TestCase
             }
         };
         $tarefas->editarNoMeio = $id;
+        return $tarefas;
+    }
+
+    public function testEdicaoDuranteOEnvioSeguidaDeRecusaTrazARemarcacaoNaAbertura(): void
+    {
+        $this->conta(self::ANA);
+        $movido = $this->movidoNoGoogle('evtvinculado1');
+        $id = $this->enviada('evtvinculado1');
+        $tarefas = $this->tarefasQueEditamNoMeio($id);
+
+        $tarefas->update($id, ['description' => 'Levar contrato']);
+        $this->assertSame('ok', $this->sync($tarefas)->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE, self::ANA));
+        // o envio seguinte e recusado pelo google e sai da fila sem trazer o evento.
+        $this->http->respondOnce('evtvinculado1', 400, FakeTransport::googleError(400, 'invalid'), 'PATCH');
+        $this->assertSame('ok', $this->sync()->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE, self::ANA));
+        $this->assertSame(0, $this->pendencia($id));
+
+        $hoje = new \DateTimeImmutable('today');
+        $this->sync()->window(self::ANA, false, $hoje, $hoje->modify('+7 days'), false);
+
+        $linha = $this->linha($id);
+        $this->assertSame($movido->format('Y-m-d H:i:s'), $linha['due_date']);
+        $this->assertSame($this->http->events($this->token(self::ANA))['evtvinculado1']['etag'], $linha['google_etag']);
+    }
+
+    public function testEdicaoDuranteOEnvioMantemAsMarcasParaOProximo(): void
+    {
+        $this->conta(self::ANA);
+        $this->movidoNoGoogle('evtvinculado1');
+        $id = $this->enviada('evtvinculado1');
+        $tarefas = $this->tarefasQueEditamNoMeio($id);
 
         $tarefas->update($id, ['description' => 'Levar contrato']);
         $this->assertSame('ok', $this->sync($tarefas)->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE, self::ANA));

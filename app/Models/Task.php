@@ -741,11 +741,26 @@ class Task extends Model
         // evento ficaria na data antiga. com outro responsavel nada e gravado,
         // porque o id e de uma agenda que nao e mais a dele. os campos do google
         // ficam para o proximo envio, cuja resposta traz o evento de novo, porque
-        // aqui a edicao do meio pode ter mudado os mesmos campos.
+        // aqui a edicao do meio pode ter mudado os mesmos campos. se o google tem
+        // titulo ou inicio diferente da tarefa, o etag antigo fica: com o proximo
+        // envio recusado, so um etag diferente leva a abertura seguinte a trazer
+        // a remarcacao feita la.
         $params[':assignee'] = $ownerId;
+        $sameAsGoogle = [];
+        if (array_key_exists('title', $fromGoogle)) {
+            // binario porque a colacao da tabela ignora caixa, e um titulo que so
+            // mudou de caixa no google tambem tem que voltar.
+            $sameAsGoogle[] = 'CAST(title AS BINARY) <=> CAST(:google_title AS BINARY)';
+            $params[':google_title'] = $fromGoogle['title'];
+        }
+        if (array_key_exists('due_date', $fromGoogle)) {
+            $sameAsGoogle[] = 'due_date <=> :google_due_date';
+            $params[':google_due_date'] = $fromGoogle['due_date'];
+        }
+        $etag = $sameAsGoogle === [] ? ':etag' : 'IF(' . implode(' AND ', $sameAsGoogle) . ', :etag, google_etag)';
         $stmt = $this->db->prepare(
             "UPDATE tasks
-             SET google_event_id = :event_id, google_owner_id = :owner_id, google_etag = :etag,
+             SET google_event_id = :event_id, google_owner_id = :owner_id, google_etag = {$etag},
                  google_duration_min = :duration_min
              WHERE id = :id AND tenant_id = :tenant_id
                AND google_sync_pending <> :seen
