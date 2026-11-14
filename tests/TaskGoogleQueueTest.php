@@ -532,18 +532,23 @@ final class TaskGoogleQueueTest extends TestCase
         $this->assertSame(0, (int) $linha['google_changed_fields']);
     }
 
-    /** @return array<string, array{array<string, string>, string}> */
+    /**
+     * o envio so passa titulo e prazo quando o google os tem diferentes da
+     * tarefa lida para o patch.
+     *
+     * @return array<string, array{array<string, mixed>, string}>
+     */
     public static function googleNoSegundoRamo(): array
     {
         return [
-            'igual a tarefa grava o etag novo'      => [['title' => 'Editada durante o envio', 'due_date' => '2030-01-10 09:00:00'], '"etag-2"'],
-            'inicio diferente mantem o etag antigo' => [['due_date' => '2030-01-12 15:00:00'], '"etag-1"'],
-            'titulo so com outra caixa mantem'      => [['title' => 'editada durante o envio'], '"etag-1"'],
+            'inicio do google mantem o etag antigo' => [['due_date' => '2030-01-12 15:00:00'], '"etag-1"'],
+            'titulo do google mantem o etag antigo' => [['title' => 'Do Google'], '"etag-1"'],
+            'so a duracao grava o etag novo'        => [['google_duration_min' => 45], '"etag-2"'],
             'sem campo do google grava o novo'      => [[], '"etag-2"'],
         ];
     }
 
-    /** @param array<string, string> $doGoogle */
+    /** @param array<string, mixed> $doGoogle */
     #[DataProvider('googleNoSegundoRamo')]
     public function testMarkSyncedComContadorMudadoSoGuardaEtagQueNaoEscondeOGoogle(array $doGoogle, string $etagFinal): void
     {

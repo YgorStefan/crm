@@ -692,7 +692,8 @@ class Task extends Model
 
     /**
      * @param  array<string, mixed>  $fromGoogle  title, due_date e google_duration_min que o google
-     *         tem nos campos que o patch nao levou, aplicados so com o contador visto
+     *         tem nos campos que o patch nao levou; title e due_date so quando diferem da tarefa
+     *         lida para o envio. aplicados so com o contador visto
      * @return bool  true so quando zerou a pendencia
      */
     public function markSynced(
@@ -741,27 +742,20 @@ class Task extends Model
         // evento ficaria na data antiga. com outro responsavel nada e gravado,
         // porque o id e de uma agenda que nao e mais a dele. os campos do google
         // ficam para o proximo envio, cuja resposta traz o evento de novo, porque
-        // aqui a edicao do meio pode ter mudado os mesmos campos. se o google tem
-        // titulo ou inicio diferente da tarefa, o etag antigo fica: com o proximo
-        // envio recusado, so um etag diferente leva a abertura seguinte a trazer
-        // a remarcacao feita la.
+        // aqui a edicao do meio pode ter mudado os mesmos campos. se o google
+        // mudou titulo ou inicio em relacao a tarefa lida para o envio, o etag
+        // antigo fica: com o proximo envio recusado, so um etag diferente leva a
+        // abertura seguinte a trazer a remarcacao feita la. uma mudanca so do crm
+        // no meio do envio nao conta, porque nao ha nada do google a trazer.
         $params[':assignee'] = $ownerId;
-        $sameAsGoogle = [];
-        if (array_key_exists('title', $fromGoogle)) {
-            // binario porque a colacao da tabela ignora caixa, e um titulo que so
-            // mudou de caixa no google tambem tem que voltar.
-            $sameAsGoogle[] = 'CAST(title AS BINARY) <=> CAST(:google_title AS BINARY)';
-            $params[':google_title'] = $fromGoogle['title'];
+        $setClauses = ['google_event_id = :event_id', 'google_owner_id = :owner_id', 'google_duration_min = :duration_min'];
+        if (array_key_exists('title', $fromGoogle) || array_key_exists('due_date', $fromGoogle)) {
+            unset($params[':etag']);
+        } else {
+            $setClauses[] = 'google_etag = :etag';
         }
-        if (array_key_exists('due_date', $fromGoogle)) {
-            $sameAsGoogle[] = 'due_date <=> :google_due_date';
-            $params[':google_due_date'] = $fromGoogle['due_date'];
-        }
-        $etag = $sameAsGoogle === [] ? ':etag' : 'IF(' . implode(' AND ', $sameAsGoogle) . ', :etag, google_etag)';
         $stmt = $this->db->prepare(
-            "UPDATE tasks
-             SET google_event_id = :event_id, google_owner_id = :owner_id, google_etag = {$etag},
-                 google_duration_min = :duration_min
+            "UPDATE tasks SET " . implode(', ', $setClauses) . "
              WHERE id = :id AND tenant_id = :tenant_id
                AND google_sync_pending <> :seen
                AND assigned_to = :assignee"

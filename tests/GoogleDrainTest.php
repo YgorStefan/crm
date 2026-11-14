@@ -750,23 +750,51 @@ final class GoogleDrainTest extends TestCase
         $this->assertSame('Ligar para a Ana', $linha['title']);
     }
 
-    /** a edicao do titulo chega depois do patch e antes de o envio gravar o resultado */
-    private function tarefasQueEditamNoMeio(int $id): Task
+    /**
+     * a edicao chega depois do patch e antes de o envio gravar o resultado.
+     *
+     * @param array<string, string> $edicao
+     */
+    private function tarefasQueEditamNoMeio(int $id, array $edicao = ['title' => 'Título editado no meio']): Task
     {
         $tarefas = new class extends Task {
             public ?int $editarNoMeio = null;
+            /** @var array<string, string> */
+            public array $edicao = [];
 
             public function markSynced(int $id, int $seenPending, string $eventId, int $ownerId, ?string $etag, int $durationMin, array $fromGoogle = []): bool
             {
                 if ($this->editarNoMeio === $id) {
                     $this->editarNoMeio = null;
-                    $this->update($id, ['title' => 'Título editado no meio']);
+                    $this->update($id, $this->edicao);
                 }
                 return parent::markSynced($id, $seenPending, $eventId, $ownerId, $etag, $durationMin, $fromGoogle);
             }
         };
         $tarefas->editarNoMeio = $id;
+        $tarefas->edicao = $edicao;
         return $tarefas;
+    }
+
+    public function testPrazoEditadoNoMeioDoEnvioSeguidoDeRecusaFicaComODoCrm(): void
+    {
+        // o google nao mudou nada: so o crm mexeu no prazo durante o envio.
+        $this->conta(self::ANA);
+        $this->evento(self::ANA, 'evtvinculado1', ['summary' => 'Ligar para cliente']);
+        $id = $this->enviada('evtvinculado1');
+        $novo = (new \DateTimeImmutable('+3 days'))->setTime(8, 30)->format('Y-m-d H:i:s');
+        $tarefas = $this->tarefasQueEditamNoMeio($id, ['due_date' => $novo]);
+
+        $tarefas->update($id, ['description' => 'Levar contrato']);
+        $this->assertSame('ok', $this->sync($tarefas)->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE, self::ANA));
+        $this->http->respondOnce('evtvinculado1', 400, FakeTransport::googleError(400, 'invalid'), 'PATCH');
+        $this->assertSame('ok', $this->sync()->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE, self::ANA));
+        $this->assertSame(0, $this->pendencia($id));
+
+        $hoje = new \DateTimeImmutable('today');
+        $this->sync()->window(self::ANA, false, $hoje, $hoje->modify('+7 days'), false);
+
+        $this->assertSame($novo, $this->linha($id)['due_date']);
     }
 
     public function testEdicaoDuranteOEnvioSeguidaDeRecusaTrazARemarcacaoNaAbertura(): void

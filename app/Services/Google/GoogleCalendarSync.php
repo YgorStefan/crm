@@ -624,7 +624,10 @@ final class GoogleCalendarSync
     }
 
     /**
-     * os campos que o patch nao levou, pelas regras da reconciliacao.
+     * os campos que o patch nao levou, pelas regras da reconciliacao. titulo e
+     * prazo so vem quando o google os tem diferentes da tarefa lida para o
+     * envio, porque e isso que o markSynced usa para decidir se guarda o etag
+     * quando a tarefa mudou no meio do envio.
      *
      * @param array<string, mixed> $task linha de Task::pendingForUser
      * @return array<string, mixed>
@@ -642,6 +645,11 @@ final class GoogleCalendarSync
         }
         if (($sent & Task::GOOGLE_DUE_DATE) !== 0) {
             unset($fields['due_date'], $fields['google_duration_min']);
+        }
+        foreach (['title', 'due_date'] as $field) {
+            if (array_key_exists($field, $fields) && $fields[$field] === (string) $task[$field]) {
+                unset($fields[$field]);
+            }
         }
         return $fields;
     }
