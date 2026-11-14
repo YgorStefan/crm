@@ -195,6 +195,19 @@ final class TaskGoogleQueueTest extends TestCase
         $this->assertSame([], $this->remocoes());
     }
 
+    public function testDeleteSemIdComContaNaoAtivaNaoEnfileira(): void
+    {
+        $this->pdo->exec("UPDATE google_accounts SET status = 'disconnected' WHERE user_id = 1");
+        $this->pdo->exec("UPDATE google_accounts SET status = 'revoked' WHERE user_id = 2");
+        $daAna = $this->tarefa(['google_sync_pending' => 1]);
+        $daBia = $this->tarefa(['assigned_to' => self::BIA, 'google_sync_pending' => 1]);
+
+        $this->assertTrue((new Task())->delete($daAna));
+        $this->assertTrue((new Task())->delete($daBia));
+
+        $this->assertSame([], $this->remocoes());
+    }
+
     public function testDeleteNaoApagaDeOutroTenant(): void
     {
         $id = $this->tarefa([

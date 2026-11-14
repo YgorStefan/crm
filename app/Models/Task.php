@@ -275,10 +275,10 @@ class Task extends Model
      */
     private function enqueueGoogleDeletions(int $tenantId, array $rows): void
     {
-        $deletions  = new GoogleEventDeletion();
-        $accounts   = new GoogleAccount();
-        $config     = null;
-        $hasAccount = [];
+        $deletions     = new GoogleEventDeletion();
+        $accounts      = new GoogleAccount();
+        $config        = null;
+        $activeAccount = [];
 
         foreach ($rows as $row) {
             if ($row['google_event_id'] !== null && $row['google_owner_id'] !== null) {
@@ -288,13 +288,18 @@ class Task extends Model
 
             // sem id salvo, um insert que estourou o tempo pode ter criado o
             // evento no google mesmo assim, e ele so pode estar na agenda do
-            // responsavel, com o id deterministico.
+            // responsavel, com o id deterministico. so com a conta ativa: a fila
+            // de conta parada ninguem processa, e na reconexao essas remocoes
+            // sairiam todas antes das tarefas, quase sempre com 404.
             if ((int) $row['google_sync_pending'] === 0) {
                 continue;
             }
             $assignee = (int) $row['assigned_to'];
-            $hasAccount[$assignee] ??= $accounts->findForUser($assignee) !== false;
-            if ($hasAccount[$assignee]) {
+            if (!array_key_exists($assignee, $activeAccount)) {
+                $account = $accounts->findForUser($assignee);
+                $activeAccount[$assignee] = $account !== false && $account['status'] === 'active';
+            }
+            if ($activeAccount[$assignee]) {
                 $config ??= GoogleConfig::fromEnv();
                 $deletions->enqueue($assignee, $config->eventIdFor($tenantId, (int) $row['id']));
             }
