@@ -549,7 +549,7 @@ final class GoogleCalendarSync
         }
 
         if ($outcome === 'ok') {
-            $this->markSent($userId, $task, $eventId, $duration, $sent, $response['body']);
+            $this->markSent($userId, $task, $eventId, $duration, $sent, (string) $event['summary'], $response['body']);
             return 'done';
         }
         if ($outcome === 'reconnect' || $outcome === 'stop') {
@@ -571,13 +571,14 @@ final class GoogleCalendarSync
      *
      * @param array<string, mixed> $task linha de Task::pendingForUser
      * @param int $sent bits de Task::GOOGLE_* enviados; zero quando foi o evento inteiro
+     * @param string $crmSummary o summary que o crm monta para a tarefa
      */
-    private function markSent(int $userId, array $task, string $eventId, int $duration, int $sent, string $body): void
+    private function markSent(int $userId, array $task, string $eventId, int $duration, int $sent, string $crmSummary, string $body): void
     {
         $taskId     = (int) $task['id'];
         $seen       = (int) $task['google_sync_pending'];
         $etag       = self::etagOf($body);
-        $fromGoogle = $sent === 0 ? [] : self::unsentFromGoogle($body, $sent, (string) $task['due_date']);
+        $fromGoogle = $sent === 0 ? [] : self::unsentFromGoogle($body, $sent, (string) $task['due_date'], $crmSummary);
 
         try {
             $this->tasks->markSynced($taskId, $seen, $eventId, $userId, $etag, $duration, $fromGoogle);
@@ -624,11 +625,13 @@ final class GoogleCalendarSync
     }
 
     /**
-     * os campos que o patch nao levou, pelas regras da reconciliacao.
+     * os campos que o patch nao levou, pelas regras da reconciliacao. o titulo
+     * so volta quando o summary do google difere do que o crm montaria, senao
+     * a retirada do "✓ " cortaria o titulo de uma tarefa aberta que comeca com ele.
      *
      * @return array<string, mixed>
      */
-    private static function unsentFromGoogle(string $body, int $sent, string $taskDue): array
+    private static function unsentFromGoogle(string $body, int $sent, string $taskDue, string $crmSummary): array
     {
         $event = json_decode($body, true);
         if (!is_array($event)) {
@@ -636,7 +639,7 @@ final class GoogleCalendarSync
         }
 
         $fields = self::fieldsFromEvent($event, $taskDue);
-        if (($sent & (Task::GOOGLE_TITLE | Task::GOOGLE_STATUS)) !== 0) {
+        if (($sent & (Task::GOOGLE_TITLE | Task::GOOGLE_STATUS)) !== 0 || ($event['summary'] ?? null) === $crmSummary) {
             unset($fields['title']);
         }
         if (($sent & Task::GOOGLE_DUE_DATE) !== 0) {

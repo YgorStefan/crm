@@ -715,6 +715,20 @@ final class GoogleDrainTest extends TestCase
         $this->assertSame($evento['etag'], $linha['google_etag']);
     }
 
+    public function testTituloQueComecaComAMarcaNaoPerdeAMarcaNoPatchParcial(): void
+    {
+        $this->conta(self::ANA);
+        $this->evento(self::ANA, 'evtmarca1', ['summary' => '✓ Revisar contrato']);
+        $id = $this->enviada('evtmarca1', ['title' => '✓ Revisar contrato']);
+
+        (new Task())->update($id, ['description' => 'Levar contrato']);
+        $this->assertSame('ok', $this->sync()->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE, self::ANA));
+
+        $this->assertSame(['description' => 'Levar contrato', 'status' => 'confirmed'], $this->corpo(0));
+        $this->assertSame('✓ Revisar contrato', $this->linha($id)['title']);
+        $this->assertSame('✓ Revisar contrato', $this->http->events($this->token(self::ANA))['evtmarca1']['summary']);
+    }
+
     public function testPrazoMudadoLevaInicioEFimComADuracaoDaTarefa(): void
     {
         $this->conta(self::ANA);
