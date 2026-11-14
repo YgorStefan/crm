@@ -765,6 +765,25 @@ final class GoogleWindowTest extends TestCase
         $this->assertSame('done', $linha['status']);
     }
 
+    public function testTituloQueComecaComAMarcaNaoPerdeAMarcaNaRemarcacao(): void
+    {
+        $this->conta(self::ANA);
+        $id = $this->vinculada('evtmarca1', ['title' => '✓ Revisar contrato'], ['summary' => '✓ Revisar contrato']);
+        $this->evento(self::ANA, 'evtmarca1', [
+            'etag'    => '"etag-2"',
+            'summary' => '✓ Revisar contrato',
+            'start'   => ['dateTime' => $this->rfc(2, '15:00'), 'timeZone' => self::SP],
+            'end'     => ['dateTime' => $this->rfc(2, '15:30'), 'timeZone' => self::SP],
+        ]);
+
+        $this->abrir();
+
+        $linha = $this->linha($id);
+        $this->assertSame($this->quando(2, '15:00'), $linha['due_date']);
+        $this->assertSame('✓ Revisar contrato', $linha['title']);
+        $this->assertSame('"etag-2"', $linha['google_etag']);
+    }
+
     public function testDiaInteiroMantemHorarioDaTarefa(): void
     {
         $this->conta(self::ANA);

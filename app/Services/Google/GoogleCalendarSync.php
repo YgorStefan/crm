@@ -549,7 +549,7 @@ final class GoogleCalendarSync
         }
 
         if ($outcome === 'ok') {
-            $this->markSent($userId, $task, $eventId, $duration, $sent, (string) $event['summary'], $response['body']);
+            $this->markSent($userId, $task, $eventId, $duration, $sent, $response['body']);
             return 'done';
         }
         if ($outcome === 'reconnect' || $outcome === 'stop') {
@@ -571,14 +571,13 @@ final class GoogleCalendarSync
      *
      * @param array<string, mixed> $task linha de Task::pendingForUser
      * @param int $sent bits de Task::GOOGLE_* enviados; zero quando foi o evento inteiro
-     * @param string $crmSummary o summary que o crm monta para a tarefa
      */
-    private function markSent(int $userId, array $task, string $eventId, int $duration, int $sent, string $crmSummary, string $body): void
+    private function markSent(int $userId, array $task, string $eventId, int $duration, int $sent, string $body): void
     {
         $taskId     = (int) $task['id'];
         $seen       = (int) $task['google_sync_pending'];
         $etag       = self::etagOf($body);
-        $fromGoogle = $sent === 0 ? [] : self::unsentFromGoogle($body, $sent, (string) $task['due_date'], $crmSummary);
+        $fromGoogle = $sent === 0 ? [] : self::unsentFromGoogle($body, $sent, $task);
 
         try {
             $this->tasks->markSynced($taskId, $seen, $eventId, $userId, $etag, $duration, $fromGoogle);
@@ -625,21 +624,20 @@ final class GoogleCalendarSync
     }
 
     /**
-     * os campos que o patch nao levou, pelas regras da reconciliacao. o titulo
-     * so volta quando o summary do google difere do que o crm montaria, senao
-     * a retirada do "✓ " cortaria o titulo de uma tarefa aberta que comeca com ele.
+     * os campos que o patch nao levou, pelas regras da reconciliacao.
      *
+     * @param array<string, mixed> $task linha de Task::pendingForUser
      * @return array<string, mixed>
      */
-    private static function unsentFromGoogle(string $body, int $sent, string $taskDue, string $crmSummary): array
+    private static function unsentFromGoogle(string $body, int $sent, array $task): array
     {
         $event = json_decode($body, true);
         if (!is_array($event)) {
             return [];
         }
 
-        $fields = self::fieldsFromEvent($event, $taskDue);
-        if (($sent & (Task::GOOGLE_TITLE | Task::GOOGLE_STATUS)) !== 0 || ($event['summary'] ?? null) === $crmSummary) {
+        $fields = self::fieldsFromEvent($event, (string) $task['due_date']);
+        if (($sent & (Task::GOOGLE_TITLE | Task::GOOGLE_STATUS)) !== 0 || !self::titleChangedInGoogle($event, $task)) {
             unset($fields['title']);
         }
         if (($sent & Task::GOOGLE_DUE_DATE) !== 0) {
@@ -796,6 +794,9 @@ final class GoogleCalendarSync
 
             $etagRead = $row['google_etag'] !== null ? (string) $row['google_etag'] : null;
             $fields   = self::fieldsFromEvent($event, (string) $row['due_date']);
+            if (!self::titleChangedInGoogle($event, $row)) {
+                unset($fields['title']);
+            }
             try {
                 $this->tasks->applyGoogleChange($taskId, $etagRead, $fields, $etag);
             } catch (\PDOException $e) {
@@ -1328,7 +1329,7 @@ final class GoogleCalendarSync
         $end   = $start->add(new \DateInterval("PT{$durationMin}M"));
 
         return [
-            'summary'     => ($task['status'] === 'done' ? self::DONE_MARK : '') . (string) $task['title'],
+            'summary'     => self::summaryFor($task),
             'description' => self::descriptionFor($task),
             'start'       => self::eventTime($start),
             'end'         => self::eventTime($end),
@@ -1343,6 +1344,25 @@ final class GoogleCalendarSync
         // inteiro no google volta 400 sem ele (medido na tarefa 1), e o 400
         // tiraria a tarefa da fila. no insert e no evento com horario ele passa.
         return ['date' => null, 'dateTime' => $when->format(DATE_RFC3339), 'timeZone' => self::TIME_ZONE];
+    }
+
+    /**
+     * o titulo do google so volta para a tarefa quando o summary de la difere
+     * do que o crm montaria, senao a retirada do "✓ " cortaria o titulo de uma
+     * tarefa aberta que comeca com ele.
+     *
+     * @param array<string, mixed> $event
+     * @param array<string, mixed> $task com title e status
+     */
+    private static function titleChangedInGoogle(array $event, array $task): bool
+    {
+        return ($event['summary'] ?? null) !== self::summaryFor($task);
+    }
+
+    /** @param array<string, mixed> $task com title e status */
+    private static function summaryFor(array $task): string
+    {
+        return ($task['status'] === 'done' ? self::DONE_MARK : '') . (string) $task['title'];
     }
 
     /** @param array<string, mixed> $task */
