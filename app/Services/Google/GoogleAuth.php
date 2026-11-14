@@ -112,44 +112,72 @@ final class GoogleAuth
     /**
      * @param array{email:string,sub:string,refresh_token:string,access_token:string,expires_in:int} $exchanged
      * @return bool  false quando o usuario nao pode conectar, sem nada gravado
+     * @throws GoogleAccountInUse a conta google ja esta ligada a outro usuario do tenant, sem nada gravado
      */
     public function completeConnection(int $userId, array $exchanged): bool
     {
         $db = Database::getInstance();
         $db->beginTransaction();
         try {
-            // o sub anterior e lido antes do upsert, que o sobrescreve.
-            $previous = $this->accounts->findForUser($userId);
-
-            $written = $this->accounts->upsertConnected(
-                $userId,
-                $exchanged['email'],
-                $exchanged['sub'],
-                $this->encrypt($exchanged['refresh_token']),
-                $this->encrypt($exchanged['access_token']),
-                $this->expiresAt(($this->now)(), $exchanged['expires_in']),
-            );
-            if (!$written) {
-                // usuario desativado, rebaixado ou de outro tenant: os vinculos e
-                // as remocoes da conexao anterior ficam como estao.
-                $db->rollBack();
-                return false;
+            // o id do evento nao leva o dono, entao duas pessoas do crm na mesma
+            // conta google dividiriam a agenda, e uma troca de responsavel entre
+            // elas apagaria o evento e cancelaria a tarefa.
+            $othersWithSub = $this->accounts->statusesOfSubForOtherUsers($userId, $exchanged['sub']);
+            if ($othersWithSub === []) {
+                return $this->storeConnection($db, $userId, $exchanged);
             }
-
-            if ($previous !== false && (string) $previous['google_sub'] !== $exchanged['sub']) {
-                // conta google diferente: os ids salvos e as remocoes pendentes
-                // apontam para a agenda da conta antiga.
-                $this->tasks->clearGoogleLinksForUser($userId);
-                $this->deletions->purgeForUser($userId);
-            }
-            $this->tasks->markOpenUnlinkedPending($userId);
-
-            $db->commit();
-            return true;
-        } catch (\Throwable $e) {
             $db->rollBack();
+        } catch (\Throwable $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
             throw $e;
         }
+
+        // o code ja foi trocado, e a autorizacao nova so fica orfa se ninguem
+        // mais a usa: a revogacao vale para a conta google inteira neste
+        // projeto, entao com a do outro usuario ativa ela o desconectaria.
+        if (!in_array('active', $othersWithSub, true)) {
+            $this->revoke($exchanged['refresh_token']);
+        }
+        throw new GoogleAccountInUse('A conta Google já está conectada a outro usuário.');
+    }
+
+    /**
+     * roda dentro da transacao do completeConnection e a encerra.
+     *
+     * @param array{email:string,sub:string,refresh_token:string,access_token:string,expires_in:int} $exchanged
+     */
+    private function storeConnection(\PDO $db, int $userId, array $exchanged): bool
+    {
+        // o sub anterior e lido antes do upsert, que o sobrescreve.
+        $previous = $this->accounts->findForUser($userId);
+
+        $written = $this->accounts->upsertConnected(
+            $userId,
+            $exchanged['email'],
+            $exchanged['sub'],
+            $this->encrypt($exchanged['refresh_token']),
+            $this->encrypt($exchanged['access_token']),
+            $this->expiresAt(($this->now)(), $exchanged['expires_in']),
+        );
+        if (!$written) {
+            // usuario desativado, rebaixado ou de outro tenant: os vinculos e
+            // as remocoes da conexao anterior ficam como estao.
+            $db->rollBack();
+            return false;
+        }
+
+        if ($previous !== false && (string) $previous['google_sub'] !== $exchanged['sub']) {
+            // conta google diferente: os ids salvos e as remocoes pendentes
+            // apontam para a agenda da conta antiga.
+            $this->tasks->clearGoogleLinksForUser($userId);
+            $this->deletions->purgeForUser($userId);
+        }
+        $this->tasks->markOpenUnlinkedPending($userId);
+
+        $db->commit();
+        return true;
     }
 
     /**
@@ -234,10 +262,15 @@ final class GoogleAuth
             return;
         }
 
-        // melhor esforco: a conexao local ja foi desfeita, e a resposta nao muda
-        // nada. o token vai no corpo, porque a url e o que acaba em log.
+        // melhor esforco: a conexao local ja foi desfeita, e a resposta nao muda nada.
+        $this->revoke($refresh);
+    }
+
+    private function revoke(string $refreshToken): void
+    {
+        // o token vai no corpo, porque a url e o que acaba em log.
         $this->http->send('POST', self::REVOKE_URL, self::FORM_HEADERS, http_build_query([
-            'token' => $refresh,
+            'token' => $refreshToken,
         ]), self::REVOKE_TIMEOUT_MS);
     }
 

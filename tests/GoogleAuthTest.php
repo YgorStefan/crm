@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 use App\Models\GoogleAccount;
 use App\Services\Google\GoogleAccessDenied;
+use App\Services\Google\GoogleAccountInUse;
 use App\Services\Google\GoogleAuth;
 use App\Services\Google\GoogleConfig;
 use App\Services\Google\GoogleReconnectRequired;
@@ -509,6 +510,86 @@ final class GoogleAuthTest extends TestCase
         $this->assertFalse($this->auth()->completeConnection(self::DUDA, $this->trocado()));
 
         $this->assertFalse($this->contaDe(self::DUDA));
+    }
+
+    /** @return array<string, array{string, bool}> */
+    public static function contaDoOutroUsuario(): array
+    {
+        // com a do outro ativa, a autorizacao no google e a mesma que ele usa, e
+        // revogar desconectaria os dois.
+        return [
+            'ativa'    => ['active', false],
+            'revogada' => ['revoked', true],
+        ];
+    }
+
+    #[DataProvider('contaDoOutroUsuario')]
+    public function testContaGoogleDeOutroUsuarioERecusadaSemMudarNada(string $statusDoOutro, bool $revogaONovo): void
+    {
+        $this->conta(self::BIA, ['google_sub' => 'sub-da-mesma-conta', 'status' => $statusDoOutro]);
+        $this->conta(self::ANA, [
+            'status' => 'disconnected', 'refresh_token' => null, 'access_token' => null, 'access_token_expires_at' => null,
+        ]);
+        $vinculada = $this->tarefa([
+            'google_event_id' => 'evento-falso-1', 'google_owner_id' => self::ANA, 'google_etag' => '"etag-falso"',
+        ]);
+        $solta = $this->tarefa();
+        $this->remocao(self::ANA, 'evento-falso-velho');
+        $bia = $this->contaDe(self::BIA);
+        $this->http->respond('oauth2.googleapis.com/revoke', 200, '');
+
+        $erro = $this->capturar(fn () => $this->auth()->completeConnection(self::ANA, $this->trocado('sub-da-mesma-conta')));
+
+        $this->assertInstanceOf(GoogleAccountInUse::class, $erro);
+        $ana = $this->contaDe(self::ANA);
+        $this->assertSame('disconnected', $ana['status']);
+        $this->assertSame('sub-falso-1', $ana['google_sub']);
+        $this->assertNull($ana['refresh_token']);
+        $this->assertSame($bia, $this->contaDe(self::BIA));
+        $this->assertSame('evento-falso-1', $this->linha($vinculada)['google_event_id']);
+        $this->assertSame(0, (int) $this->linha($solta)['google_sync_pending']);
+        $this->assertSame(['evento-falso-velho'], $this->remocoesDe(self::ANA));
+
+        $revogacoes = array_values(array_filter($this->http->requests(), fn (array $p): bool => $p['url'] === self::REVOKE_URL));
+        $this->assertCount($revogaONovo ? 1 : 0, $revogacoes);
+        if ($revogaONovo) {
+            $this->assertSame(['token' => 'refresh-novo-falso'], self::formulario($revogacoes[0]['body']));
+        }
+    }
+
+    public function testContaDesconectadaDeOutroUsuarioNaoBloqueia(): void
+    {
+        $this->conta(self::BIA, [
+            'google_sub' => 'sub-da-mesma-conta', 'status' => 'disconnected',
+            'refresh_token' => null, 'access_token' => null, 'access_token_expires_at' => null,
+        ]);
+
+        $this->assertTrue($this->auth()->completeConnection(self::ANA, $this->trocado('sub-da-mesma-conta')));
+        $this->assertSame('active', $this->contaDe(self::ANA)['status']);
+    }
+
+    public function testMesmaContaEmOutroTenantNaoBloqueia(): void
+    {
+        $this->conta(self::DUDA, ['tenant_id' => 2, 'google_sub' => 'sub-da-mesma-conta']);
+
+        $this->assertTrue($this->auth()->completeConnection(self::ANA, $this->trocado('sub-da-mesma-conta')));
+        $this->assertSame('active', $this->contaDe(self::ANA)['status']);
+    }
+
+    /** @return array<string, array{string}> */
+    public static function statusDaPropriaConta(): array
+    {
+        return ['ativa' => ['active'], 'revogada' => ['revoked'], 'desconectada' => ['disconnected']];
+    }
+
+    #[DataProvider('statusDaPropriaConta')]
+    public function testMesmoUsuarioReconectaAMesmaConta(string $status): void
+    {
+        $this->conta(self::ANA, ['status' => $status]);
+
+        $this->assertTrue($this->auth()->completeConnection(self::ANA, $this->trocado('sub-falso-1')));
+        $this->assertSame('active', $this->contaDe(self::ANA)['status']);
+        $this->assertSame([], $this->http->requests());
     }
 
     public function testConexaoGravadaDevolveTrue(): void

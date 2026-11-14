@@ -38,6 +38,26 @@ class GoogleAccount extends Model
     }
 
     /**
+     * status das contas de outros usuarios do tenant ligadas a mesma conta
+     * google. a desconectada fica de fora, porque quem a tinha ja a soltou. o
+     * for update vale dentro da transacao de quem chama e segura as contas do
+     * tenant ate o fim dela, para duas conexoes ao mesmo tempo nao passarem as duas.
+     *
+     * @return list<string>
+     */
+    public function statusesOfSubForOtherUsers(int $userId, string $sub): array
+    {
+        $stmt = $this->db->prepare(
+            "SELECT status FROM google_accounts
+             WHERE tenant_id = :tenant_id AND google_sub = :sub AND user_id <> :user_id
+               AND status IN ('active', 'revoked')
+             FOR UPDATE"
+        );
+        $stmt->execute([':tenant_id' => $this->currentTenantId(), ':sub' => $sub, ':user_id' => $userId]);
+        return array_map('strval', $stmt->fetchAll(\PDO::FETCH_COLUMN));
+    }
+
+    /**
      * @return bool  false quando o usuario nao pode conectar e nada foi gravado
      */
     public function upsertConnected(

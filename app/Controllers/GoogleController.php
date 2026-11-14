@@ -7,6 +7,7 @@ namespace App\Controllers;
 use App\Models\GoogleAccount;
 use App\Services\Google\CurlTransport;
 use App\Services\Google\GoogleAccessDenied;
+use App\Services\Google\GoogleAccountInUse;
 use App\Services\Google\GoogleAuth;
 use App\Services\Google\GoogleCalendarSync;
 use App\Services\Google\GoogleConfig;
@@ -27,6 +28,7 @@ class GoogleController extends Controller
     private const MSG_CONNECTED      = 'Google Agenda conectado. Suas tarefas abertas de hoje em diante vão para a sua agenda do Google.';
     private const MSG_ALREADY_ACTIVE = 'O Google Agenda já está conectado. Para usar outra conta, desconecte antes.';
     private const MSG_NOT_ALLOWED    = 'Seu usuário não pode conectar o Google Agenda.';
+    private const MSG_ACCOUNT_IN_USE = 'Esta conta Google já está conectada a outro usuário.';
     private const MSG_UNEXPECTED     = 'Não foi possível concluir a conexão com o Google Agenda. Tente de novo em alguns instantes.';
     private const MSG_DISCONNECT     = 'Não foi possível desconectar o Google Agenda. Tente de novo.';
     private const MSG_INVALID_FIELDS = 'Dados do evento inválidos.';
@@ -134,6 +136,9 @@ class GoogleController extends Controller
         } catch (GoogleAccessDenied $e) {
             $this->logFailure('conexao recusada', $e);
             $this->backToTasks('warning', self::MSG_DENIED);
+            return;
+        } catch (GoogleAccountInUse $e) {
+            $this->backToTasks('warning', self::MSG_ACCOUNT_IN_USE);
             return;
         } catch (GoogleUnavailable $e) {
             $this->logFailure('troca do codigo sem resposta', $e);

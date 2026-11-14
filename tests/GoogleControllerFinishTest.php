@@ -133,6 +133,26 @@ final class GoogleControllerFinishTest extends TestCase
         $this->assertArrayNotHasKey('google_oauth_state', $_SESSION);
     }
 
+    public function testContaGoogleDeOutroUsuarioRecebeAviso(): void
+    {
+        // a troca valida devolve o sub-falso-1, que o usuario 2 ja tem ativo.
+        $this->pdo->exec("INSERT INTO users (id, name, tenant_id) VALUES (2, 'Bia', 1)");
+        $this->pdo->exec("INSERT INTO google_accounts (user_id, tenant_id, google_email, google_sub, status)
+            VALUES (2, 1, 'pessoa@example.com', 'sub-falso-1', 'active')");
+        $http = $this->trocaValida();
+        $controller = $this->controller($http);
+
+        $controller->finish();
+
+        $this->assertSame('/tasks', $controller->destino);
+        $this->assertSame([
+            'type'    => 'warning',
+            'message' => 'Esta conta Google já está conectada a outro usuário.',
+        ], $_SESSION['flash']);
+        $this->assertSame(1, $this->contas());
+        $this->assertSame(['https://oauth2.googleapis.com/token'], array_column($http->requests(), 'url'));
+    }
+
     public function testConexaoGravadaAvisaConectado(): void
     {
         $controller = $this->controller($this->trocaValida());
