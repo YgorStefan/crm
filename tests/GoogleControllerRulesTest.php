@@ -39,6 +39,28 @@ class GoogleControllerRulesTest extends TestCase
         $this->assertFalse(GoogleController::stateIsValid('abd', 'abc', self::VALIDO, self::AGORA));
     }
 
+    public function testContaAtivaRecusaNovaConexao(): void
+    {
+        $this->assertTrue(GoogleController::blocksNewConnection(['user_id' => 1, 'status' => 'active']));
+    }
+
+    /** @return array<string, array{array<string, mixed>|false}> */
+    public static function contasQueConectamDeNovo(): array
+    {
+        return [
+            'revogada'     => [['user_id' => 1, 'status' => 'revoked']],
+            'desconectada' => [['user_id' => 1, 'status' => 'disconnected']],
+            'sem conta'    => [false],
+        ];
+    }
+
+    /** @param array<string, mixed>|false $conta */
+    #[DataProvider('contasQueConectamDeNovo')]
+    public function testContaQueNaoEstaAtivaConectaDeNovo(array|false $conta): void
+    {
+        $this->assertFalse(GoogleController::blocksNewConnection($conta));
+    }
+
     public function testJanelaValidaPreservaOffset(): void
     {
         $janela = TaskController::parseFeedWindow('2026-11-01T00:00:00-03:00', '2026-12-13T00:00:00-03:00');

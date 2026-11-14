@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controllers;
 
+use App\Models\GoogleAccount;
 use App\Services\Google\CurlTransport;
 use App\Services\Google\GoogleAccessDenied;
 use App\Services\Google\GoogleAuth;
@@ -24,6 +25,7 @@ class GoogleController extends Controller
     private const MSG_DENIED         = 'O Google Agenda não foi conectado. Na tela do Google, marque a permissão de acesso à agenda e tente de novo.';
     private const MSG_UNAVAILABLE    = 'O Google não respondeu agora. Tente conectar de novo em alguns instantes.';
     private const MSG_CONNECTED      = 'Google Agenda conectado. Suas tarefas abertas de hoje em diante vão para a sua agenda do Google.';
+    private const MSG_ALREADY_ACTIVE = 'O Google Agenda já está conectado. Para usar outra conta, desconecte antes.';
     private const MSG_DISCONNECT     = 'Não foi possível desconectar o Google Agenda. Tente de novo.';
     private const MSG_INVALID_FIELDS = 'Dados do evento inválidos.';
 
@@ -34,6 +36,10 @@ class GoogleController extends Controller
         $config = GoogleConfig::fromEnv();
         if (!$config->isConfigured()) {
             $this->backToTasks('error', self::MSG_NOT_CONFIGURED);
+            return;
+        }
+        if (self::blocksNewConnection((new GoogleAccount())->findForUser($this->userId()))) {
+            $this->backToTasks('error', self::MSG_ALREADY_ACTIVE);
             return;
         }
 
@@ -93,6 +99,12 @@ class GoogleController extends Controller
             $this->backToTasks('warning', self::MSG_DENIED);
             return;
         }
+        // o connect ja recusa conta ativa, mas outra sessao do mesmo usuario
+        // guarda o proprio state, que continua valido depois de ela conectar.
+        if (self::blocksNewConnection((new GoogleAccount())->findForUser($this->userId()))) {
+            $this->backToTasks('error', self::MSG_ALREADY_ACTIVE);
+            return;
+        }
 
         $auth = new GoogleAuth($config, new CurlTransport());
         try {
@@ -146,6 +158,18 @@ class GoogleController extends Controller
         $this->eventResult(
             GoogleCalendarSync::default()->deleteForeignEvent($this->userId(), (string) ($params['google_id'] ?? ''))
         );
+    }
+
+    /**
+     * trocar de conta google com a atual ativa deixaria uma renovacao ou um
+     * envio no ar gravar a conta antiga na nova. desconectada ou revogada, a
+     * conta nao tem chamada no ar, entao pode conectar de novo.
+     *
+     * @param array<string, mixed>|false $account linha de GoogleAccount::findForUser
+     */
+    public static function blocksNewConnection(array|false $account): bool
+    {
+        return $account !== false && ($account['status'] ?? null) === 'active';
     }
 
     public static function stateIsValid(mixed $received, mixed $expected, int $expiresAt, int $now): bool
