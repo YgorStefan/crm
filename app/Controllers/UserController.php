@@ -147,6 +147,9 @@ class UserController extends Controller
         }
 
         $this->users->update($id, $data);
+        if (self::editRemovesGoogle($data)) {
+            $this->disconnectGoogle($id);
+        }
 
         // Atualiza a sessão se o admin editou o próprio perfil
         if ($id === (int) ($_SESSION['user']['id'] ?? 0)) {
@@ -179,6 +182,17 @@ class UserController extends Controller
 
         $this->flash('success', 'Usuário desativado com sucesso.');
         $this->redirect('/admin/users');
+    }
+
+    /**
+     * leitor nao tem a barra do google para desconectar, e o envio nao olha o
+     * papel, entao rebaixar a leitor desconecta como desativar.
+     *
+     * @param array{is_active:int, role:string} $data o que a edicao gravou
+     */
+    public static function editRemovesGoogle(array $data): bool
+    {
+        return $data['is_active'] === 0 || $data['role'] === 'viewer';
     }
 
     // usuario desativado nao deixa credencial do google guardada. a desativacao

@@ -2,6 +2,7 @@
 
 use App\Controllers\GoogleController;
 use App\Controllers\TaskController;
+use App\Controllers\UserController;
 use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
@@ -102,6 +103,23 @@ class GoogleControllerRulesTest extends TestCase
     public function testFeedDeHojeConverteADataDaJanela(): void
     {
         $this->assertSame('2026-11-01 00:00:00', TaskController::parseCalendarDate('2026-11-01T00:00:00-03:00'));
+    }
+
+    public function testEdicaoQueDesativaDesconectaOGoogle(): void
+    {
+        $this->assertTrue(UserController::editRemovesGoogle(['is_active' => 0, 'role' => 'seller']));
+        $this->assertTrue(UserController::editRemovesGoogle(['is_active' => 0, 'role' => 'admin']));
+    }
+
+    public function testEdicaoQueRebaixaALeitorDesconectaOGoogle(): void
+    {
+        $this->assertTrue(UserController::editRemovesGoogle(['is_active' => 1, 'role' => 'viewer']));
+    }
+
+    public function testEdicaoDeUsuarioAtivoQueConectaMantemOGoogle(): void
+    {
+        $this->assertFalse(UserController::editRemovesGoogle(['is_active' => 1, 'role' => 'seller']));
+        $this->assertFalse(UserController::editRemovesGoogle(['is_active' => 1, 'role' => 'admin']));
     }
 
     public function testCamposDoEventoSoLevamOsEnviados(): void
