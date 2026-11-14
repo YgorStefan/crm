@@ -51,7 +51,8 @@ class TaskTenantIsolationTest extends TestCase
                 created_by INT UNSIGNED, tenant_id INT UNSIGNED,
                 google_event_id VARCHAR(255) NULL, google_owner_id INT UNSIGNED NULL,
                 google_etag VARCHAR(100) NULL, google_duration_min INT UNSIGNED NULL,
-                google_sync_pending INT UNSIGNED NOT NULL DEFAULT 1
+                google_sync_pending INT UNSIGNED NOT NULL DEFAULT 1,
+                google_changed_fields TINYINT UNSIGNED NOT NULL DEFAULT 0
             ) ENGINE=InnoDB'
         );
 

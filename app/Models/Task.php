@@ -12,6 +12,13 @@ class Task extends Model
     public const INVALID_ASSIGNEE = 1;
     public const INVALID_CLIENT   = 2;
 
+    // bits de google_changed_fields: o que vai ao google e mudou no crm desde o
+    // ultimo envio, para o patch levar so isso e nao desfazer o que mudou la.
+    public const GOOGLE_TITLE       = 1;
+    public const GOOGLE_DESCRIPTION = 2;
+    public const GOOGLE_DUE_DATE    = 4;
+    public const GOOGLE_STATUS      = 8;
+
     private const CALENDAR_COLUMNS = "
         t.id, t.title, t.due_date, t.priority, t.status, t.client_id,
         t.description, t.assigned_to, t.created_by,
@@ -187,26 +194,40 @@ class Task extends Model
         if (empty($setClauses))
             return false;
 
-        // soma em vez de marcar 1 porque o envio so zera se o contador ainda for
-        // o que ele leu, e assim uma edicao feita durante o envio nao se perde.
-        $setClauses[] = 'google_sync_pending = google_sync_pending + 1';
-
         $this->db->beginTransaction();
         try {
-            if (array_key_exists('assigned_to', $data)) {
-                $setClauses = array_merge(
-                    $setClauses,
-                    $this->releaseGoogleEventOnReassign($id, $tenantId, (int) $data['assigned_to'])
-                );
+            // a linha travada e a base da comparacao: so o que muda de valor vai
+            // ao google, e o modal reenvia todos os campos a cada salvar.
+            $stmt = $this->db->prepare(
+                "SELECT title, description, due_date, status, " . self::DELETION_COLUMNS . " FROM tasks
+                 WHERE id = :id AND tenant_id = :tenant_id
+                 FOR UPDATE"
+            );
+            $stmt->execute([':id' => $id, ':tenant_id' => $tenantId]);
+            $row = $stmt->fetch();
+            if (!$row) {
+                $this->db->commit();
+                return false;
+            }
+
+            $changedFields = self::googleFieldsChanged($row, $data);
+            $reassigned    = array_key_exists('assigned_to', $data) && (int) $row['assigned_to'] !== (int) $data['assigned_to'];
+            if ($reassigned) {
+                $setClauses = array_merge($setClauses, $this->releaseGoogleEventOnReassign($tenantId, $row));
+            }
+            if ($changedFields !== 0 || $reassigned) {
+                // soma em vez de marcar 1 porque o envio so zera se o contador ainda
+                // for o que ele leu, e assim uma edicao feita durante o envio nao se perde.
+                $setClauses[] = 'google_sync_pending = google_sync_pending + 1';
+                $setClauses[] = 'google_changed_fields = google_changed_fields | :changed_fields';
+                $params[':changed_fields'] = $changedFields;
             }
 
             $sql = "UPDATE tasks SET " . implode(', ', $setClauses) .
                    " WHERE id = :id AND tenant_id = :tenant_id_u";
-            $stmt = $this->db->prepare($sql);
-            $stmt->execute($params);
-            $updated = $stmt->rowCount() > 0;
+            $this->db->prepare($sql)->execute($params);
             $this->db->commit();
-            return $updated;
+            return true;
         } catch (\Throwable $e) {
             $this->db->rollBack();
             throw $e;
@@ -214,22 +235,52 @@ class Task extends Model
     }
 
     /**
-     * @return list<string> clausulas que limpam o vinculo, vazia quando o evento fica onde esta
+     * bits de google_changed_fields dos campos que mudam de valor. o prazo do
+     * formulario chega sem segundos, e a descricao vazia e a nula sao a mesma
+     * para o google, que recebe a descricao sem os espacos das pontas.
+     *
+     * @param array<string, mixed> $row  linha travada
+     * @param array<string, mixed> $data campos recebidos
      */
-    private function releaseGoogleEventOnReassign(int $id, int $tenantId, int $newAssignee): array
+    private static function googleFieldsChanged(array $row, array $data): int
     {
-        $stmt = $this->db->prepare(
-            "SELECT " . self::DELETION_COLUMNS . " FROM tasks
-             WHERE id = :id AND tenant_id = :tenant_id
-             FOR UPDATE"
-        );
-        $stmt->execute([':id' => $id, ':tenant_id' => $tenantId]);
-        $row = $stmt->fetch();
-
-        if (!$row || (int) $row['assigned_to'] === $newAssignee) {
-            return [];
+        $changed = 0;
+        if (array_key_exists('title', $data) && (string) $data['title'] !== (string) $row['title']) {
+            $changed |= self::GOOGLE_TITLE;
         }
+        if (array_key_exists('description', $data)
+            && trim((string) ($data['description'] ?? '')) !== trim((string) ($row['description'] ?? ''))) {
+            $changed |= self::GOOGLE_DESCRIPTION;
+        }
+        if (array_key_exists('due_date', $data)
+            && self::comparableDue($data['due_date']) !== self::comparableDue($row['due_date'])) {
+            $changed |= self::GOOGLE_DUE_DATE;
+        }
+        if (array_key_exists('status', $data) && (string) $data['status'] !== (string) $row['status']) {
+            $changed |= self::GOOGLE_STATUS;
+        }
+        return $changed;
+    }
 
+    private static function comparableDue(mixed $value): string
+    {
+        $text = str_replace('T', ' ', trim((string) $value));
+        // em utc o texto sai como entrou, sem o horario de verao empurrar uma hora.
+        foreach (['!Y-m-d H:i:s', '!Y-m-d H:i'] as $format) {
+            $parsed = \DateTimeImmutable::createFromFormat($format, $text, new \DateTimeZone('UTC'));
+            if ($parsed !== false && $parsed->format(substr($format, 1)) === $text) {
+                return $parsed->format('Y-m-d H:i:s');
+            }
+        }
+        return $text;
+    }
+
+    /**
+     * @param array<string, mixed> $row linha travada pelo update, com as colunas de DELETION_COLUMNS
+     * @return list<string> clausulas que limpam o vinculo, vazia quando nao ha evento salvo
+     */
+    private function releaseGoogleEventOnReassign(int $tenantId, array $row): array
+    {
         // o evento mora na agenda do dono antigo, inclusive o de um insert sem
         // resposta: sai de la pela mesma regra do delete, e o envio cria outro
         // na agenda do novo responsavel.
@@ -640,27 +691,47 @@ class Task extends Model
     }
 
     /**
+     * @param  array<string, mixed>  $fromGoogle  title, due_date e google_duration_min que o google
+     *         tem nos campos que o patch nao levou, aplicados so com o contador visto
      * @return bool  true so quando zerou a pendencia
      */
-    public function markSynced(int $id, int $seenPending, string $eventId, int $ownerId, ?string $etag, int $durationMin): bool
-    {
+    public function markSynced(
+        int $id,
+        int $seenPending,
+        string $eventId,
+        int $ownerId,
+        ?string $etag,
+        int $durationMin,
+        array $fromGoogle = [],
+    ): bool {
         $params = [
             ':event_id'     => $eventId,
             ':owner_id'     => $ownerId,
             ':etag'         => $etag,
-            ':duration_min' => $durationMin,
+            ':duration_min' => $fromGoogle['google_duration_min'] ?? $durationMin,
             ':id'           => $id,
             ':tenant_id'    => $this->currentTenantId(),
             ':seen'         => $seenPending,
         ];
 
+        // as marcas zeram junto com o contador e sob a mesma guarda, entao a
+        // edicao feita durante o envio mantem as dela para o proximo.
+        $setClauses = [
+            'google_event_id = :event_id', 'google_owner_id = :owner_id', 'google_etag = :etag',
+            'google_duration_min = :duration_min', 'google_sync_pending = 0', 'google_changed_fields = 0',
+        ];
+        $synced = $params;
+        foreach (['title', 'due_date'] as $field) {
+            if (array_key_exists($field, $fromGoogle)) {
+                $setClauses[] = "{$field} = :{$field}";
+                $synced[":{$field}"] = $fromGoogle[$field];
+            }
+        }
         $stmt = $this->db->prepare(
-            "UPDATE tasks
-             SET google_event_id = :event_id, google_owner_id = :owner_id, google_etag = :etag,
-                 google_duration_min = :duration_min, google_sync_pending = 0
+            "UPDATE tasks SET " . implode(', ', $setClauses) . "
              WHERE id = :id AND tenant_id = :tenant_id AND google_sync_pending = :seen"
         );
-        $stmt->execute($params);
+        $stmt->execute($synced);
         if ($stmt->rowCount() > 0) {
             return true;
         }
@@ -668,7 +739,9 @@ class Task extends Model
         // com o contador mudado o vinculo ainda e gravado, senao uma tarefa
         // movida para o passado durante o envio sairia da fila sem id e o
         // evento ficaria na data antiga. com outro responsavel nada e gravado,
-        // porque o id e de uma agenda que nao e mais a dele.
+        // porque o id e de uma agenda que nao e mais a dele. os campos do google
+        // ficam para o proximo envio, cuja resposta traz o evento de novo, porque
+        // aqui a edicao do meio pode ter mudado os mesmos campos.
         $params[':assignee'] = $ownerId;
         $stmt = $this->db->prepare(
             "UPDATE tasks
@@ -684,8 +757,10 @@ class Task extends Model
 
     public function dropFromQueue(int $id, int $seenPending): void
     {
+        // marca que sobrasse iria junto com uma edicao futura de outro campo e
+        // regravaria no google algo que o crm nao mudou.
         $stmt = $this->db->prepare(
-            "UPDATE tasks SET google_sync_pending = 0
+            "UPDATE tasks SET google_sync_pending = 0, google_changed_fields = 0
              WHERE id = :id AND tenant_id = :tenant_id AND google_sync_pending = :seen"
         );
         $stmt->execute([':id' => $id, ':tenant_id' => $this->currentTenantId(), ':seen' => $seenPending]);

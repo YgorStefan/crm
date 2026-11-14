@@ -225,6 +225,41 @@ final class GoogleDrainTest extends TestCase
         ], $campos));
     }
 
+    /**
+     * evento ja enviado que a pessoa remarcou no google para depois de amanha
+     * as 15h, com 45 minutos.
+     *
+     * @param array<string, mixed> $campos
+     */
+    private function movidoNoGoogle(string $eventId, array $campos = []): \DateTimeImmutable
+    {
+        $movido = (new \DateTimeImmutable('+2 days'))->setTime(15, 0);
+        $this->evento(self::ANA, $eventId, array_merge([
+            'etag'    => '"etag-movido"',
+            'summary' => 'Ligar para cliente',
+            'start'   => ['dateTime' => $movido->format(DATE_RFC3339), 'timeZone' => 'America/Sao_Paulo'],
+            'end'     => ['dateTime' => $movido->modify('+45 minutes')->format(DATE_RFC3339), 'timeZone' => 'America/Sao_Paulo'],
+        ], $campos));
+        return $movido;
+    }
+
+    /**
+     * tarefa da ana ja enviada para amanha as 10h, vinculada e sem pendencia.
+     *
+     * @param array<string, mixed> $campos
+     */
+    private function enviada(string $eventId, array $campos = []): int
+    {
+        return $this->tarefa(array_merge([
+            'due_date'            => (new \DateTimeImmutable('+1 day'))->setTime(10, 0)->format('Y-m-d H:i:s'),
+            'google_event_id'     => $eventId,
+            'google_owner_id'     => self::ANA,
+            'google_etag'         => '"etag-1"',
+            'google_duration_min' => 30,
+            'google_sync_pending' => 0,
+        ], $campos));
+    }
+
     private function logs(): string
     {
         $texto = '';
@@ -598,6 +633,208 @@ final class GoogleDrainTest extends TestCase
         $this->assertSame('Título editado', $evento['summary']);
         $this->assertSame($lembreteDaPessoa, $evento['reminders']);
         $this->assertSame(0, $this->pendencia($id));
+    }
+
+    public function testSoPrioridadeNaoEnviaNada(): void
+    {
+        $this->conta(self::ANA);
+        $movido = $this->movidoNoGoogle('evtvinculado1');
+        $id = $this->enviada('evtvinculado1');
+
+        (new Task())->update($id, ['priority' => 'high']);
+        $this->assertSame('ok', $this->sync()->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE, self::ANA));
+
+        $this->assertSame([], $this->http->requests());
+        $this->assertSame($movido->format(DATE_RFC3339), $this->http->events($this->token(self::ANA))['evtvinculado1']['start']['dateTime']);
+    }
+
+    public function testModalSemMudancaNaoEnviaNada(): void
+    {
+        $this->conta(self::ANA);
+        $this->movidoNoGoogle('evtvinculado1');
+        $id = $this->enviada('evtvinculado1');
+        $linha = $this->linha($id);
+
+        // o modal manda sempre titulo, prazo como o formulario, prioridade e descricao.
+        (new Task())->update($id, [
+            'title'       => $linha['title'],
+            'due_date'    => substr(str_replace(' ', 'T', $linha['due_date']), 0, 16),
+            'priority'    => $linha['priority'],
+            'description' => '',
+        ]);
+        $this->assertSame('ok', $this->sync()->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE, self::ANA));
+
+        $this->assertSame([], $this->http->requests());
+    }
+
+    public function testDescricaoDepoisDeMoverNoGoogleMantemOQueMudouLa(): void
+    {
+        $this->conta(self::ANA);
+        $movido = $this->movidoNoGoogle('evtmovido1', ['summary' => 'Ligar para a Ana']);
+        $id = $this->enviada('evtmovido1');
+
+        (new Task())->update($id, ['description' => 'Levar contrato']);
+        $this->assertSame('ok', $this->sync()->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE, self::ANA));
+
+        $this->assertSame(['PATCH ' . self::EVENTS_URL . '/evtmovido1'], $this->chamadas());
+        $this->assertSame(['description' => 'Levar contrato', 'status' => 'confirmed'], $this->corpo(0));
+        $evento = $this->http->events($this->token(self::ANA))['evtmovido1'];
+        $this->assertSame($movido->format(DATE_RFC3339), $evento['start']['dateTime']);
+        $this->assertSame('Ligar para a Ana', $evento['summary']);
+        $this->assertSame('Levar contrato', $evento['description']);
+
+        // o etag novo so fica guardado junto com o que o google tem, senao a
+        // proxima abertura nao veria a remarcacao.
+        $linha = $this->linha($id);
+        $this->assertSame($movido->format('Y-m-d H:i:s'), $linha['due_date']);
+        $this->assertSame(45, (int) $linha['google_duration_min']);
+        $this->assertSame('Ligar para a Ana', $linha['title']);
+        $this->assertSame('Levar contrato', $linha['description']);
+        $this->assertSame($evento['etag'], $linha['google_etag']);
+        $this->assertSame(0, (int) $linha['google_sync_pending']);
+        $this->assertSame(0, (int) $linha['google_changed_fields']);
+    }
+
+    public function testConcluirDepoisDeMoverNoGoogleMantemOInicioDeLa(): void
+    {
+        $this->conta(self::ANA);
+        $movido = $this->movidoNoGoogle('evtmovido1');
+        $id = $this->enviada('evtmovido1');
+
+        (new Task())->update($id, ['status' => 'done']);
+        $this->assertSame('ok', $this->sync()->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE, self::ANA));
+
+        $this->assertSame(['summary' => '✓ Ligar para cliente', 'status' => 'confirmed'], $this->corpo(0));
+        $evento = $this->http->events($this->token(self::ANA))['evtmovido1'];
+        $this->assertSame('✓ Ligar para cliente', $evento['summary']);
+        $this->assertSame($movido->format(DATE_RFC3339), $evento['start']['dateTime']);
+        $linha = $this->linha($id);
+        $this->assertSame('done', $linha['status']);
+        $this->assertSame('Ligar para cliente', $linha['title']);
+        $this->assertSame($movido->format('Y-m-d H:i:s'), $linha['due_date']);
+        $this->assertSame($evento['etag'], $linha['google_etag']);
+    }
+
+    public function testPrazoMudadoLevaInicioEFimComADuracaoDaTarefa(): void
+    {
+        $this->conta(self::ANA);
+        $this->movidoNoGoogle('evtvinculado1', ['summary' => 'Ligar para a Ana']);
+        $id = $this->enviada('evtvinculado1', ['google_duration_min' => 50]);
+        $novo = (new \DateTimeImmutable('+3 days'))->setTime(8, 30);
+
+        (new Task())->update($id, ['due_date' => $novo->format('Y-m-d H:i:s')]);
+        $this->assertSame('ok', $this->sync()->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE, self::ANA));
+
+        $this->assertSame([
+            'start'  => ['date' => null, 'dateTime' => $novo->format(DATE_RFC3339), 'timeZone' => 'America/Sao_Paulo'],
+            'end'    => ['date' => null, 'dateTime' => $novo->modify('+50 minutes')->format(DATE_RFC3339), 'timeZone' => 'America/Sao_Paulo'],
+            'status' => 'confirmed',
+        ], $this->corpo(0));
+        $linha = $this->linha($id);
+        $this->assertSame($novo->format('Y-m-d H:i:s'), $linha['due_date']);
+        $this->assertSame(50, (int) $linha['google_duration_min']);
+        $this->assertSame('Ligar para a Ana', $linha['title']);
+    }
+
+    public function testEdicaoDuranteOEnvioMantemAsMarcasParaOProximo(): void
+    {
+        $this->conta(self::ANA);
+        $this->movidoNoGoogle('evtvinculado1');
+        $id = $this->enviada('evtvinculado1');
+        // a edicao do titulo chega depois do patch e antes de o envio gravar o resultado.
+        $tarefas = new class extends Task {
+            public ?int $editarNoMeio = null;
+
+            public function markSynced(int $id, int $seenPending, string $eventId, int $ownerId, ?string $etag, int $durationMin, array $fromGoogle = []): bool
+            {
+                if ($this->editarNoMeio === $id) {
+                    $this->editarNoMeio = null;
+                    $this->update($id, ['title' => 'Título editado no meio']);
+                }
+                return parent::markSynced($id, $seenPending, $eventId, $ownerId, $etag, $durationMin, $fromGoogle);
+            }
+        };
+        $tarefas->editarNoMeio = $id;
+
+        $tarefas->update($id, ['description' => 'Levar contrato']);
+        $this->assertSame('ok', $this->sync($tarefas)->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE, self::ANA));
+
+        $linha = $this->linha($id);
+        $this->assertSame(2, (int) $linha['google_sync_pending']);
+        $this->assertSame(Task::GOOGLE_TITLE | Task::GOOGLE_DESCRIPTION, (int) $linha['google_changed_fields']);
+
+        $this->assertSame('ok', $this->sync()->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE, self::ANA));
+
+        $this->assertSame(
+            ['summary' => 'Título editado no meio', 'description' => 'Levar contrato', 'status' => 'confirmed'],
+            $this->corpo(1),
+        );
+        $linha = $this->linha($id);
+        $this->assertSame(0, (int) $linha['google_sync_pending']);
+        $this->assertSame(0, (int) $linha['google_changed_fields']);
+    }
+
+    public function testPatchSemMarcaLevaOEventoInteiro(): void
+    {
+        $this->conta(self::ANA);
+        $this->movidoNoGoogle('evtvinculado1');
+        $this->enviada('evtvinculado1', ['google_sync_pending' => 1, 'google_changed_fields' => 0]);
+
+        $this->assertSame('ok', $this->sync()->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE, self::ANA));
+
+        $this->assertSame(['PATCH ' . self::EVENTS_URL . '/evtvinculado1'], $this->chamadas());
+        $this->assertSame(['summary', 'description', 'start', 'end', 'status'], array_keys($this->corpo(0)));
+    }
+
+    public function testInsertE409ViraPatchLevamOEventoInteiroMesmoComMarca(): void
+    {
+        $this->conta(self::ANA);
+        $id = $this->tarefa(['google_changed_fields' => Task::GOOGLE_DESCRIPTION]);
+        $this->evento(self::ANA, $this->idDe($id), ['status' => 'cancelled']);
+
+        $this->assertSame('ok', $this->sync()->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE, self::ANA));
+
+        $this->assertSame(['POST ' . self::EVENTS_URL, 'PATCH ' . self::EVENTS_URL . '/' . $this->idDe($id)], $this->chamadas());
+        $this->assertSame(['id', 'summary', 'description', 'start', 'end', 'status', 'reminders'], array_keys($this->corpo(0)));
+        $this->assertSame(['summary', 'description', 'start', 'end', 'status'], array_keys($this->corpo(1)));
+        $this->assertSame(0, (int) $this->linha($id)['google_changed_fields']);
+    }
+
+    public function testPatchParcialDeEventoSumidoViraInsertInteiro(): void
+    {
+        $this->conta(self::ANA);
+        $id = $this->enviada('evtsumido1');
+
+        (new Task())->update($id, ['description' => 'Levar contrato']);
+        $this->assertSame('ok', $this->sync()->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE, self::ANA));
+
+        $this->assertSame(['PATCH ' . self::EVENTS_URL . '/evtsumido1', 'POST ' . self::EVENTS_URL], $this->chamadas());
+        $this->assertSame(['description' => 'Levar contrato', 'status' => 'confirmed'], $this->corpo(0));
+        $this->assertSame(['id', 'summary', 'description', 'start', 'end', 'status', 'reminders'], array_keys($this->corpo(1)));
+        $linha = $this->linha($id);
+        $this->assertSame(0, (int) $linha['google_sync_pending']);
+        $this->assertSame(0, (int) $linha['google_changed_fields']);
+    }
+
+    public function testDataDoGoogleQueColideNaSerieFicaComADoCrm(): void
+    {
+        $this->conta(self::ANA);
+        $mae    = $this->tarefa(['due_date' => $this->em('-30 days'), 'google_sync_pending' => 0]);
+        $movido = $this->movidoNoGoogle('evtfilha1');
+        // a irma ja ocupa a data para onde a filha foi movida no google.
+        $this->tarefa(['recurrence_parent_id' => $mae, 'due_date' => $movido->format('Y-m-d H:i:s'), 'google_sync_pending' => 0]);
+        $filha = $this->enviada('evtfilha1', ['recurrence_parent_id' => $mae]);
+        $antes = $this->linha($filha)['due_date'];
+
+        (new Task())->update($filha, ['description' => 'Levar contrato']);
+        $this->assertSame('ok', $this->sync()->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE, self::ANA));
+
+        $linha = $this->linha($filha);
+        $this->assertSame($antes, $linha['due_date']);
+        $this->assertSame($this->http->events($this->token(self::ANA))['evtfilha1']['etag'], $linha['google_etag']);
+        $this->assertSame(0, (int) $linha['google_sync_pending']);
+        $this->assertSame(0, (int) $linha['google_changed_fields']);
+        $this->assertStringContainsString('"task_id":' . $filha, $this->logs());
     }
 
     /** @return array<string, array{int}> */

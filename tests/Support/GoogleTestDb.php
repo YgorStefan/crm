@@ -59,6 +59,7 @@ final class GoogleTestDb
             google_event_id VARCHAR(255) NULL, google_owner_id INT UNSIGNED NULL,
             google_etag VARCHAR(100) NULL, google_duration_min INT UNSIGNED NULL,
             google_sync_pending INT UNSIGNED NOT NULL DEFAULT 1,
+            google_changed_fields TINYINT UNSIGNED NOT NULL DEFAULT 0,
             UNIQUE KEY uq_tasks_recurrence_instance (recurrence_parent_id, due_date),
             CONSTRAINT fk_task_recurrence_parent
                 FOREIGN KEY (recurrence_parent_id) REFERENCES tasks(id) ON DELETE CASCADE

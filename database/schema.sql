@@ -265,6 +265,9 @@ CREATE TABLE IF NOT EXISTS tasks (
     -- google_sync_pending e um contador: marcar soma 1, e o envio so zera se o
     -- valor nao mudou desde a leitura, para nao perder edicao feita no meio.
     google_sync_pending INT UNSIGNED    NOT NULL DEFAULT 1,
+    -- mascara dos campos que vao ao google e mudaram no crm desde o ultimo
+    -- envio (1 titulo, 2 descricao, 4 prazo, 8 status): o patch leva so eles.
+    google_changed_fields TINYINT UNSIGNED NOT NULL DEFAULT 0,
     created_at  TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at  TIMESTAMP       NOT NULL DEFAULT CURRENT_TIMESTAMP
                                 ON UPDATE CURRENT_TIMESTAMP,

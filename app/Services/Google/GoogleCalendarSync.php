@@ -524,8 +524,9 @@ final class GoogleCalendarSync
         $duration = $task['google_duration_min'] !== null ? (int) $task['google_duration_min'] : self::DEFAULT_DURATION_MIN;
         $event    = $this->eventFor($task, $duration);
 
-        $first    = $storedId !== null ? 'PATCH' : 'INSERT';
-        $response = $this->write($userId, $first, $eventId, $event);
+        $first = $storedId !== null ? 'PATCH' : 'INSERT';
+        $sent  = $first === 'PATCH' ? (int) ($task['google_changed_fields'] ?? 0) : 0;
+        $response = $this->write($userId, $first, $eventId, self::changedPart($event, $sent));
         if ($response === null) {
             return 'budget';
         }
@@ -537,6 +538,9 @@ final class GoogleCalendarSync
             default                                        => null,
         };
         if ($fallback !== null) {
+            // o insert de recuperacao cria o evento de novo, e o patch depois do
+            // 409 regrava um evento que o crm nunca viu, entao os dois levam tudo.
+            $sent     = 0;
             $response = $this->write($userId, $fallback, $eventId, $event);
             if ($response === null) {
                 return 'budget';
@@ -545,7 +549,7 @@ final class GoogleCalendarSync
         }
 
         if ($outcome === 'ok') {
-            $this->tasks->markSynced($taskId, $seen, $eventId, $userId, self::etagOf($response['body']), $duration);
+            $this->markSent($userId, $task, $eventId, $duration, $sent, $response['body']);
             return 'done';
         }
         if ($outcome === 'reconnect' || $outcome === 'stop') {
@@ -558,6 +562,87 @@ final class GoogleCalendarSync
         $this->logResponse('tarefa recusada pelo google, saiu da fila', $userId, $taskId, $response);
         $this->tasks->dropFromQueue($taskId, $seen);
         return 'done';
+    }
+
+    /**
+     * o patch parcial devolve o evento inteiro, e o que o google tem nos campos
+     * que nao foram enviados volta para a tarefa junto com o etag: guardado
+     * sozinho, o etag novo esconderia da proxima abertura uma remarcacao feita la.
+     *
+     * @param array<string, mixed> $task linha de Task::pendingForUser
+     * @param int $sent bits de Task::GOOGLE_* enviados; zero quando foi o evento inteiro
+     */
+    private function markSent(int $userId, array $task, string $eventId, int $duration, int $sent, string $body): void
+    {
+        $taskId     = (int) $task['id'];
+        $seen       = (int) $task['google_sync_pending'];
+        $etag       = self::etagOf($body);
+        $fromGoogle = $sent === 0 ? [] : self::unsentFromGoogle($body, $sent, (string) $task['due_date']);
+
+        try {
+            $this->tasks->markSynced($taskId, $seen, $eventId, $userId, $etag, $duration, $fromGoogle);
+        } catch (\PDOException $e) {
+            if (!self::isDuplicateKey($e) || !array_key_exists('due_date', $fromGoogle)) {
+                throw $e;
+            }
+            // a data do google e a de outra ocorrencia da mesma serie: como na
+            // reconciliacao, a tarefa fica onde esta e o etag e guardado, senao o
+            // envio repetiria o patch e a colisao a cada abertura.
+            unset($fromGoogle['due_date']);
+            $this->tasks->markSynced($taskId, $seen, $eventId, $userId, $etag, $duration, $fromGoogle);
+            $this->logFailure('data do google colide com outra ocorrencia da serie', $userId, $e, $taskId);
+        }
+    }
+
+    /**
+     * so os campos marcados, para o patch nao desfazer o que mudou no google
+     * desde o ultimo envio, e sempre o status, que restaura o evento apagado
+     * la (medido na tarefa 1). sem marca vai o evento inteiro.
+     *
+     * @param array<string, mixed> $event
+     * @return array<string, mixed>
+     */
+    private static function changedPart(array $event, int $changed): array
+    {
+        if ($changed === 0) {
+            return $event;
+        }
+
+        $part = [];
+        if (($changed & (Task::GOOGLE_TITLE | Task::GOOGLE_STATUS)) !== 0) {
+            $part['summary'] = $event['summary'];
+        }
+        if (($changed & Task::GOOGLE_DESCRIPTION) !== 0) {
+            $part['description'] = $event['description'];
+        }
+        if (($changed & Task::GOOGLE_DUE_DATE) !== 0) {
+            $part['start'] = $event['start'];
+            $part['end']   = $event['end'];
+        }
+        $part['status'] = $event['status'];
+        return $part;
+    }
+
+    /**
+     * os campos que o patch nao levou, pelas regras da reconciliacao.
+     *
+     * @return array<string, mixed>
+     */
+    private static function unsentFromGoogle(string $body, int $sent, string $taskDue): array
+    {
+        $event = json_decode($body, true);
+        if (!is_array($event)) {
+            return [];
+        }
+
+        $fields = self::fieldsFromEvent($event, $taskDue);
+        if (($sent & (Task::GOOGLE_TITLE | Task::GOOGLE_STATUS)) !== 0) {
+            unset($fields['title']);
+        }
+        if (($sent & Task::GOOGLE_DUE_DATE) !== 0) {
+            unset($fields['due_date'], $fields['google_duration_min']);
+        }
+        return $fields;
     }
 
     /**

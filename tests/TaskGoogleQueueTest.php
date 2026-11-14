@@ -6,6 +6,7 @@ use App\Models\GoogleAccount;
 use App\Models\GoogleEventDeletion;
 use App\Models\Task;
 use App\Services\Google\GoogleConfig;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 require_once __DIR__ . '/Support/GoogleTestDb.php';
@@ -120,6 +121,113 @@ final class TaskGoogleQueueTest extends TestCase
 
         $this->assertFalse((new Task())->update($id, ['campo_qualquer' => 'x']));
         $this->assertSame(1, (int) $this->linha($id)['google_sync_pending']);
+    }
+
+    public function testSoPrioridadeNaoSomaNemMarca(): void
+    {
+        // a prioridade nao vai ao google, e somar regravaria o evento inteiro.
+        $id = $this->tarefa(['google_sync_pending' => 0]);
+
+        $this->assertTrue((new Task())->update($id, ['priority' => 'high']));
+
+        $linha = $this->linha($id);
+        $this->assertSame('high', $linha['priority']);
+        $this->assertSame(0, (int) $linha['google_sync_pending']);
+        $this->assertSame(0, (int) $linha['google_changed_fields']);
+    }
+
+    /** @return array<string, array{string, string|null}> */
+    public static function modalSemMudanca(): array
+    {
+        return [
+            'prazo como o controller grava, descricao nula' => ['2030-01-10 09:00:00', null],
+            'prazo como o formulario manda'                 => ['2030-01-10T09:00', null],
+            'prazo sem segundos, descricao vazia'           => ['2030-01-10 09:00', ''],
+            'descricao com espacos em volta'                => ['2030-01-10 09:00:00', '  Levar contrato '],
+        ];
+    }
+
+    #[DataProvider('modalSemMudanca')]
+    public function testModalReenviandoOsMesmosValoresNaoSoma(string $prazo, ?string $descricaoGuardada): void
+    {
+        $id = $this->tarefa([
+            'title' => 'Ligar para cliente', 'due_date' => '2030-01-10 09:00:00',
+            'description' => $descricaoGuardada, 'google_sync_pending' => 0,
+        ]);
+
+        $this->assertTrue((new Task())->update($id, [
+            'title'       => 'Ligar para cliente',
+            'due_date'    => $prazo,
+            'priority'    => 'medium',
+            'description' => trim((string) $descricaoGuardada),
+        ]));
+
+        $linha = $this->linha($id);
+        $this->assertSame(0, (int) $linha['google_sync_pending']);
+        $this->assertSame(0, (int) $linha['google_changed_fields']);
+    }
+
+    /** @return array<string, array{array<string, string>, int}> */
+    public static function campoQueMuda(): array
+    {
+        return [
+            'titulo'    => [['title' => 'Ligar de novo'], Task::GOOGLE_TITLE],
+            'descricao' => [['description' => 'Levar contrato'], Task::GOOGLE_DESCRIPTION],
+            'prazo'     => [['due_date' => '2030-01-11 09:00:00'], Task::GOOGLE_DUE_DATE],
+            'status'    => [['status' => 'done'], Task::GOOGLE_STATUS],
+        ];
+    }
+
+    /** @param array<string, string> $mudanca */
+    #[DataProvider('campoQueMuda')]
+    public function testCampoQueMudaSomaEMarcaSoEle(array $mudanca, int $marca): void
+    {
+        $id = $this->tarefa(['due_date' => '2030-01-10 09:00:00', 'google_sync_pending' => 0]);
+
+        (new Task())->update($id, $mudanca + [
+            'title' => 'Ligar para cliente', 'due_date' => '2030-01-10 09:00:00', 'priority' => 'low', 'description' => '',
+        ]);
+
+        $linha = $this->linha($id);
+        $this->assertSame(1, (int) $linha['google_sync_pending']);
+        $this->assertSame($marca, (int) $linha['google_changed_fields']);
+    }
+
+    public function testMarcasSeAcumulamAteOEnvio(): void
+    {
+        $id = $this->tarefa(['google_sync_pending' => 0]);
+
+        (new Task())->update($id, ['title' => 'Ligar de novo']);
+        (new Task())->update($id, ['description' => 'Levar contrato']);
+
+        $linha = $this->linha($id);
+        $this->assertSame(2, (int) $linha['google_sync_pending']);
+        $this->assertSame(Task::GOOGLE_TITLE | Task::GOOGLE_DESCRIPTION, (int) $linha['google_changed_fields']);
+    }
+
+    public function testTrocaDeResponsavelSomaSemMarcarCampo(): void
+    {
+        $id = $this->tarefa(['google_sync_pending' => 0]);
+
+        (new Task())->update($id, ['assigned_to' => self::BIA, 'title' => 'Ligar para cliente']);
+
+        $linha = $this->linha($id);
+        $this->assertSame(1, (int) $linha['google_sync_pending']);
+        $this->assertSame(0, (int) $linha['google_changed_fields']);
+    }
+
+    public function testUpdateDeTarefaDeOutroTenantDevolveFalse(): void
+    {
+        $id = $this->tarefa([
+            'tenant_id' => self::OUTRO_TENANT, 'assigned_to' => self::DUDA, 'created_by' => self::DUDA,
+            'google_sync_pending' => 0,
+        ]);
+
+        $this->assertFalse((new Task())->update($id, ['title' => 'Invadida']));
+
+        $linha = $this->linha($id);
+        $this->assertSame('Ligar para cliente', $linha['title']);
+        $this->assertSame(0, (int) $linha['google_sync_pending']);
     }
 
     public function testDeleteCopiaEventoParaRemocoes(): void
@@ -393,13 +501,54 @@ final class TaskGoogleQueueTest extends TestCase
 
     public function testDropFromQueueZeraSoComContadorVisto(): void
     {
-        $id = $this->tarefa(['google_sync_pending' => 2]);
+        $id = $this->tarefa(['google_sync_pending' => 2, 'google_changed_fields' => Task::GOOGLE_DESCRIPTION]);
 
         (new Task())->dropFromQueue($id, 1);
         $this->assertSame(2, (int) $this->linha($id)['google_sync_pending']);
+        $this->assertSame(Task::GOOGLE_DESCRIPTION, (int) $this->linha($id)['google_changed_fields']);
 
         (new Task())->dropFromQueue($id, 2);
         $this->assertSame(0, (int) $this->linha($id)['google_sync_pending']);
+        $this->assertSame(0, (int) $this->linha($id)['google_changed_fields']);
+    }
+
+    public function testMarkSyncedZeraAsMarcasEAplicaOQueVeioDoGoogle(): void
+    {
+        $id = $this->tarefa([
+            'title' => 'Do CRM', 'due_date' => '2030-01-10 09:00:00', 'google_duration_min' => 30,
+            'google_sync_pending' => 1, 'google_changed_fields' => Task::GOOGLE_DESCRIPTION,
+        ]);
+
+        $this->assertTrue((new Task())->markSynced($id, 1, 'evento-a', self::ANA, '"etag-2"', 30, [
+            'title' => 'Do Google', 'due_date' => '2030-01-12 15:00:00', 'google_duration_min' => 45,
+        ]));
+
+        $linha = $this->linha($id);
+        $this->assertSame('Do Google', $linha['title']);
+        $this->assertSame('2030-01-12 15:00:00', $linha['due_date']);
+        $this->assertSame(45, (int) $linha['google_duration_min']);
+        $this->assertSame('"etag-2"', $linha['google_etag']);
+        $this->assertSame(0, (int) $linha['google_sync_pending']);
+        $this->assertSame(0, (int) $linha['google_changed_fields']);
+    }
+
+    public function testMarkSyncedComContadorMudadoMantemMarcasECampos(): void
+    {
+        $id = $this->tarefa([
+            'title' => 'Do CRM', 'due_date' => '2030-01-10 09:00:00',
+            'google_sync_pending' => 1, 'google_changed_fields' => Task::GOOGLE_DESCRIPTION,
+        ]);
+        (new Task())->update($id, ['title' => 'Editada durante o envio']);
+
+        $this->assertFalse((new Task())->markSynced($id, 1, 'evento-a', self::ANA, '"etag-2"', 30, [
+            'due_date' => '2030-01-12 15:00:00',
+        ]));
+
+        $linha = $this->linha($id);
+        $this->assertSame('Editada durante o envio', $linha['title']);
+        $this->assertSame('2030-01-10 09:00:00', $linha['due_date']);
+        $this->assertSame(2, (int) $linha['google_sync_pending']);
+        $this->assertSame(Task::GOOGLE_DESCRIPTION | Task::GOOGLE_TITLE, (int) $linha['google_changed_fields']);
     }
 
     public function testApplyGoogleChangeNaoSoma(): void

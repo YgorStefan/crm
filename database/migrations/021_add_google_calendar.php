@@ -85,6 +85,17 @@ if ($pdo->query("SHOW COLUMNS FROM tasks LIKE 'google_sync_pending'")->fetch()) 
     echo "Migration 021: coluna google_sync_pending adicionada em tasks ({$zeradas} tarefas encerradas ou vencidas ficaram sem pendência).\n";
 }
 
+// fica depois do bloco do contador porque e posicionada logo apos ele.
+if ($pdo->query("SHOW COLUMNS FROM tasks LIKE 'google_changed_fields'")->fetch()) {
+    echo "Migration 021: coluna google_changed_fields já existe em tasks, ignorado.\n";
+} else {
+    $pdo->exec("
+        ALTER TABLE tasks
+            ADD COLUMN google_changed_fields TINYINT UNSIGNED NOT NULL DEFAULT 0 AFTER google_sync_pending
+    ");
+    echo "Migration 021: coluna google_changed_fields adicionada em tasks.\n";
+}
+
 $indexes = [
     'idx_tasks_google_queue' => 'INDEX idx_tasks_google_queue (tenant_id, google_sync_pending, assigned_to, due_date)',
     'idx_tasks_google_event' => 'INDEX idx_tasks_google_event (tenant_id, google_event_id)',
