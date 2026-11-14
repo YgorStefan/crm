@@ -268,7 +268,7 @@ class GoogleControllerRulesTest extends TestCase
         $this->assertSame(
             [
                 'id'    => 7,
-                'title' => '↻ Ligar &lt;para&gt; cliente',
+                'title' => '↻ Ligar <para> cliente',
                 'start' => '2026-11-15 09:00:00',
                 'color' => '#ef4444',
                 'extendedProps' => [
@@ -282,6 +282,13 @@ class GoogleControllerRulesTest extends TestCase
             ],
             TaskController::calendarTaskEvent(self::tarefa()),
         );
+    }
+
+    public function testTituloDaTarefaChegaAoCalendarioSemEscape(): void
+    {
+        $tarefa =['title' => 'Reunião & almoço "cliente"', 'recurrence_type' => 'none', 'recurrence_parent_id' => null] + self::tarefa();
+
+        $this->assertSame('Reunião & almoço "cliente"', TaskController::calendarTaskEvent($tarefa)['title']);
     }
 
     public function testTarefaDaEquipeLevaOResponsavel(): void

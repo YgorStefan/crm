@@ -97,10 +97,12 @@ class TaskController extends Controller
      */
     public static function calendarTaskEvent(array $task): array
     {
+        // o titulo vai cru porque o fullcalendar, o tooltip e a lista de conflito o
+        // poem como texto, e escapar aqui mostraria &amp; na tela.
         return [
             'id'    => $task['id'],
             'title' => (($task['recurrence_type'] !== 'none' || $task['recurrence_parent_id'] !== null) ? '↻ ' : '')
-                       . htmlspecialchars($task['title'], ENT_QUOTES, 'UTF-8'),
+                       . $task['title'],
             'start' => $task['due_date'],
             'color' => match ($task['priority']) {
                 'high'   => '#ef4444',
