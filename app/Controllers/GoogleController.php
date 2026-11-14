@@ -26,6 +26,7 @@ class GoogleController extends Controller
     private const MSG_UNAVAILABLE    = 'O Google não respondeu agora. Tente conectar de novo em alguns instantes.';
     private const MSG_CONNECTED      = 'Google Agenda conectado. Suas tarefas abertas de hoje em diante vão para a sua agenda do Google.';
     private const MSG_ALREADY_ACTIVE = 'O Google Agenda já está conectado. Para usar outra conta, desconecte antes.';
+    private const MSG_NOT_ALLOWED    = 'Seu usuário não pode conectar o Google Agenda.';
     private const MSG_UNEXPECTED     = 'Não foi possível concluir a conexão com o Google Agenda. Tente de novo em alguns instantes.';
     private const MSG_DISCONNECT     = 'Não foi possível desconectar o Google Agenda. Tente de novo.';
     private const MSG_INVALID_FIELDS = 'Dados do evento inválidos.';
@@ -100,13 +101,14 @@ class GoogleController extends Controller
             $this->backToTasks('warning', self::MSG_DENIED);
             return;
         }
+        $connected = false;
         try {
             // o connect ja recusa conta ativa, mas outra sessao do mesmo usuario
             // guarda o proprio state, que continua valido depois de ela conectar.
             $alreadyActive = self::blocksNewConnection((new GoogleAccount())->findForUser($this->userId()));
             if (!$alreadyActive) {
-                $auth = new GoogleAuth($config, new CurlTransport());
-                $auth->completeConnection($this->userId(), $auth->exchangeCode($code));
+                $auth = $this->googleAuth($config);
+                $connected = $auth->completeConnection($this->userId(), $auth->exchangeCode($code));
             }
         } catch (GoogleAccessDenied $e) {
             $this->logFailure('conexao recusada', $e);
@@ -127,7 +129,18 @@ class GoogleController extends Controller
             $this->backToTasks('error', self::MSG_ALREADY_ACTIVE);
             return;
         }
+        if (!$connected) {
+            // o papel da sessao pode estar velho: quem foi rebaixado ou
+            // desativado com a aba aberta chega aqui, e o banco recusa.
+            $this->backToTasks('warning', self::MSG_NOT_ALLOWED);
+            return;
+        }
         $this->backToTasks('success', self::MSG_CONNECTED);
+    }
+
+    protected function googleAuth(GoogleConfig $config): GoogleAuth
+    {
+        return new GoogleAuth($config, new CurlTransport());
     }
 
     public function disconnect(array $params = []): void

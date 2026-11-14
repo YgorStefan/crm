@@ -41,10 +41,11 @@ final class GoogleTestDb
 
         self::dropAll($pdo);
 
-        $pdo->exec('CREATE TABLE users (
+        $pdo->exec("CREATE TABLE users (
             id INT UNSIGNED PRIMARY KEY, name VARCHAR(100), tenant_id INT UNSIGNED,
+            role VARCHAR(20) NOT NULL DEFAULT 'seller',
             is_active TINYINT(1) NOT NULL DEFAULT 1
-        ) ENGINE=InnoDB');
+        ) ENGINE=InnoDB");
         $pdo->exec('CREATE TABLE clients (
             id INT UNSIGNED PRIMARY KEY, name VARCHAR(100), tenant_id INT UNSIGNED,
             is_active TINYINT(1) DEFAULT 1

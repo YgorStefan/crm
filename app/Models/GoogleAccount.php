@@ -21,6 +21,9 @@ class GoogleAccount extends Model
         return $stmt->fetch();
     }
 
+    /**
+     * @return bool  false quando o usuario nao pode conectar e nada foi gravado
+     */
     public function upsertConnected(
         int $userId,
         string $email,
@@ -28,9 +31,11 @@ class GoogleAccount extends Model
         string $encRefresh,
         string $encAccess,
         string $expiresAt,
-    ): void {
+    ): bool {
         // o on duplicate key nao aceita where, entao o tenant e conferido na
         // origem: so entra usuario do tenant da sessao, e a chave e o user_id.
+        // o papel e o ativo tambem saem do banco, porque a sessao de quem foi
+        // rebaixado ou desativado continua dizendo o papel antigo.
         $stmt = $this->db->prepare(
             "INSERT INTO google_accounts
                 (user_id, tenant_id, google_email, google_sub, refresh_token, access_token,
@@ -38,6 +43,7 @@ class GoogleAccount extends Model
              SELECT u.id, u.tenant_id, :email, :sub, :refresh, :access, :expires, 'active'
              FROM users u
              WHERE u.id = :user_id AND u.tenant_id = :tenant_id
+               AND u.is_active = 1 AND u.role IN ('admin', 'seller')
              ON DUPLICATE KEY UPDATE
                 google_email = :email_upd, google_sub = :sub_upd,
                 refresh_token = :refresh_upd, access_token = :access_upd,
@@ -58,6 +64,10 @@ class GoogleAccount extends Model
             ':access_upd'  => $encAccess,
             ':expires_upd' => $expiresAt,
         ]);
+
+        // o token cifrado muda a cada conexao, porque o iv e aleatorio, entao a
+        // linha existente sempre muda e zero linhas so acontece sem usuario apto.
+        return $stmt->rowCount() > 0;
     }
 
     /**

@@ -3,9 +3,12 @@
 declare(strict_types=1);
 
 use App\Controllers\GoogleController;
+use App\Services\Google\GoogleAuth;
+use App\Services\Google\GoogleConfig;
 use PHPUnit\Framework\TestCase;
 
 require_once __DIR__ . '/Support/GoogleTestDb.php';
+require_once __DIR__ . '/Support/FakeTransport.php';
 
 final class GoogleControllerFinishTest extends TestCase
 {
@@ -41,17 +44,81 @@ final class GoogleControllerFinishTest extends TestCase
         $_GET = [];
     }
 
-    /** o redirect de verdade da exit, e aqui ele so guarda o destino */
-    private function controller(): GoogleController
+    /**
+     * o redirect de verdade da exit, e aqui ele so guarda o destino. a troca do
+     * code vai ao transporte falso, nunca ao endpoint de token do google.
+     */
+    private function controller(?FakeTransport $http = null): GoogleController
     {
-        return new class extends GoogleController {
+        return new class ($http ?? new FakeTransport()) extends GoogleController {
             public ?string $destino = null;
+
+            public function __construct(private FakeTransport $http)
+            {
+            }
 
             protected function redirect(string $path): void
             {
                 $this->destino = $path;
             }
+
+            protected function googleAuth(GoogleConfig $config): GoogleAuth
+            {
+                return new GoogleAuth($config, $this->http);
+            }
         };
+    }
+
+    /** o endpoint de token devolve uma troca valida, com o escopo de agenda e o refresh_token */
+    private function trocaValida(): FakeTransport
+    {
+        $base64url = fn (string $bruto): string => rtrim(strtr(base64_encode($bruto), '+/', '-_'), '=');
+        $idToken = $base64url('{"alg":"RS256","typ":"JWT"}') . '.'
+            . $base64url((string) json_encode(['sub' => 'sub-falso-1', 'email' => 'pessoa@example.com'])) . '.assinatura-falsa';
+
+        $http = new FakeTransport();
+        $http->respond('oauth2.googleapis.com/token', 200, [
+            'access_token'  => 'acesso-novo-falso',
+            'expires_in'    => 3599,
+            'refresh_token' => 'refresh-novo-falso',
+            'scope'         => 'openid ' . GoogleAuth::SCOPE_CALENDAR,
+            'token_type'    => 'Bearer',
+            'id_token'      => $idToken,
+        ]);
+        return $http;
+    }
+
+    private function contas(): int
+    {
+        return (int) $this->pdo->query('SELECT COUNT(*) FROM google_accounts')->fetchColumn();
+    }
+
+    public function testConexaoGravadaAvisaConectado(): void
+    {
+        $controller = $this->controller($this->trocaValida());
+
+        $controller->finish();
+
+        $this->assertSame('/tasks', $controller->destino);
+        $this->assertSame('success', $_SESSION['flash']['type']);
+        $this->assertStringStartsWith('Google Agenda conectado.', $_SESSION['flash']['message']);
+        $this->assertSame(1, $this->contas());
+    }
+
+    public function testUsuarioRebaixadoComSessaoAntigaRecebeAviso(): void
+    {
+        // a sessao ainda diz admin, mas o banco ja tem o usuario como leitor.
+        $this->pdo->exec("UPDATE users SET role = 'viewer' WHERE id = 1");
+        $controller = $this->controller($this->trocaValida());
+
+        $controller->finish();
+
+        $this->assertSame('/tasks', $controller->destino);
+        $this->assertSame([
+            'type'    => 'warning',
+            'message' => 'Seu usuário não pode conectar o Google Agenda.',
+        ], $_SESSION['flash']);
+        $this->assertSame(0, $this->contas());
     }
 
     public function testErroInesperadoVoltaParaTarefasComAviso(): void

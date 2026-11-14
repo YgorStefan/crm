@@ -506,9 +506,63 @@ final class GoogleAuthTest extends TestCase
 
     public function testConectarUsuarioDeOutroTenantNaoGrava(): void
     {
-        $this->auth()->completeConnection(self::DUDA, $this->trocado());
+        $this->assertFalse($this->auth()->completeConnection(self::DUDA, $this->trocado()));
 
         $this->assertFalse($this->contaDe(self::DUDA));
+    }
+
+    public function testConexaoGravadaDevolveTrue(): void
+    {
+        $this->assertTrue($this->auth()->completeConnection(self::ANA, $this->trocado()));
+        $this->assertSame('active', $this->contaDe(self::ANA)['status']);
+    }
+
+    /** @return array<string, array{string, int}> */
+    public static function usuariosQueNaoConectam(): array
+    {
+        return [
+            'rebaixado a leitor' => ['viewer', 1],
+            'desativado'         => ['seller', 0],
+        ];
+    }
+
+    #[DataProvider('usuariosQueNaoConectam')]
+    public function testUsuarioQueNaoPodeConectarNaoMudaNada(string $papel, int $ativo): void
+    {
+        // a sessao antiga ainda diz seller, entao so o banco barra a conexao.
+        $this->pdo->prepare('UPDATE users SET role = :papel, is_active = :ativo WHERE id = :id')
+            ->execute([':papel' => $papel, ':ativo' => $ativo, ':id' => self::ANA]);
+        $this->conta(self::ANA, [
+            'status' => 'disconnected', 'refresh_token' => null, 'access_token' => null, 'access_token_expires_at' => null,
+        ]);
+        $vinculada = $this->tarefa([
+            'google_event_id' => 'evento-falso-1', 'google_owner_id' => self::ANA, 'google_etag' => '"etag-falso"',
+        ]);
+        $solta = $this->tarefa();
+        $this->remocao(self::ANA, 'evento-falso-velho');
+
+        $conectou = $this->auth()->completeConnection(self::ANA, $this->trocado('sub-falso-outra-conta'));
+
+        $conta = $this->contaDe(self::ANA);
+        $this->assertSame('disconnected', $conta['status']);
+        $this->assertSame('sub-falso-1', $conta['google_sub']);
+        $this->assertNull($conta['refresh_token']);
+        $this->assertSame('evento-falso-1', $this->linha($vinculada)['google_event_id']);
+        $this->assertSame(0, (int) $this->linha($solta)['google_sync_pending']);
+        $this->assertSame(['evento-falso-velho'], $this->remocoesDe(self::ANA));
+        $this->assertFalse($conectou);
+    }
+
+    #[DataProvider('usuariosQueNaoConectam')]
+    public function testUsuarioQueNaoPodeConectarNaoGanhaConta(string $papel, int $ativo): void
+    {
+        $this->pdo->prepare('UPDATE users SET role = :papel, is_active = :ativo WHERE id = :id')
+            ->execute([':papel' => $papel, ':ativo' => $ativo, ':id' => self::ANA]);
+
+        $conectou = $this->auth()->completeConnection(self::ANA, $this->trocado());
+
+        $this->assertFalse($this->contaDe(self::ANA));
+        $this->assertFalse($conectou);
     }
 
     public function testDesconectarGuardaSubEApagaTokens(): void

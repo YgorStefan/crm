@@ -109,22 +109,19 @@ final class GoogleAuth
         ];
     }
 
-    /** @param array{email:string,sub:string,refresh_token:string,access_token:string,expires_in:int} $exchanged */
-    public function completeConnection(int $userId, array $exchanged): void
+    /**
+     * @param array{email:string,sub:string,refresh_token:string,access_token:string,expires_in:int} $exchanged
+     * @return bool  false quando o usuario nao pode conectar, sem nada gravado
+     */
+    public function completeConnection(int $userId, array $exchanged): bool
     {
         $db = Database::getInstance();
         $db->beginTransaction();
         try {
             // o sub anterior e lido antes do upsert, que o sobrescreve.
             $previous = $this->accounts->findForUser($userId);
-            if ($previous !== false && (string) $previous['google_sub'] !== $exchanged['sub']) {
-                // conta google diferente: os ids salvos e as remocoes pendentes
-                // apontam para a agenda da conta antiga.
-                $this->tasks->clearGoogleLinksForUser($userId);
-                $this->deletions->purgeForUser($userId);
-            }
 
-            $this->accounts->upsertConnected(
+            $written = $this->accounts->upsertConnected(
                 $userId,
                 $exchanged['email'],
                 $exchanged['sub'],
@@ -132,9 +129,23 @@ final class GoogleAuth
                 $this->encrypt($exchanged['access_token']),
                 $this->expiresAt(($this->now)(), $exchanged['expires_in']),
             );
+            if (!$written) {
+                // usuario desativado, rebaixado ou de outro tenant: os vinculos e
+                // as remocoes da conexao anterior ficam como estao.
+                $db->rollBack();
+                return false;
+            }
+
+            if ($previous !== false && (string) $previous['google_sub'] !== $exchanged['sub']) {
+                // conta google diferente: os ids salvos e as remocoes pendentes
+                // apontam para a agenda da conta antiga.
+                $this->tasks->clearGoogleLinksForUser($userId);
+                $this->deletions->purgeForUser($userId);
+            }
             $this->tasks->markOpenUnlinkedPending($userId);
 
             $db->commit();
+            return true;
         } catch (\Throwable $e) {
             $db->rollBack();
             throw $e;
