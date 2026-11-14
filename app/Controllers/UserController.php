@@ -5,6 +5,7 @@ namespace App\Controllers;
 use Core\Controller;
 use Core\Logger;
 use Core\Middleware\CsrfMiddleware;
+use App\Models\GoogleAccount;
 use App\Models\User;
 use App\Services\Google\CurlTransport;
 use App\Services\Google\GoogleAuth;
@@ -195,17 +196,21 @@ class UserController extends Controller
         return $data['is_active'] === 0 || $data['role'] === 'viewer';
     }
 
-    // usuario desativado nao deixa credencial do google guardada. a desativacao
-    // ja foi gravada, entao a falha aqui so fica registrada.
+    // usuario desativado ou rebaixado a leitor nao deixa credencial do google
+    // guardada. a edicao ja foi gravada, entao a falha aqui so fica registrada.
     private function disconnectGoogle(int $userId): void
     {
         try {
             $config = GoogleConfig::fromEnv();
             if ($config->isConfigured()) {
                 (new GoogleAuth($config, new CurlTransport()))->disconnect($userId);
+            } else {
+                // com a integracao desligada o crm nao chama o google, entao so
+                // os tokens guardados saem, sem a revogacao.
+                (new GoogleAccount())->markDisconnected($userId);
             }
         } catch (\Throwable $e) {
-            (new Logger())->error('[UserController] desconectar o google do usuario desativado', [
+            (new Logger())->error('[UserController] desconectar o google do usuario desativado ou rebaixado a leitor', [
                 'user_id'   => $userId,
                 'exception' => $e::class,
                 'message'   => $e->getMessage(),
