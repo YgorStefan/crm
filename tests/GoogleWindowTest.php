@@ -976,6 +976,47 @@ final class GoogleWindowTest extends TestCase
         $this->assertSame('cancelled', $this->linha($filha)['status']);
     }
 
+    public function testTrocaDeResponsavelDuranteOFeedNaoCancela(): void
+    {
+        // depois de o feed da ana ler o mapa, o admin passa a tarefa para a bia,
+        // e o envio tira o evento da agenda da ana e cria outro na da bia.
+        $this->conta(self::ANA);
+        $this->conta(self::BIA);
+        $id = $this->vinculada('evtreatribuida1');
+        $trocar = function () use ($id): void {
+            (new Task())->update($id, ['assigned_to' => self::BIA]);
+            $this->sync()->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE);
+        };
+        $tarefas = new class ($trocar) extends Task {
+            public function __construct(private ?\Closure $depoisDoMapa)
+            {
+                parent::__construct();
+            }
+
+            public function linkMap(int $userId): array
+            {
+                $mapa = parent::linkMap($userId);
+                $acao = $this->depoisDoMapa;
+                $this->depoisDoMapa = null;
+                if ($acao !== null) {
+                    $acao();
+                }
+                return $mapa;
+            }
+        };
+
+        $this->abrir(tasks: $tarefas);
+
+        $this->assertSame(['evtreatribuida1'], $this->getsDeEvento());
+        $this->assertSame('cancelled', $this->http->events($this->token(self::ANA))['evtreatribuida1']['status']);
+        $linha = $this->linha($id);
+        $this->assertSame('pending', $linha['status']);
+        $this->assertSame(self::BIA, (int) $linha['assigned_to']);
+        $this->assertSame(self::BIA, (int) $linha['google_owner_id']);
+        $this->assertSame($this->config->eventIdFor(self::TENANT, $id), $linha['google_event_id']);
+        $this->assertSame('confirmed', $this->http->events($this->token(self::BIA))[$linha['google_event_id']]['status']);
+    }
+
     public function testLimiteDeGetsFicaParaProxima(): void
     {
         $this->conta(self::ANA);

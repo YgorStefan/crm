@@ -514,8 +514,8 @@ final class TaskGoogleQueueTest extends TestCase
             'google_etag' => '"etag-1"', 'google_sync_pending' => 0,
         ]);
 
-        (new Task())->unlinkGoogle($cancelada, 'cancelled');
-        (new Task())->unlinkGoogle($mantida);
+        (new Task())->unlinkGoogle($cancelada, self::ANA, '"etag-1"', 'cancelled');
+        (new Task())->unlinkGoogle($mantida, self::ANA, '"etag-1"');
 
         $linha = $this->linha($cancelada);
         $this->assertSame('cancelled', $linha['status']);
@@ -534,10 +534,31 @@ final class TaskGoogleQueueTest extends TestCase
             'google_etag' => '"etag-1"', 'google_sync_pending' => 1,
         ]);
 
-        (new Task())->unlinkGoogle($id, 'cancelled');
+        (new Task())->unlinkGoogle($id, self::ANA, '"etag-1"', 'cancelled');
 
         $this->assertSame('pending', $this->linha($id)['status']);
         $this->assertSame('evento-a', $this->linha($id)['google_event_id']);
+    }
+
+    public function testUnlinkGoogleRecusaDonoOuEtagDiferenteDoLido(): void
+    {
+        // a linha mudou depois da leitura: outro dono, ou o mesmo dono com outro envio.
+        $outroDono = $this->tarefa([
+            'assigned_to' => self::BIA, 'google_event_id' => 'evento-bia', 'google_owner_id' => self::BIA,
+            'google_etag' => '"etag-2"', 'google_sync_pending' => 0,
+        ]);
+        $outroEtag = $this->tarefa([
+            'google_event_id' => 'evento-a', 'google_owner_id' => self::ANA,
+            'google_etag' => '"etag-2"', 'google_sync_pending' => 0,
+        ]);
+
+        (new Task())->unlinkGoogle($outroDono, self::ANA, '"etag-1"', 'cancelled');
+        (new Task())->unlinkGoogle($outroEtag, self::ANA, '"etag-1"', 'cancelled');
+
+        $this->assertSame('pending', $this->linha($outroDono)['status']);
+        $this->assertSame('evento-bia', $this->linha($outroDono)['google_event_id']);
+        $this->assertSame('pending', $this->linha($outroEtag)['status']);
+        $this->assertSame('evento-a', $this->linha($outroEtag)['google_event_id']);
     }
 
     public function testMarkOpenUnlinkedIgnoraVinculadas(): void

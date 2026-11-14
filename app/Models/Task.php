@@ -743,10 +743,15 @@ class Task extends Model
         return $stmt->rowCount() > 0;
     }
 
-    public function unlinkGoogle(int $id, ?string $newStatus = null): void
+    public function unlinkGoogle(int $id, ?int $ownerRead, ?string $etagRead, ?string $newStatus = null): void
     {
         $setClauses = ['google_event_id = NULL', 'google_owner_id = NULL', 'google_etag = NULL'];
-        $params = [':id' => $id, ':tenant_id' => $this->currentTenantId()];
+        $params = [
+            ':id'         => $id,
+            ':tenant_id'  => $this->currentTenantId(),
+            ':owner_read' => $ownerRead,
+            ':etag_read'  => $etagRead,
+        ];
         if ($newStatus !== null) {
             $setClauses[] = 'status = :status';
             $params[':status'] = $newStatus;
@@ -754,10 +759,13 @@ class Task extends Model
 
         // nao soma, senao o envio recriaria o evento que sumiu do google. com
         // pendencia a mudanca do crm ganha e o vinculo fica para o envio refazer
-        // o evento, em vez de a tarefa recem editada ser cancelada.
+        // o evento, em vez de a tarefa recem editada ser cancelada. o dono e o
+        // etag lidos barram a troca de responsavel feita depois da leitura, cujo
+        // envio ja levou a tarefa para a agenda de outra pessoa.
         $stmt = $this->db->prepare(
             "UPDATE tasks SET " . implode(', ', $setClauses) . "
-             WHERE id = :id AND tenant_id = :tenant_id AND google_sync_pending = 0"
+             WHERE id = :id AND tenant_id = :tenant_id AND google_sync_pending = 0
+               AND google_owner_id <=> :owner_read AND google_etag <=> :etag_read"
         );
         $stmt->execute($params);
     }

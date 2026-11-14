@@ -518,7 +518,7 @@ final class GoogleCalendarSync
         $eventId  = $storedId ?? $this->config->eventIdFor((int) $task['tenant_id'], $taskId);
 
         if ($task['status'] === 'cancelled') {
-            return $this->removeCancelled($userId, $taskId, $seen, $eventId);
+            return $this->removeCancelled($userId, $task, $eventId);
         }
 
         $duration = $task['google_duration_min'] !== null ? (int) $task['google_duration_min'] : self::DEFAULT_DURATION_MIN;
@@ -560,9 +560,14 @@ final class GoogleCalendarSync
         return 'done';
     }
 
-    /** @return 'done'|'budget'|'reconnect'|'stop' */
-    private function removeCancelled(int $userId, int $taskId, int $seen, string $eventId): string
+    /**
+     * @param array<string, mixed> $task linha de Task::pendingForUser
+     * @return 'done'|'budget'|'reconnect'|'stop'
+     */
+    private function removeCancelled(int $userId, array $task, string $eventId): string
     {
+        $taskId   = (int) $task['id'];
+        $seen     = (int) $task['google_sync_pending'];
         $response = $this->request($userId, 'DELETE', self::eventUrl($eventId), null);
         if ($response === null) {
             return 'budget';
@@ -577,7 +582,11 @@ final class GoogleCalendarSync
         // o unlinkGoogle nao faz nada com pendencia, entao a fila zera antes.
         $this->tasks->dropFromQueue($taskId, $seen);
         if ($outcome === 'ok' || $outcome === 'gone') {
-            $this->tasks->unlinkGoogle($taskId);
+            $this->tasks->unlinkGoogle(
+                $taskId,
+                $task['google_owner_id'] !== null ? (int) $task['google_owner_id'] : null,
+                $task['google_etag'] !== null ? (string) $task['google_etag'] : null,
+            );
         } else {
             $this->logResponse('remocao de tarefa cancelada recusada, saiu da fila', $userId, $taskId, $response);
         }
@@ -779,7 +788,7 @@ final class GoogleCalendarSync
         $taskId = (int) $row['id'];
         try {
             if ($outcome === 'gone') {
-                $this->deletedInGoogle($row);
+                $this->deletedInGoogle($userId, $row);
                 return 'ok';
             }
             $event = $outcome === 'ok' ? json_decode($response['body'], true) : null;
@@ -793,9 +802,9 @@ final class GoogleCalendarSync
                 // (medido na tarefa 1). so com o id, ele mudou de agenda ou o
                 // motivo e desconhecido, e a tarefa so perde o vinculo.
                 if (isset($event['summary']) || isset($event['start'])) {
-                    $this->deletedInGoogle($row);
+                    $this->deletedInGoogle($userId, $row);
                 } else {
-                    $this->tasks->unlinkGoogle($taskId);
+                    $this->tasks->unlinkGoogle($taskId, $userId, self::etagRead($row));
                 }
                 return 'ok';
             }
@@ -806,14 +815,20 @@ final class GoogleCalendarSync
         }
     }
 
-    /** @param array<string, mixed> $row */
-    private function deletedInGoogle(array $row): void
+    /** @param array<string, mixed> $row linha do Task::linkMap, que so traz as do dono $userId */
+    private function deletedInGoogle(int $userId, array $row): void
     {
         // o molde cancelado pararia de gerar a serie, e a concluida e historico:
         // os dois so perdem o vinculo.
         $isTemplate = ($row['recurrence_type'] ?? 'none') !== 'none' && $row['recurrence_parent_id'] === null;
         $isOpen     = in_array($row['status'], ['pending', 'in_progress'], true);
-        $this->tasks->unlinkGoogle((int) $row['id'], $isOpen && !$isTemplate ? 'cancelled' : null);
+        $this->tasks->unlinkGoogle((int) $row['id'], $userId, self::etagRead($row), $isOpen && !$isTemplate ? 'cancelled' : null);
+    }
+
+    /** @param array<string, mixed> $row */
+    private static function etagRead(array $row): ?string
+    {
+        return $row['google_etag'] !== null ? (string) $row['google_etag'] : null;
     }
 
     /**
