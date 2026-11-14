@@ -121,9 +121,10 @@ final class GoogleAuth
         try {
             // o id do evento nao leva o dono, entao duas pessoas do crm na mesma
             // conta google dividiriam a agenda, e uma troca de responsavel entre
-            // elas apagaria o evento e cancelaria a tarefa.
-            $othersWithSub = $this->accounts->statusesOfSubForOtherUsers($userId, $exchanged['sub']);
-            if ($othersWithSub === []) {
+            // elas apagaria o evento e cancelaria a tarefa. o token recebido nao
+            // e revogado: a revogacao vale para a conta google no projeto
+            // inteiro, e derrubaria a conexao dela em outro tenant e no cliente de dev.
+            if (!$this->accounts->subUsedByOtherUser($userId, $exchanged['sub'])) {
                 return $this->storeConnection($db, $userId, $exchanged);
             }
             $db->rollBack();
@@ -134,12 +135,6 @@ final class GoogleAuth
             throw $e;
         }
 
-        // o code ja foi trocado, e a autorizacao nova so fica orfa se ninguem
-        // mais a usa: a revogacao vale para a conta google inteira neste
-        // projeto, entao com a do outro usuario ativa ela o desconectaria.
-        if (!in_array('active', $othersWithSub, true)) {
-            $this->revoke($exchanged['refresh_token']);
-        }
         throw new GoogleAccountInUse('A conta Google já está conectada a outro usuário.');
     }
 

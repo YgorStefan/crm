@@ -512,19 +512,14 @@ final class GoogleAuthTest extends TestCase
         $this->assertFalse($this->contaDe(self::DUDA));
     }
 
-    /** @return array<string, array{string, bool}> */
+    /** @return array<string, array{string}> */
     public static function contaDoOutroUsuario(): array
     {
-        // com a do outro ativa, a autorizacao no google e a mesma que ele usa, e
-        // revogar desconectaria os dois.
-        return [
-            'ativa'    => ['active', false],
-            'revogada' => ['revoked', true],
-        ];
+        return ['ativa' => ['active'], 'revogada' => ['revoked']];
     }
 
     #[DataProvider('contaDoOutroUsuario')]
-    public function testContaGoogleDeOutroUsuarioERecusadaSemMudarNada(string $statusDoOutro, bool $revogaONovo): void
+    public function testContaGoogleDeOutroUsuarioERecusadaSemMudarNada(string $statusDoOutro): void
     {
         $this->conta(self::BIA, ['google_sub' => 'sub-da-mesma-conta', 'status' => $statusDoOutro]);
         $this->conta(self::ANA, [
@@ -549,12 +544,9 @@ final class GoogleAuthTest extends TestCase
         $this->assertSame('evento-falso-1', $this->linha($vinculada)['google_event_id']);
         $this->assertSame(0, (int) $this->linha($solta)['google_sync_pending']);
         $this->assertSame(['evento-falso-velho'], $this->remocoesDe(self::ANA));
-
-        $revogacoes = array_values(array_filter($this->http->requests(), fn (array $p): bool => $p['url'] === self::REVOKE_URL));
-        $this->assertCount($revogaONovo ? 1 : 0, $revogacoes);
-        if ($revogaONovo) {
-            $this->assertSame(['token' => 'refresh-novo-falso'], self::formulario($revogacoes[0]['body']));
-        }
+        // a revogacao vale para a conta google no projeto inteiro, entao
+        // derrubaria a conexao dela em outro tenant e no cliente de dev.
+        $this->assertSame([], $this->http->requests());
     }
 
     public function testContaDesconectadaDeOutroUsuarioNaoBloqueia(): void

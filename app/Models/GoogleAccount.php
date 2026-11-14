@@ -38,23 +38,22 @@ class GoogleAccount extends Model
     }
 
     /**
-     * status das contas de outros usuarios do tenant ligadas a mesma conta
-     * google. a desconectada fica de fora, porque quem a tinha ja a soltou. o
-     * for update vale dentro da transacao de quem chama e segura as contas do
-     * tenant ate o fim dela, para duas conexoes ao mesmo tempo nao passarem as duas.
-     *
-     * @return list<string>
+     * outro usuario do tenant tem a mesma conta google ativa ou revogada. a
+     * desconectada fica de fora, porque quem a tinha ja a soltou. o for update
+     * vale dentro da transacao de quem chama e segura as contas do tenant ate o
+     * fim dela, para duas conexoes ao mesmo tempo nao passarem as duas.
      */
-    public function statusesOfSubForOtherUsers(int $userId, string $sub): array
+    public function subUsedByOtherUser(int $userId, string $sub): bool
     {
         $stmt = $this->db->prepare(
-            "SELECT status FROM google_accounts
+            "SELECT 1 FROM google_accounts
              WHERE tenant_id = :tenant_id AND google_sub = :sub AND user_id <> :user_id
                AND status IN ('active', 'revoked')
+             LIMIT 1
              FOR UPDATE"
         );
         $stmt->execute([':tenant_id' => $this->currentTenantId(), ':sub' => $sub, ':user_id' => $userId]);
-        return array_map('strval', $stmt->fetchAll(\PDO::FETCH_COLUMN));
+        return $stmt->fetchColumn() !== false;
     }
 
     /**
