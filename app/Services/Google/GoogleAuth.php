@@ -113,6 +113,7 @@ final class GoogleAuth
      * @param array{email:string,sub:string,refresh_token:string,access_token:string,expires_in:int} $exchanged
      * @return bool  false quando o usuario nao pode conectar, sem nada gravado
      * @throws GoogleAccountInUse a conta google ja esta ligada a outro usuario do tenant, sem nada gravado
+     * @throws \RuntimeException  a trava das conexoes do tenant nao veio no tempo, sem nada gravado
      */
     public function completeConnection(int $userId, array $exchanged): bool
     {
