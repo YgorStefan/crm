@@ -789,6 +789,8 @@ final class GoogleDrainTest extends TestCase
         $linha = $this->linha($id);
         $this->assertSame($movido->format('Y-m-d H:i:s'), $linha['due_date']);
         $this->assertSame($this->http->events($this->token(self::ANA))['evtvinculado1']['etag'], $linha['google_etag']);
+        // o titulo editado no meio, que o google recusou, da lugar ao de la.
+        $this->assertSame('Ligar para cliente', $linha['title']);
     }
 
     public function testEdicaoDuranteOEnvioMantemAsMarcasParaOProximo(): void
