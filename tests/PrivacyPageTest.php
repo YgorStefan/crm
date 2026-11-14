@@ -16,11 +16,14 @@ class PrivacyPageTest extends TestCase
         // o ambiente do processo tambem e limpo.
         unset($_ENV['APP_CONTACT_EMAIL']);
         putenv('APP_CONTACT_EMAIL');
+        // sem cookie a pagina destroi a sessao, que aqui e a do processo inteiro
+        // do phpunit. o caminho sem cookie e conferido no e2e, pelo cabecalho.
+        $_COOKIE[session_name()] = 'cookie-de-teste';
     }
 
     protected function tearDown(): void
     {
-        unset($_ENV['APP_CONTACT_EMAIL']);
+        unset($_ENV['APP_CONTACT_EMAIL'], $_COOKIE[session_name()]);
         putenv('APP_CONTACT_EMAIL');
     }
 
