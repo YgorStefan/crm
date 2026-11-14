@@ -5,6 +5,7 @@ declare(strict_types=1);
 use App\Controllers\GoogleController;
 use App\Services\Google\GoogleAuth;
 use App\Services\Google\GoogleConfig;
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 
 require_once __DIR__ . '/Support/GoogleTestDb.php';
@@ -105,11 +106,24 @@ final class GoogleControllerFinishTest extends TestCase
         $this->assertSame(1, $this->contas());
     }
 
-    public function testUsuarioRebaixadoComSessaoAntigaRecebeAviso(): void
+    /** @return array<string, array{string, int}> */
+    public static function usuariosQueNaoConectam(): array
     {
-        // a sessao ainda diz admin, mas o banco ja tem o usuario como leitor.
-        $this->pdo->exec("UPDATE users SET role = 'viewer' WHERE id = 1");
-        $controller = $this->controller($this->trocaValida());
+        return [
+            'rebaixado a leitor' => ['viewer', 1],
+            'desativado'         => ['admin', 0],
+        ];
+    }
+
+    #[DataProvider('usuariosQueNaoConectam')]
+    public function testUsuarioQueNaoPodeConectarRecebeAvisoSemTrocarOCode(string $papel, int $ativo): void
+    {
+        // a sessao ainda diz admin. a troca do code ja emitiria um refresh token
+        // que ninguem revoga, e o app ficaria nos acessos de terceiros da pessoa.
+        $this->pdo->prepare('UPDATE users SET role = :papel, is_active = :ativo WHERE id = 1')
+            ->execute([':papel' => $papel, ':ativo' => $ativo]);
+        $http = $this->trocaValida();
+        $controller = $this->controller($http);
 
         $controller->finish();
 
@@ -119,6 +133,7 @@ final class GoogleControllerFinishTest extends TestCase
             'message' => 'Seu usuário não pode conectar o Google Agenda.',
         ], $_SESSION['flash']);
         $this->assertSame(0, $this->contas());
+        $this->assertSame([], $http->requests());
     }
 
     public function testErroInesperadoVoltaParaTarefasComAviso(): void

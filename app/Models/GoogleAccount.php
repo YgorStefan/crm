@@ -22,6 +22,22 @@ class GoogleAccount extends Model
     }
 
     /**
+     * a mesma regra do upsertConnected, lida antes da troca do code: o papel e
+     * o ativo saem do banco, porque a sessao de quem foi rebaixado ou
+     * desativado continua dizendo o papel antigo.
+     */
+    public function userCanConnect(int $userId): bool
+    {
+        $stmt = $this->db->prepare(
+            "SELECT 1 FROM users
+             WHERE id = :user_id AND tenant_id = :tenant_id
+               AND is_active = 1 AND role IN ('admin', 'seller')"
+        );
+        $stmt->execute([':user_id' => $userId, ':tenant_id' => $this->currentTenantId()]);
+        return $stmt->fetchColumn() !== false;
+    }
+
+    /**
      * @return bool  false quando o usuario nao pode conectar e nada foi gravado
      */
     public function upsertConnected(

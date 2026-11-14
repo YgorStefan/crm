@@ -103,9 +103,17 @@ class GoogleController extends Controller
         }
         $connected = false;
         try {
+            $accounts = new GoogleAccount();
+            // antes da troca do code: depois dela o google ja emitiu um refresh
+            // token que ninguem revoga, e o app fica nos acessos de terceiros da
+            // pessoa. o upsert repete a regra para quem for rebaixado no meio.
+            if (!$accounts->userCanConnect($this->userId())) {
+                $this->backToTasks('warning', self::MSG_NOT_ALLOWED);
+                return;
+            }
             // o connect ja recusa conta ativa, mas outra sessao do mesmo usuario
             // guarda o proprio state, que continua valido depois de ela conectar.
-            $alreadyActive = self::blocksNewConnection((new GoogleAccount())->findForUser($this->userId()));
+            $alreadyActive = self::blocksNewConnection($accounts->findForUser($this->userId()));
             if (!$alreadyActive) {
                 $auth = $this->googleAuth($config);
                 $connected = $auth->completeConnection($this->userId(), $auth->exchangeCode($code));
@@ -130,8 +138,8 @@ class GoogleController extends Controller
             return;
         }
         if (!$connected) {
-            // o papel da sessao pode estar velho: quem foi rebaixado ou
-            // desativado com a aba aberta chega aqui, e o banco recusa.
+            // so quem foi rebaixado ou desativado entre a conferencia acima e a
+            // gravacao chega aqui, e o upsert recusa.
             $this->backToTasks('warning', self::MSG_NOT_ALLOWED);
             return;
         }
