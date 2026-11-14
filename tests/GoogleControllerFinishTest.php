@@ -53,6 +53,7 @@ final class GoogleControllerFinishTest extends TestCase
     {
         return new class ($http ?? new FakeTransport()) extends GoogleController {
             public ?string $destino = null;
+            public ?string $google = null;
 
             public function __construct(private FakeTransport $http)
             {
@@ -61,6 +62,11 @@ final class GoogleControllerFinishTest extends TestCase
             protected function redirect(string $path): void
             {
                 $this->destino = $path;
+            }
+
+            protected function redirectToGoogle(string $url): void
+            {
+                $this->google = $url;
             }
 
             protected function googleAuth(GoogleConfig $config): GoogleAuth
@@ -92,6 +98,39 @@ final class GoogleControllerFinishTest extends TestCase
     private function contas(): int
     {
         return (int) $this->pdo->query('SELECT COUNT(*) FROM google_accounts')->fetchColumn();
+    }
+
+    public function testConnectLevaAoConsentimentoDoGoogle(): void
+    {
+        unset($_SESSION['google_oauth_state']);
+        $controller = $this->controller();
+
+        $controller->connect();
+
+        $this->assertStringStartsWith('https://accounts.google.com/', (string) $controller->google);
+        $this->assertNull($controller->destino);
+        $this->assertIsString($_SESSION['google_oauth_state']['value'] ?? null);
+    }
+
+    #[DataProvider('usuariosQueNaoConectam')]
+    public function testConnectDeQuemNaoPodeConectarNaoVaiAoGoogle(string $papel, int $ativo): void
+    {
+        // a sessao ainda diz admin. o google pode registrar o acesso ja no
+        // consentimento, antes de o crm trocar o code.
+        $this->pdo->prepare('UPDATE users SET role = :papel, is_active = :ativo WHERE id = 1')
+            ->execute([':papel' => $papel, ':ativo' => $ativo]);
+        unset($_SESSION['google_oauth_state']);
+        $controller = $this->controller();
+
+        $controller->connect();
+
+        $this->assertNull($controller->google);
+        $this->assertSame('/tasks', $controller->destino);
+        $this->assertSame([
+            'type'    => 'warning',
+            'message' => 'Seu usuário não pode conectar o Google Agenda.',
+        ], $_SESSION['flash']);
+        $this->assertArrayNotHasKey('google_oauth_state', $_SESSION);
     }
 
     public function testConexaoGravadaAvisaConectado(): void

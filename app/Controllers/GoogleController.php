@@ -35,12 +35,20 @@ class GoogleController extends Controller
     {
         $this->requireRole(['admin', 'seller']);
 
+        // o papel da sessao pode estar velho, e o google pode registrar o acesso
+        // ja no consentimento, entao quem foi rebaixado ou desativado nem chega la.
+        $accounts = new GoogleAccount();
+        if (!$accounts->userCanConnect($this->userId())) {
+            $this->backToTasks('warning', self::MSG_NOT_ALLOWED);
+            return;
+        }
+
         $config = GoogleConfig::fromEnv();
         if (!$config->isConfigured()) {
             $this->backToTasks('error', self::MSG_NOT_CONFIGURED);
             return;
         }
-        if (self::blocksNewConnection((new GoogleAccount())->findForUser($this->userId()))) {
+        if (self::blocksNewConnection($accounts->findForUser($this->userId()))) {
             $this->backToTasks('error', self::MSG_ALREADY_ACTIVE);
             return;
         }
@@ -48,8 +56,13 @@ class GoogleController extends Controller
         $state = bin2hex(random_bytes(32));
         $_SESSION[self::STATE_KEY] = ['value' => $state, 'expires_at' => time() + self::STATE_TTL_S];
 
-        // o redirect do controller so aceita caminho interno.
-        header('Location: ' . (new GoogleAuth($config, new CurlTransport()))->consentUrl($state));
+        $this->redirectToGoogle($this->googleAuth($config)->consentUrl($state));
+    }
+
+    // o redirect do controller so aceita caminho interno.
+    protected function redirectToGoogle(string $url): void
+    {
+        header('Location: ' . $url);
         exit;
     }
 
