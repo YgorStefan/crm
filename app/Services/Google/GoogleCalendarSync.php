@@ -788,7 +788,7 @@ final class GoogleCalendarSync
         $taskId = (int) $row['id'];
         try {
             if ($outcome === 'gone') {
-                $this->deletedInGoogle($userId, $row);
+                $this->deletedInGoogle($userId, $row, $response['status'] === 410 ? '410' : '404');
                 return 'ok';
             }
             $event = $outcome === 'ok' ? json_decode($response['body'], true) : null;
@@ -802,7 +802,7 @@ final class GoogleCalendarSync
                 // (medido na tarefa 1). so com o id, ele mudou de agenda ou o
                 // motivo e desconhecido, e a tarefa so perde o vinculo.
                 if (isset($event['summary']) || isset($event['start'])) {
-                    $this->deletedInGoogle($userId, $row);
+                    $this->deletedInGoogle($userId, $row, 'cancelled');
                 } else {
                     $this->tasks->unlinkGoogle($taskId, $userId, self::etagRead($row));
                 }
@@ -815,14 +815,28 @@ final class GoogleCalendarSync
         }
     }
 
-    /** @param array<string, mixed> $row linha do Task::linkMap, que so traz as do dono $userId */
-    private function deletedInGoogle(int $userId, array $row): void
+    /**
+     * @param array<string, mixed> $row linha do Task::linkMap, que so traz as do dono $userId
+     * @param '404'|'410'|'cancelled' $reason
+     */
+    private function deletedInGoogle(int $userId, array $row, string $reason): void
     {
         // o molde cancelado pararia de gerar a serie, e a concluida e historico:
         // os dois so perdem o vinculo.
         $isTemplate = ($row['recurrence_type'] ?? 'none') !== 'none' && $row['recurrence_parent_id'] === null;
         $isOpen     = in_array($row['status'], ['pending', 'in_progress'], true);
-        $this->tasks->unlinkGoogle((int) $row['id'], $userId, self::etagRead($row), $isOpen && !$isTemplate ? 'cancelled' : null);
+        $cancels    = $isOpen && !$isTemplate;
+        $taskId     = (int) $row['id'];
+        if (!$this->tasks->unlinkGoogle($taskId, $userId, self::etagRead($row), $cancels ? 'cancelled' : null)) {
+            return;
+        }
+
+        // nao ha tela para reabrir, entao o registro e o que permite achar e
+        // desfazer um cancelamento errado. titulo e descricao ficam de fora.
+        $this->logger->info(
+            '[GoogleCalendarSync] ' . ($cancels ? 'tarefa cancelada pelo google' : 'vinculo desfeito pelo google'),
+            ['user_id' => $userId, 'task_id' => $taskId, 'reason' => $reason],
+        );
     }
 
     /** @param array<string, mixed> $row */

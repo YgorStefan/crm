@@ -743,7 +743,10 @@ class Task extends Model
         return $stmt->rowCount() > 0;
     }
 
-    public function unlinkGoogle(int $id, ?int $ownerRead, ?string $etagRead, ?string $newStatus = null): void
+    /**
+     * @return bool  true so quando a linha mudou
+     */
+    public function unlinkGoogle(int $id, ?int $ownerRead, ?string $etagRead, ?string $newStatus = null): bool
     {
         $setClauses = ['google_event_id = NULL', 'google_owner_id = NULL', 'google_etag = NULL'];
         $params = [
@@ -768,6 +771,7 @@ class Task extends Model
                AND google_owner_id <=> :owner_read AND google_etag <=> :etag_read"
         );
         $stmt->execute($params);
+        return $stmt->rowCount() > 0;
     }
 
     public function clearGoogleLinksForUser(int $userId): void

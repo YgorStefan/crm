@@ -897,6 +897,32 @@ final class GoogleWindowTest extends TestCase
         $this->assertSame('ok', $janela['status']);
     }
 
+    #[DataProvider('apagadoDeVerdade')]
+    public function testCancelamentoPeloGoogleFicaNoLog(string $resposta): void
+    {
+        $this->conta(self::ANA);
+        $id = $this->tarefa([
+            'title' => 'Visita sigilosa', 'description' => 'Detalhe sigiloso',
+            'google_event_id' => 'evtapagado1', 'google_owner_id' => self::ANA, 'google_etag' => '"etag-1"',
+        ]);
+        if ($resposta === 'cancelled') {
+            $this->evento(self::ANA, 'evtapagado1', ['etag' => '"etag-2"', 'status' => 'cancelled', 'summary' => 'Visita sigilosa']);
+        }
+        if ($resposta === '410') {
+            $this->http->respondOnce('evtapagado1', 410, FakeTransport::googleError(410, 'deleted'), 'GET');
+        }
+
+        $this->abrir();
+
+        $log = $this->logs();
+        $this->assertStringContainsString('tarefa cancelada pelo google', $log);
+        $this->assertStringContainsString('"task_id":' . $id, $log);
+        $this->assertStringContainsString('"user_id":' . self::ANA, $log);
+        $this->assertStringContainsString('"reason":"' . $resposta . '"', $log);
+        $this->assertStringNotContainsString('sigilos', $log);
+        $this->assertStringNotContainsString('acesso-falso', $log);
+    }
+
     public function testMovidoDeAgendaNaoCancela(): void
     {
         $this->conta(self::ANA);
@@ -963,6 +989,8 @@ final class GoogleWindowTest extends TestCase
         $linha = $this->linha($id);
         $this->assertSame('done', $linha['status']);
         $this->assertNull($linha['google_event_id']);
+        $this->assertStringContainsString('vinculo desfeito pelo google', $this->logs());
+        $this->assertStringNotContainsString('tarefa cancelada pelo google', $this->logs());
     }
 
     public function testFilhaApagadaECancelada(): void
@@ -1015,6 +1043,7 @@ final class GoogleWindowTest extends TestCase
         $this->assertSame(self::BIA, (int) $linha['google_owner_id']);
         $this->assertSame($this->config->eventIdFor(self::TENANT, $id), $linha['google_event_id']);
         $this->assertSame('confirmed', $this->http->events($this->token(self::BIA))[$linha['google_event_id']]['status']);
+        $this->assertStringNotContainsString('pelo google', $this->logs());
     }
 
     public function testLimiteDeGetsFicaParaProxima(): void
