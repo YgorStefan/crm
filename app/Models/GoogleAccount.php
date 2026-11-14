@@ -13,6 +13,10 @@ class GoogleAccount extends Model
     protected string $table = 'google_accounts';
 
     private const CONNECTION_LOCK_TIMEOUT_S = 5;
+    // o nome do get_lock vale para o servidor mariadb inteiro, nao para o banco,
+    // entao leva o banco: senao o banco de teste e o de dev, no mesmo servidor,
+    // travariam um ao outro.
+    private const CONNECTION_LOCK_NAME = "CONCAT(DATABASE(), '.crm-google-connect-', :tenant_id)";
 
     public function findForUser(int $userId): array|false
     {
@@ -45,24 +49,19 @@ class GoogleAccount extends Model
      * google. um for update na leitura travaria a faixa do indice do tenant, e
      * conexoes de contas diferentes dariam deadlock (medido na revisao).
      */
-    public function lockConnections(): bool
+    public function lockConnections(int $timeoutS = self::CONNECTION_LOCK_TIMEOUT_S): bool
     {
-        $stmt = $this->db->prepare('SELECT GET_LOCK(:name, :timeout_s)');
-        $stmt->bindValue(':name', $this->connectionLockName());
-        $stmt->bindValue(':timeout_s', self::CONNECTION_LOCK_TIMEOUT_S, \PDO::PARAM_INT);
+        $stmt = $this->db->prepare('SELECT GET_LOCK(' . self::CONNECTION_LOCK_NAME . ', :timeout_s)');
+        $stmt->bindValue(':tenant_id', $this->currentTenantId(), \PDO::PARAM_INT);
+        $stmt->bindValue(':timeout_s', $timeoutS, \PDO::PARAM_INT);
         $stmt->execute();
         return (int) $stmt->fetchColumn() === 1;
     }
 
     public function unlockConnections(): void
     {
-        $stmt = $this->db->prepare('SELECT RELEASE_LOCK(:name)');
-        $stmt->execute([':name' => $this->connectionLockName()]);
-    }
-
-    private function connectionLockName(): string
-    {
-        return 'crm-google-connect-' . $this->currentTenantId();
+        $stmt = $this->db->prepare('SELECT RELEASE_LOCK(' . self::CONNECTION_LOCK_NAME . ')');
+        $stmt->execute([':tenant_id' => $this->currentTenantId()]);
     }
 
     /**
