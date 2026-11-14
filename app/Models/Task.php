@@ -197,7 +197,8 @@ class Task extends Model
         $this->db->beginTransaction();
         try {
             // a linha travada e a base da comparacao: so o que muda de valor vai
-            // ao google, e o modal reenvia todos os campos a cada salvar.
+            // ao google, porque quem chama pode reenviar o valor que leu antes,
+            // e isso nao e mudanca nenhuma.
             $stmt = $this->db->prepare(
                 "SELECT title, description, due_date, status, " . self::DELETION_COLUMNS . " FROM tasks
                  WHERE id = :id AND tenant_id = :tenant_id
