@@ -115,8 +115,19 @@ jobs:
       - name: Registrar baseline das migrations
         run: php bin/migrate.php --baseline
 
+      # teste de integracao sem banco vira skip, entao o skip derruba o job: sem
+      # isto, um ci que nao alcance o mariadb sairia verde sem rodar a integracao.
+      # o --fail-on-skipped do phpunit 11.5 nao conta o skip lancado no
+      # setUpBeforeClass (medido), e por isso o resumo tambem e conferido. o
+      # shell bash liga o pipefail, para o tee nao esconder a saida do phpunit.
       - name: Rodar testes PHPUnit (unitário + integração)
-        run: composer test
+        shell: bash
+        run: |
+          composer test -- --fail-on-skipped | tee "$RUNNER_TEMP/phpunit.txt"
+          if grep -q "Skipped:" "$RUNNER_TEMP/phpunit.txt"; then
+            echo "Teste pulado: o banco de teste nao respondeu?"
+            exit 1
+          fi
 
       - name: Subir servidor PHP embutido em background
         run: |
