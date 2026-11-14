@@ -33,7 +33,7 @@ $headingClass     = 'font-semibold text-gray-900 dark:text-white mb-1';
 
             <section>
                 <h2 class="<?= $headingClass ?>">Com quem os dados são compartilhados.</h2>
-                <p>Não vendemos dados, não usamos para publicidade e não usamos para treinar modelos de inteligência artificial. O CRM só envia dados a serviços externos para fazer o que você pede: ao Google Agenda, os eventos das suas tarefas, com a descrição, o nome do cliente e o link da ficha; ao Google Maps, as buscas da prospecção; e ao ViaCEP, os CEPs consultados no cadastro. As páginas carregam fontes do Google Fonts e, depois do login, bibliotecas de gráfico, calendário e planilha da jsDelivr e da SheetJS. O uso e a transferência, para qualquer outro app, de informações recebidas das APIs do Google seguem a
+                <p>Não vendemos dados, não usamos para publicidade e não usamos para treinar modelos de inteligência artificial. O CRM só envia dados a serviços externos para fazer o que você pede: ao Google Agenda, os eventos das suas tarefas, com a descrição e o nome do cliente; ao Google Maps, as buscas da prospecção; e ao ViaCEP, os CEPs consultados no cadastro. As páginas carregam fontes do Google Fonts e, depois do login, bibliotecas de gráfico, calendário e planilha da jsDelivr e da SheetJS. O uso e a transferência, para qualquer outro app, de informações recebidas das APIs do Google seguem a
                     <a href="https://developers.google.com/terms/api-services-user-data-policy" target="_blank" rel="noopener noreferrer" class="<?= $linkClass ?>">Política de Dados do Usuário dos Serviços de API do Google</a>, incluindo os requisitos de Uso Limitado.</p>
             </section>
 
@@ -54,7 +54,7 @@ $headingClass     = 'font-semibold text-gray-900 dark:text-white mb-1';
         </div>
 
         <footer class="border-t border-gray-100 dark:border-zinc-800 px-6 sm:px-8 py-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between text-xs text-gray-500 dark:text-zinc-400">
-            <p>Atualizada em 13/11/2026.</p>
+            <p>Atualizada em 14/11/2026.</p>
             <a href="<?= $safeAppUrl ?>/login" class="<?= $linkClass ?>">Voltar ao login</a>
         </footer>
     </article>

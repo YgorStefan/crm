@@ -103,4 +103,13 @@ class PrivacyPageTest extends TestCase
         $this->assertStringContainsString('incluindo os requisitos de Uso Limitado', $html);
         $this->assertStringContainsString('Para apagá-los, use o contato abaixo.', $html);
     }
+
+    public function testEventoDoGoogleNaoLevaOLinkDaFicha(): void
+    {
+        $html = $this->renderPage();
+
+        $this->assertStringContainsString('os eventos das suas tarefas, com a descrição e o nome do cliente;', $html);
+        $this->assertStringNotContainsString('link da ficha', $html);
+        $this->assertStringContainsString('Atualizada em 14/11/2026.', $html);
+    }
 }
