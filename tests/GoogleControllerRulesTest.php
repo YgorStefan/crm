@@ -90,6 +90,20 @@ class GoogleControllerRulesTest extends TestCase
         $this->assertNull(TaskController::parseFeedWindow('2026-11-01T00:00:00-03:00', '2026-11-01T00:00:00-03:00'));
     }
 
+    // a janela recusada cai no feed de hoje, que le os mesmos parametros de novo.
+    public function testFeedDeHojeIgnoraDataQueNaoETexto(): void
+    {
+        $this->assertNull(TaskController::parseCalendarDate(['x']));
+        $this->assertNull(TaskController::parseCalendarDate(null));
+        $this->assertNull(TaskController::parseCalendarDate(''));
+        $this->assertNull(TaskController::parseCalendarDate('abc'));
+    }
+
+    public function testFeedDeHojeConverteADataDaJanela(): void
+    {
+        $this->assertSame('2026-11-01 00:00:00', TaskController::parseCalendarDate('2026-11-01T00:00:00-03:00'));
+    }
+
     public function testCamposDoEventoSoLevamOsEnviados(): void
     {
         $this->assertSame(

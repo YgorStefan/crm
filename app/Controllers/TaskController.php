@@ -84,8 +84,8 @@ class TaskController extends Controller
         // FullCalendar envia start/end (janela visível) automaticamente
         // quando "events" é configurado como URL — antes ignorados, o que
         // fazia esse endpoint carregar TODAS as tarefas do tenant a cada abertura.
-        $start = $this->parseCalendarDate($_GET['start'] ?? null);
-        $end   = $this->parseCalendarDate($_GET['end'] ?? null);
+        $start = self::parseCalendarDate($_GET['start'] ?? null);
+        $end   = self::parseCalendarDate($_GET['end'] ?? null);
         $tasks = $this->tasks->findForCalendar($userId, $isAdmin, $start, $end);
 
         $this->json(array_map(self::calendarTaskEvent(...), $tasks));
@@ -213,9 +213,10 @@ class TaskController extends Controller
      * visível) para o formato DATETIME do MySQL. Retorna null se ausente
      * ou inválida (nesse caso a consulta simplesmente não filtra por data).
      */
-    private function parseCalendarDate(?string $raw): ?string
+    public static function parseCalendarDate(mixed $raw): ?string
     {
-        if (empty($raw)) return null;
+        // a query aceita start[]=x, e o array derrubaria o feed com erro 500.
+        if (!is_string($raw) || empty($raw)) return null;
         try {
             return (new \DateTime($raw))->format('Y-m-d H:i:s');
         } catch (\Throwable) {
