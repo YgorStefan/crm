@@ -865,21 +865,24 @@ final class GoogleWindowTest extends TestCase
         $this->assertStringContainsString('"task_id":' . $filha, $this->logs());
     }
 
-    /** @return array<string, array{bool}> */
+    /** @return array<string, array{string}> */
     public static function apagadoDeVerdade(): array
     {
-        return ['404' => [false], 'cancelled com summary e start' => [true]];
+        return ['404' => ['404'], '410' => ['410'], 'cancelled com summary e start' => ['cancelled']];
     }
 
     #[DataProvider('apagadoDeVerdade')]
-    public function testApagadoNoGoogleCancelaEDesvincula(bool $comDetalhes): void
+    public function testApagadoNoGoogleCancelaEDesvincula(string $resposta): void
     {
         $this->conta(self::ANA);
         $id = $this->tarefa([
             'google_event_id' => 'evtapagado1', 'google_owner_id' => self::ANA, 'google_etag' => '"etag-1"',
         ]);
-        if ($comDetalhes) {
+        if ($resposta === 'cancelled') {
             $this->evento(self::ANA, 'evtapagado1', ['etag' => '"etag-2"', 'status' => 'cancelled']);
+        }
+        if ($resposta === '410') {
+            $this->http->respondOnce('evtapagado1', 410, FakeTransport::googleError(410, 'deleted'), 'GET');
         }
 
         $janela = $this->abrir();
