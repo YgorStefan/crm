@@ -50,12 +50,14 @@ export default defineConfig({
   ],
 
   webServer: {
-    command: `php -S localhost:${PORT} -t public router.php`,
+    // o variables_order com E poe o ambiente no $_ENV qualquer que seja o php.ini: com GPCS o
+    // valor vazio nao chega nem ao $_ENV nem ao $_SERVER, e o .env repoe o que estiver nele (medido).
+    command: `php -d variables_order=EGPCS -S localhost:${PORT} -t public router.php`,
     url: `${BASE_URL}/login`,
     // o Playwright soma este env ao process.env; o .env so preenche o que o ambiente nao trouxe.
     // as GOOGLE_* vazias desligam a integracao no servidor que o Playwright sobe, mesmo com
-    // as credenciais reais no .env, para as tarefas do E2E nunca irem a uma agenda de verdade.
-    // nao cobre um servidor que ja estava no ar, que o reuseExistingServer reaproveita.
+    // as credenciais no .env. nao cobre um servidor que ja estava no ar, que o
+    // reuseExistingServer reaproveita, como o que o CI sobe antes do Playwright.
     env: {
       APP_URL: `http://localhost:${PORT}`,
       GOOGLE_CLIENT_ID: '',
