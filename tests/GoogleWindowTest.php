@@ -23,7 +23,6 @@ final class GoogleWindowTest extends TestCase
 
     private const SP         = 'America/Sao_Paulo';
     private const EVENTS_URL = FakeTransport::EVENTS_URL;
-    private const TOKEN_URL  = 'https://oauth2.googleapis.com/token';
 
     private ?\PDO $pdo = null;
     private string $chave = '';
