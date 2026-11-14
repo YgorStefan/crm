@@ -26,6 +26,7 @@ class GoogleController extends Controller
     private const MSG_UNAVAILABLE    = 'O Google não respondeu agora. Tente conectar de novo em alguns instantes.';
     private const MSG_CONNECTED      = 'Google Agenda conectado. Suas tarefas abertas de hoje em diante vão para a sua agenda do Google.';
     private const MSG_ALREADY_ACTIVE = 'O Google Agenda já está conectado. Para usar outra conta, desconecte antes.';
+    private const MSG_UNEXPECTED     = 'Não foi possível concluir a conexão com o Google Agenda. Tente de novo em alguns instantes.';
     private const MSG_DISCONNECT     = 'Não foi possível desconectar o Google Agenda. Tente de novo.';
     private const MSG_INVALID_FIELDS = 'Dados do evento inválidos.';
 
@@ -99,16 +100,14 @@ class GoogleController extends Controller
             $this->backToTasks('warning', self::MSG_DENIED);
             return;
         }
-        // o connect ja recusa conta ativa, mas outra sessao do mesmo usuario
-        // guarda o proprio state, que continua valido depois de ela conectar.
-        if (self::blocksNewConnection((new GoogleAccount())->findForUser($this->userId()))) {
-            $this->backToTasks('error', self::MSG_ALREADY_ACTIVE);
-            return;
-        }
-
-        $auth = new GoogleAuth($config, new CurlTransport());
         try {
-            $auth->completeConnection($this->userId(), $auth->exchangeCode($code));
+            // o connect ja recusa conta ativa, mas outra sessao do mesmo usuario
+            // guarda o proprio state, que continua valido depois de ela conectar.
+            $alreadyActive = self::blocksNewConnection((new GoogleAccount())->findForUser($this->userId()));
+            if (!$alreadyActive) {
+                $auth = new GoogleAuth($config, new CurlTransport());
+                $auth->completeConnection($this->userId(), $auth->exchangeCode($code));
+            }
         } catch (GoogleAccessDenied $e) {
             $this->logFailure('conexao recusada', $e);
             $this->backToTasks('warning', self::MSG_DENIED);
@@ -117,8 +116,17 @@ class GoogleController extends Controller
             $this->logFailure('troca do codigo sem resposta', $e);
             $this->backToTasks('error', self::MSG_UNAVAILABLE);
             return;
+        } catch (\Throwable $e) {
+            // sem isto o erro de banco ou de chave vira uma pagina 500 em branco.
+            $this->logUnexpected('concluir a conexao', $e);
+            $this->backToTasks('error', self::MSG_UNEXPECTED);
+            return;
         }
 
+        if ($alreadyActive) {
+            $this->backToTasks('error', self::MSG_ALREADY_ACTIVE);
+            return;
+        }
         $this->backToTasks('success', self::MSG_CONNECTED);
     }
 
@@ -253,6 +261,18 @@ class GoogleController extends Controller
             'user_id'   => $this->userId(),
             'exception' => $e::class,
             'message'   => $e->getMessage(),
+        ]);
+    }
+
+    private function logUnexpected(string $what, \Throwable $e): void
+    {
+        // a mensagem de um erro inesperado pode vir de qualquer camada e nao
+        // tem garantia de sair sem token, entao fica so a classe, o codigo e o lugar.
+        (new Logger())->error("[GoogleController] {$what}", [
+            'user_id'   => $this->userId(),
+            'exception' => $e::class,
+            'code'      => $e->getCode(),
+            'at'        => basename($e->getFile()) . ':' . $e->getLine(),
         ]);
     }
 }
