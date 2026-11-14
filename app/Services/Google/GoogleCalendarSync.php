@@ -1101,7 +1101,11 @@ final class GoogleCalendarSync
     private function write(int $userId, string $kind, string $eventId, array $event): ?array
     {
         if ($kind === 'INSERT') {
-            return $this->request($userId, 'POST', self::EVENTS_URL, self::encodeBody(['id' => $eventId] + $event));
+            // o lembrete padrao vai so na criacao: o patch mescla o corpo no
+            // evento, e useDefault true junto do lembrete que a pessoa pos no
+            // google e combinacao que a api recusa.
+            $created = ['id' => $eventId] + $event + ['reminders' => ['useDefault' => true]];
+            return $this->request($userId, 'POST', self::EVENTS_URL, self::encodeBody($created));
         }
         return $this->request($userId, 'PATCH', self::eventUrl($eventId), self::encodeBody($event));
     }
@@ -1210,7 +1214,6 @@ final class GoogleCalendarSync
             'start'       => self::eventTime($start),
             'end'         => self::eventTime($end),
             'status'      => 'confirmed',
-            'reminders'   => ['useDefault' => true],
         ];
     }
 

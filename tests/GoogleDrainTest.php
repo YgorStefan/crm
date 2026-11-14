@@ -357,6 +357,7 @@ final class GoogleDrainTest extends TestCase
         $eventId = $this->idDe($id);
         $this->assertSame(['POST ' . self::EVENTS_URL], $this->chamadas());
         $this->assertSame($eventId, $this->corpo(0)['id']);
+        $this->assertSame(['useDefault' => true], $this->corpo(0)['reminders']);
 
         $eventos = $this->http->events($this->token(self::ANA));
         $this->assertSame([$eventId], array_keys($eventos));
@@ -564,6 +565,8 @@ final class GoogleDrainTest extends TestCase
         $this->assertSame('ok', $this->sync()->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE));
 
         $this->assertSame(['POST ' . self::EVENTS_URL, 'PATCH ' . self::EVENTS_URL . '/' . $eventId], $this->chamadas());
+        $this->assertSame(['useDefault' => true], $this->corpo(0)['reminders']);
+        $this->assertArrayNotHasKey('reminders', $this->corpo(1));
         $evento = $this->http->events($this->token(self::ANA))[$eventId];
         $this->assertSame('confirmed', $evento['status']);
         $this->assertSame('Título novo', $evento['summary']);
@@ -571,6 +574,30 @@ final class GoogleDrainTest extends TestCase
         $this->assertSame($eventId, $linha['google_event_id']);
         $this->assertSame($evento['etag'], $linha['google_etag']);
         $this->assertSame(0, (int) $linha['google_sync_pending']);
+    }
+
+    public function testPatchNaoMandaLembreteEMantemODaPessoa(): void
+    {
+        // a api so aceita overrides com useDefault false, e o patch mescla o
+        // corpo no evento, entao mandar o lembrete padrao quebraria a edicao.
+        $this->conta(self::ANA);
+        $lembreteDaPessoa = ['useDefault' => false, 'overrides' => [['method' => 'popup', 'minutes' => 10]]];
+        $this->evento(self::ANA, 'evtcomlembrete1', ['reminders' => $lembreteDaPessoa]);
+        $id = $this->tarefa([
+            'title'           => 'Título editado',
+            'google_event_id' => 'evtcomlembrete1',
+            'google_owner_id' => self::ANA,
+            'google_etag'     => '"etag-velho"',
+        ]);
+
+        $this->assertSame('ok', $this->sync()->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE, self::ANA));
+
+        $this->assertSame(['PATCH ' . self::EVENTS_URL . '/evtcomlembrete1'], $this->chamadas());
+        $this->assertArrayNotHasKey('reminders', $this->corpo(0));
+        $evento = $this->http->events($this->token(self::ANA))['evtcomlembrete1'];
+        $this->assertSame('Título editado', $evento['summary']);
+        $this->assertSame($lembreteDaPessoa, $evento['reminders']);
+        $this->assertSame(0, $this->pendencia($id));
     }
 
     /** @return array<string, array{int}> */
@@ -593,7 +620,9 @@ final class GoogleDrainTest extends TestCase
         $this->assertSame('ok', $this->sync()->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE));
 
         $this->assertSame(['PATCH ' . self::EVENTS_URL . '/evtsumido1', 'POST ' . self::EVENTS_URL], $this->chamadas());
+        $this->assertArrayNotHasKey('reminders', $this->corpo(0));
         $this->assertSame('evtsumido1', $this->corpo(1)['id']);
+        $this->assertSame(['useDefault' => true], $this->corpo(1)['reminders']);
         $evento = $this->http->events($this->token(self::ANA))['evtsumido1'];
         $this->assertSame('confirmed', $evento['status']);
         $linha = $this->linha($id);
