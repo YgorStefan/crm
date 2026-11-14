@@ -69,6 +69,7 @@
             ['degraded',  'O Google Agenda não respondeu agora. As tarefas do CRM estão todas aqui, e os eventos do Google voltam na próxima atualização.'],
             ['reconnect', 'A conexão com o Google Agenda expirou. Reconecte para voltar a ver seus eventos e enviar as tarefas para a agenda.'],
         ]);
+        static #FEED_DEBOUNCE_MS = 250;
 
         #calendarEl;
         #appUrl;
@@ -183,6 +184,12 @@
 
         async #fetchEvents(info) {
             const request = ++this.#feedRequest;
+            // com o google lento ou fora do ar cada feed segura uma thread do php por
+            // segundos, e varias setas seguidas ocupariam todas. o pedido superado
+            // durante a espera nem sai, e devolve vazio em vez de ficar pendurado,
+            // porque o fullcalendar descarta a resposta dele de qualquer forma.
+            await new Promise(resolve => setTimeout(resolve, TaskCalendarManager.#FEED_DEBOUNCE_MS));
+            if (request !== this.#feedRequest) return [];
             // sem a janela o feed carrega todas as tarefas do tenant.
             const params = new URLSearchParams({ start: info.startStr, end: info.endStr });
             if (this.#teamMode) params.set('team', '1');

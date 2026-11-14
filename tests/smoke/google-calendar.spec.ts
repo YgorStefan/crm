@@ -209,6 +209,28 @@ test.describe('Calendário / eventos e avisos do Google com feed falso', () => {
         await expect(page.locator('#googleFeedNotice')).toBeHidden();
     });
 
+    test('setas seguidas pedem o feed menos vezes que os cliques, e o último pedido é o do mês final', async ({ page }) => {
+        const feed = await mockFeed(page, []);
+        await openTasks(page);
+        await expect.poll(() => feed.requests.length).toBe(1);
+
+        // os tres cliques saem juntos, sem a espera que o playwright poe entre um e outro.
+        await page.evaluate(() => {
+            const next = document.querySelector<HTMLButtonElement>('.fc-next-button');
+            for (let i = 0; i < 3; i++) next?.click();
+        });
+        await expect.poll(() => feed.requests.length).toBeGreaterThan(1);
+        await page.waitForTimeout(600);
+
+        expect(feed.requests.length - 1).toBeLessThan(3);
+        const target = new Date();
+        target.setDate(15);
+        target.setMonth(target.getMonth() + 3);
+        const last = feed.requests[feed.requests.length - 1];
+        expect(new Date(last.searchParams.get('start') ?? '').getTime()).toBeLessThan(target.getTime());
+        expect(new Date(last.searchParams.get('end') ?? '').getTime()).toBeGreaterThan(target.getTime());
+    });
+
     test('falha de rede no feed não quebra a tela', async ({ page }) => {
         const errors: string[] = [];
         page.on('pageerror', (e) => errors.push(e.message));
