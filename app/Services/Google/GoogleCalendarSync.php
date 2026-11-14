@@ -329,9 +329,13 @@ final class GoogleCalendarSync
             401      => 'reconnect',
             400      => 'drop',
             403      => self::classifyForbidden($body),
-            // rede, 429, 5xx e qualquer status que a tabela nao lista: a
-            // pendencia fica para a proxima abertura em vez de sumir da fila.
-            default  => 'stop',
+            // 408 e 429 passam sozinhos, como rede e 5xx: a pendencia fica para
+            // a proxima abertura.
+            408, 429 => 'stop',
+            // outro 4xx que a tabela nao lista e erro do proprio pedido, que
+            // repetir nao cura: parado, ele travaria a fila da conta e, pelo
+            // sendStopped, a lista do google de todo o tenant.
+            default  => $status >= 400 && $status < 500 ? 'drop' : 'stop',
         };
     }
 

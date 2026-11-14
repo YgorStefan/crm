@@ -275,7 +275,13 @@ final class GoogleDrainTest extends TestCase
             '403 requiredAccessLevel'            => [403, $erro(403, 'requiredAccessLevel'), 'drop'],
             '403 desconhecido'                   => [403, $erro(403, 'motivoNovoFalso'), 'stop'],
             '403 sem json'                       => [403, '<html>Forbidden</html>', 'stop'],
-            'status fora da tabela'              => [412, $erro(412, 'conditionNotMet'), 'stop'],
+            '405 fora da tabela'                 => [405, $erro(405, 'httpMethodNotAllowed'), 'drop'],
+            '412 fora da tabela'                 => [412, $erro(412, 'conditionNotMet'), 'drop'],
+            '413 fora da tabela'                 => [413, $erro(413, 'requestTooLarge'), 'drop'],
+            '422 fora da tabela'                 => [422, '', 'drop'],
+            '408 passageiro'                     => [408, '', 'stop'],
+            '429 sem json'                       => [429, '', 'stop'],
+            '3xx fora da tabela'                 => [304, '', 'stop'],
         ];
     }
 
@@ -796,12 +802,22 @@ final class GoogleDrainTest extends TestCase
         $this->assertSame(['evtremover1'], $this->remocoes());
     }
 
-    public function testErroDoEventoTiraSoEleDaFila(): void
+    /** @return array<string, array{int, string}> */
+    public static function errosDoEvento(): array
+    {
+        return [
+            '400'                => [400, 'invalid'],
+            '412 fora da tabela' => [412, 'conditionNotMet'],
+        ];
+    }
+
+    #[DataProvider('errosDoEvento')]
+    public function testErroDoEventoTiraSoEleDaFila(int $status, string $motivo): void
     {
         $this->conta(self::ANA);
         $primeira = $this->tarefa(['due_date' => $this->em('+1 day')]);
         $segunda  = $this->tarefa(['due_date' => $this->em('+2 days')]);
-        $this->http->respondOnce('calendar/v3', 400, FakeTransport::googleError(400, 'invalid'));
+        $this->http->respondOnce('calendar/v3', $status, FakeTransport::googleError($status, $motivo));
 
         $this->assertSame('ok', $this->sync()->drain(GoogleCalendarSync::PROFILE_AFTER_SAVE, self::ANA));
 
