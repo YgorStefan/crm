@@ -673,7 +673,7 @@ class Task extends Model
         // precisa levar a edicao ao google. concluida e cancelada entram, porque
         // o envio marca uma e remove o evento da outra.
         $stmt = $this->db->prepare("
-            SELECT t.*, c.name AS client_name
+            SELECT t.*, c.name AS client_name, c.is_active AS client_is_active
             FROM tasks t
             LEFT JOIN clients c ON c.id = t.client_id AND c.tenant_id = :tenant_id_c
             WHERE t.tenant_id = :tenant_id_u
@@ -866,6 +866,27 @@ class Task extends Model
              WHERE tenant_id = :tenant_id AND google_owner_id = :uid"
         );
         $stmt->execute([':tenant_id' => $this->currentTenantId(), ':uid' => $userId]);
+    }
+
+    public function markClientDescriptionPending(int $clientId): int
+    {
+        // o cliente arquivado some da tela, e a ficha dele responde que nao
+        // existe: a descricao vai de novo para o evento perder o link. so a
+        // descricao, para o patch nao desfazer titulo nem data mudados no google.
+        // como toda edicao do crm, o patch leva o status e sobrescreve a
+        // descricao de la, entao evento apagado no google e ainda nao lido volta
+        // para a agenda. a concluida fica de fora, com o link antigo, porque
+        // reenviar traria de volta o evento que a pessoa limpou da agenda.
+        $stmt = $this->db->prepare(
+            "UPDATE tasks SET google_sync_pending = google_sync_pending + 1,
+                              google_changed_fields = google_changed_fields | :bit
+             WHERE tenant_id = :tenant_id
+               AND client_id = :cid
+               AND google_event_id IS NOT NULL
+               AND status IN ('pending', 'in_progress')"
+        );
+        $stmt->execute([':bit' => self::GOOGLE_DESCRIPTION, ':tenant_id' => $this->currentTenantId(), ':cid' => $clientId]);
+        return $stmt->rowCount();
     }
 
     public function markOpenUnlinkedPending(int $userId): int

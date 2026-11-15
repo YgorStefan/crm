@@ -424,7 +424,7 @@ final class GoogleDrainTest extends TestCase
         $this->assertSame(45, (int) $this->linha($longa)['google_duration_min']);
     }
 
-    public function testEventoLevaDescricaoEClienteSemLink(): void
+    public function testEventoLevaDescricaoEClienteComLinkDaFicha(): void
     {
         $this->conta(self::ANA);
         $comCliente = $this->tarefa(['client_id' => self::CLIENTE, 'description' => 'Levar a proposta impressa']);
@@ -434,11 +434,23 @@ final class GoogleDrainTest extends TestCase
 
         $eventos = $this->http->events($this->token(self::ANA));
         $evento  = $eventos[$this->idDe($comCliente)];
-        $this->assertSame("Levar a proposta impressa\n\nCliente: Cliente Teste", $evento['description']);
-        $this->assertStringNotContainsString('/clients/', $evento['description']);
-        $this->assertStringNotContainsString(APP_URL, $evento['description']);
+        $this->assertSame(
+            "Levar a proposta impressa\n\nCliente: Cliente Teste\n" . APP_URL . '/clients/' . self::CLIENTE,
+            $evento['description'],
+        );
         $this->assertSame(['useDefault' => true], $evento['reminders']);
         $this->assertStringNotContainsString('/clients/', $eventos[$this->idDe($semCliente)]['description'] ?? '');
+    }
+
+    public function testEventoDeClienteArquivadoLevaONomeSemOLink(): void
+    {
+        $this->pdo->exec("INSERT INTO clients (id, name, tenant_id, is_active) VALUES (11, 'Cliente Arquivado', 1, 0)");
+        $this->conta(self::ANA);
+        $tarefa = $this->tarefa(['client_id' => 11]);
+
+        $this->assertSame('ok', $this->sync()->drain(GoogleCalendarSync::PROFILE_FEED));
+
+        $this->assertSame('Cliente: Cliente Arquivado', $this->http->events($this->token(self::ANA))[$this->idDe($tarefa)]['description']);
     }
 
     public function testCorpoLevaDateNullEmStartEEnd(): void

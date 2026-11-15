@@ -70,12 +70,7 @@ class GoogleController extends Controller
 
     public function callback(array $params = []): void
     {
-        // o cookie samesite strict nao vem na volta do google, e a sessao nova que
-        // o bootstrap abriu mandaria um set-cookie que troca o cookie do usuario.
-        if (!isset($_COOKIE[session_name()])) {
-            session_destroy();
-            header_remove('Set-Cookie');
-        }
+        $this->withoutNewSession();
 
         // a url desta pagina leva o code, que nao pode ir em cache nem em referer.
         header('Cache-Control: no-store');

@@ -1381,10 +1381,15 @@ final class GoogleCalendarSync
         if ($description !== '') {
             $parts[] = $description;
         }
-        // sem o link da ficha: clicado no google agenda web, ele chega sem o
-        // cookie samesite strict, e a sessao nova troca o cookie e desloga o usuario.
+        // o link depende do cookie de sessao lax do core/bootstrap.php: com strict,
+        // o clique no google agenda web chegava sem a sessao e deslogava o usuario.
+        // cliente arquivado fica so com o nome: a ficha dele responde que nao existe.
         if ($task['client_id'] !== null && ($task['client_name'] ?? null) !== null) {
-            $parts[] = 'Cliente: ' . (string) $task['client_name'];
+            $line = 'Cliente: ' . (string) $task['client_name'];
+            if ((int) ($task['client_is_active'] ?? 1) === 1) {
+                $line .= "\n" . APP_URL . '/clients/' . (int) $task['client_id'];
+            }
+            $parts[] = $line;
         }
         return implode("\n\n", $parts);
     }
