@@ -82,6 +82,21 @@ class TaskCalendarViewTest extends TestCase
         $this->assertStringNotContainsString('data-google-disconnect', $html);
     }
 
+    public function testSemContaLinkaAPrivacidadeNoAvisoEAoLadoDoBotao(): void
+    {
+        $html = $this->renderTasks('seller', true, null, null);
+
+        $this->assertStringContainsString('Como o CRM usa a sua agenda está na', $html);
+        $this->assertSame(2, substr_count($html, 'href="http://localhost/crm/public/privacidade" target="_blank" rel="noopener noreferrer"'));
+    }
+
+    public function testContaAtivaNaoRepeteOLinkDaPrivacidade(): void
+    {
+        $html = $this->renderTasks('seller', true, 'active', 'pessoa@example.com');
+
+        $this->assertStringNotContainsString('/privacidade', $html);
+    }
+
     public function testContaAtivaMostraEmailEDesconectar(): void
     {
         $html = $this->renderTasks('seller', true, 'active', 'pessoa@example.com');
