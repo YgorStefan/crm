@@ -19,6 +19,8 @@ $router->get('/logout', 'AuthController', 'logout');
 
 // a politica de privacidade fica publica porque o google confere essa url, sem login, ao publicar o app oauth do google agenda.
 $router->get('/privacidade', 'PrivacyController', 'index', [], public: true);
+// a pagina inicial do app oauth tambem: o google exige uma pagina publica que descreva o app, e a raiz manda para o login.
+$router->get('/sobre', 'AboutController', 'index', [], public: true);
 
 // ---- Troca de senha obrigatória (AuthMiddleware libera mesmo com password_must_change) ----
 $router->get('/profile/change-password', 'ProfileController', 'changePasswordForm');
