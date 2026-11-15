@@ -424,7 +424,7 @@ SET FOREIGN_KEY_CHECKS = 1;
 --  11. google_accounts       → conexão de cada usuário com o Google Agenda
 --  12. google_event_deletions → fila de remoções de eventos no Google Agenda
 --
--- Consolidado até a migration 023 (inclusive). Qualquer migration nova
+-- Consolidado até a migration 022 (inclusive). Qualquer migration nova
 -- em database/migrations/ deve ser aplicada com `php bin/migrate.php`
 -- após o baseline inicial (`php bin/migrate.php --baseline`).
 -- ============================================================
