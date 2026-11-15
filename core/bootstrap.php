@@ -17,7 +17,11 @@ require_once dirname(__DIR__) . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPAR
 //    config/app.php, por isso o require acima vem primeiro.
 // ------------------------------------------------------------------
 ini_set('session.cookie_httponly', '1');
-ini_set('session.cookie_samesite', 'Strict');
+// lax e nao strict: com strict, o link do crm clicado no gmail, no whatsapp ou
+// no google agenda chegava sem o cookie, e a sessao nova trocava o cookie e
+// deslogava o usuario em todas as abas. o lax so manda o cookie de outro site
+// em navegacao de pagina com get, e o post continua protegido pelo csrf.
+ini_set('session.cookie_samesite', 'Lax');
 ini_set('session.use_strict_mode', '1');
 ini_set('session.use_only_cookies', '1');
 ini_set('session.use_trans_sid', '0');

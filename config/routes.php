@@ -74,8 +74,9 @@ $router->get('/api/tasks/{id}', 'TaskController', 'getTask');
 
 // ---- Google Agenda ----
 $router->get('/google/connect', 'GoogleController', 'connect');
-// o google volta sem o cookie samesite strict da sessao, entao esta rota e
-// publica e so repassa a query ao finish, que ja chega com o cookie.
+// a volta do google e publica e so repassa a query ao finish. a pagina
+// intermediaria vem do cookie strict, quando a volta chegava sem a sessao; com
+// o lax a sessao ja chega aqui, e ela segue valendo sem mudar nada no google.
 $router->get('/google/callback', 'GoogleController', 'callback', [], public: true);
 $router->get('/google/callback/finish', 'GoogleController', 'finish');
 $router->post('/google/disconnect', 'GoogleController', 'disconnect', ['CsrfMiddleware']);

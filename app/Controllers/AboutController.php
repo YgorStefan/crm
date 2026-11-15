@@ -8,9 +8,9 @@ class AboutController extends Controller
 {
     public function index(array $params = []): void
     {
-        // e a pagina inicial cadastrada no app oauth do google, e a tela de
-        // consentimento linka ela. o clique de la chega sem o cookie samesite
-        // strict, e a sessao nova trocaria o cookie do usuario, como na privacidade.
+        // pagina inicial cadastrada no app oauth do google, publica como a
+        // privacidade: quem chega sem cookie nao precisa de sessao, e a que o
+        // bootstrap abriu sai sem set-cookie.
         if (!isset($_COOKIE[session_name()])) {
             session_destroy();
             header_remove('Set-Cookie');

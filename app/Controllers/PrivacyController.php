@@ -8,10 +8,9 @@ class PrivacyController extends Controller
 {
     public function index(array $params = []): void
     {
-        // a tela de consentimento do google linka esta pagina, e o clique de la
-        // chega sem o cookie samesite strict. a sessao nova que o bootstrap abriu
-        // mandaria um set-cookie que troca o do usuario logado e derruba o state
-        // da conexao em andamento, entao ela sai sem sessao, como o callback.
+        // pagina publica, linkada pela tela de consentimento do google: quem chega
+        // sem cookie nao precisa de sessao, e a que o bootstrap abriu sai sem
+        // set-cookie, como no callback.
         if (!isset($_COOKIE[session_name()])) {
             session_destroy();
             header_remove('Set-Cookie');

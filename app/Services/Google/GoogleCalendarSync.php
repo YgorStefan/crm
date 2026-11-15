@@ -1381,8 +1381,8 @@ final class GoogleCalendarSync
         if ($description !== '') {
             $parts[] = $description;
         }
-        // o link clicado no google agenda web chega sem o cookie samesite strict,
-        // e e a recarga do core/bootstrap.php que impede o logout.
+        // o link depende do cookie de sessao lax do core/bootstrap.php: com strict,
+        // o clique no google agenda web chegava sem a sessao e deslogava o usuario.
         if ($task['client_id'] !== null && ($task['client_name'] ?? null) !== null) {
             $parts[] = 'Cliente: ' . (string) $task['client_name'] . "\n"
                 . APP_URL . '/clients/' . (int) $task['client_id'];
