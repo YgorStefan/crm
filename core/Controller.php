@@ -99,6 +99,18 @@ abstract class Controller
     }
 
     /**
+     * para pagina publica: quem chega sem cookie nao precisa de sessao, e a
+     * que o bootstrap abriu sai sem set-cookie, para nao criar uma a toa.
+     */
+    protected function withoutNewSession(): void
+    {
+        if (!isset($_COOKIE[session_name()])) {
+            session_destroy();
+            header_remove('Set-Cookie');
+        }
+    }
+
+    /**
      * Detecta requisição AJAX (fetch/XHR) pelo header X-Requested-With
      * ou pelo Accept de JSON.
      */

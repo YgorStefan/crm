@@ -8,8 +8,9 @@ final class CrossSiteRequest
 {
     /**
      * post, put, patch e delete vindos de outro site chegam sem o cookie lax e
-     * nunca sao legitimos, porque o token csrf mora na sessao. navegador que
-     * nao manda o sec-fetch-site segue para o csrf, como antes.
+     * nunca sao legitimos, porque o token csrf mora na sessao. navegador antigo
+     * que nao manda o sec-fetch-site segue o caminho de antes, em que o post de
+     * outro site ainda troca o cookie e desloga.
      *
      * @param array<string, mixed> $server
      */

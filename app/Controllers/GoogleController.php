@@ -70,12 +70,7 @@ class GoogleController extends Controller
 
     public function callback(array $params = []): void
     {
-        // sem cookie nao ha sessao de usuario a preservar, e a pagina so repassa a
-        // query: a sessao que o bootstrap abriu sai sem set-cookie, para nao criar uma a toa.
-        if (!isset($_COOKIE[session_name()])) {
-            session_destroy();
-            header_remove('Set-Cookie');
-        }
+        $this->withoutNewSession();
 
         // a url desta pagina leva o code, que nao pode ir em cache nem em referer.
         header('Cache-Control: no-store');
