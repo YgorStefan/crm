@@ -104,12 +104,11 @@ class PrivacyPageTest extends TestCase
         $this->assertStringContainsString('Para apagá-los, use o contato abaixo.', $html);
     }
 
-    public function testEventoDoGoogleNaoLevaOLinkDaFicha(): void
+    public function testEventoDoGoogleLevaOLinkDaFicha(): void
     {
         $html = $this->renderPage();
 
-        $this->assertStringContainsString('os eventos das suas tarefas, com a descrição e o nome do cliente;', $html);
-        $this->assertStringNotContainsString('link da ficha', $html);
+        $this->assertStringContainsString('os eventos das suas tarefas, com a descrição, o nome do cliente e o link da ficha dele no CRM;', $html);
         $this->assertStringContainsString('Atualizada em 14/11/2026.', $html);
     }
 }
