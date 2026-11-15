@@ -7,6 +7,7 @@ unset($_jsV);
 $googleEnabled    = $googleEnabled ?? false;
 $googleConnection = $googleConnection ?? null;
 $googleConnectUrl = htmlspecialchars(APP_URL . '/google/connect', ENT_QUOTES, 'UTF-8');
+$privacyUrl       = htmlspecialchars(APP_URL . '/privacidade', ENT_QUOTES, 'UTF-8');
 $googleEmailSafe  = htmlspecialchars((string) ($googleEmail ?? ''), ENT_QUOTES, 'UTF-8');
 $googleTeam       = $googleEnabled && $googleConnection === 'active' && ($_SESSION['user']['role'] ?? '') === 'admin';
 ?>
@@ -57,6 +58,9 @@ $googleTeam       = $googleEnabled && $googleConnection === 'active' && ($_SESSI
             <span class="crm-google-mark mt-0.5" aria-hidden="true"></span>
             <p class="flex-1 min-w-0 text-sm text-indigo-900 dark:text-indigo-100">
                 Conecte o Google Agenda para ver seus compromissos aqui e mandar as tarefas do CRM para a sua agenda.
+                Como o CRM usa a sua agenda está na
+                <a href="<?= $privacyUrl ?>" target="_blank" rel="noopener noreferrer"
+                   class="font-medium underline underline-offset-2 hover:text-indigo-700 dark:hover:text-indigo-300">Política de Privacidade</a>.
                 <span class="font-semibold">Na tela do Google, marque a permissão de acesso à agenda.</span>
             </p>
             <button type="button" data-google-hint-dismiss aria-label="Dispensar aviso"
@@ -115,6 +119,9 @@ $googleTeam       = $googleEnabled && $googleConnection === 'active' && ($_SESSI
                         Desconectar
                     </button>
                 <?php else: ?>
+                    <?php // o google exige o aviso de privacidade a vista onde se conecta, mesmo depois de dispensado o aviso de cima. ?>
+                    <a href="<?= $privacyUrl ?>" target="_blank" rel="noopener noreferrer"
+                        class="flex-shrink-0 text-gray-500 underline underline-offset-2 hover:text-indigo-700 dark:text-zinc-400 dark:hover:text-indigo-300">Privacidade</a>
                     <a href="<?= $googleConnectUrl ?>"
                         class="inline-flex items-center gap-2 px-3 py-1 rounded-md font-medium border border-indigo-200 bg-white text-indigo-700 hover:bg-indigo-50
                                dark:border-indigo-800 dark:bg-transparent dark:text-indigo-300 dark:hover:bg-indigo-900/30 transition-colors">
