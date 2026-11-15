@@ -27,6 +27,7 @@ if (defined('APP_ENV') && APP_ENV === 'production') {
 ini_set('session.gc_maxlifetime', (string) SESSION_LIFETIME);
 
 session_name(SESSION_NAME);
+session_start();
 
 // ------------------------------------------------------------------
 // 3. Autoloader PSR-4
@@ -52,25 +53,6 @@ spl_autoload_register(function (string $className): void {
         }
     }
 });
-
-// o session_start espera o autoloader porque a checagem abaixo e uma classe, e
-// a sessao nao pode abrir antes dela: o set-cookie de uma sessao nova desloga
-// quem chegou de outro site sem o cookie strict.
-if (\Core\Http\CrossSiteArrival::needsReload($_SERVER, $_COOKIE, session_name())) {
-    // a volta do google passa por aqui com o code na url, que nao pode ir em
-    // cache nem em referer.
-    header('Cache-Control: no-store');
-    header('Referrer-Policy: no-referrer');
-    header("Content-Security-Policy: default-src 'none'; frame-ancestors 'none'; base-uri 'none'");
-    header('X-Content-Type-Options: nosniff');
-    header('Content-Type: text/html; charset=utf-8');
-    echo \Core\Http\CrossSiteArrival::reloadPage(
-        \Core\Http\CrossSiteArrival::reloadUrl((string) ($_SERVER['REQUEST_URI'] ?? '/'), APP_URL)
-    );
-    exit;
-}
-
-session_start();
 
 // ------------------------------------------------------------------
 // 4. Helpers globais
