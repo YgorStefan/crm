@@ -1,15 +1,9 @@
-import { test, expect, type APIResponse, type Page } from '@playwright/test';
-import { E2E_SELLER_EMAIL, E2E_SELLER_PASSWORD, login, resetLoginRateLimit } from './helpers';
+import { test, expect, type Page } from '@playwright/test';
+import { E2E_SELLER_EMAIL, E2E_SELLER_PASSWORD, login, resetLoginRateLimit, setCookies } from './helpers';
 
 // um host .test nunca resolve; o page.route responde por ele, e o navegador trata a pagina como
 // outro site de verdade, com a regra samesite do cookie de sessao e os cabecalhos sec-fetch reais.
 const OUTRO_SITE = 'http://outro-site.test/';
-
-function setCookies(resp: APIResponse): string[] {
-    return resp.headersArray()
-        .filter((h) => h.name.toLowerCase() === 'set-cookie')
-        .map((h) => h.value);
-}
 
 async function outroSiteCom(page: Page, html: string): Promise<void> {
     await page.route(OUTRO_SITE, (route) => route.fulfill({ contentType: 'text/html', body: html }));

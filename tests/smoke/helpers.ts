@@ -1,10 +1,17 @@
 import { execFile } from 'node:child_process';
 import path from 'node:path';
 import { promisify } from 'node:util';
-import type { CDPSession, Page } from '@playwright/test';
+import type { APIResponse, CDPSession, Page } from '@playwright/test';
 import { expect } from '@playwright/test';
 
 const execFileAsync = promisify(execFile);
+
+/** Os Set-Cookie da resposta, um por item, para provar que a página não abriu sessão. */
+export function setCookies(resp: APIResponse): string[] {
+    return resp.headersArray()
+        .filter((h) => h.name.toLowerCase() === 'set-cookie')
+        .map((h) => h.value);
+}
 
 export const E2E_SELLER_EMAIL = 'e2e.seller@crm.local';
 export const E2E_SELLER_PASSWORD = 'E2eSeller@1234';

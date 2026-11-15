@@ -1,16 +1,10 @@
-import { test, expect, type APIResponse, type Page } from '@playwright/test';
-import { login } from './helpers';
+import { test, expect, type Page } from '@playwright/test';
+import { login, setCookies } from './helpers';
 
 // o servidor da suite sobe sem GOOGLE_CLIENT_ID, entao o /google/connect nunca guarda um state
 // e o finish so recebe state que nao confere; o state substituido por outra aba cai no mesmo aviso.
 
 const STATE_WARNING = 'A conexão com o Google Agenda não foi concluída porque o pedido expirou ou foi substituído por outro. Tente conectar de novo.';
-
-function setCookies(resp: APIResponse): string[] {
-    return resp.headersArray()
-        .filter((h) => h.name.toLowerCase() === 'set-cookie')
-        .map((h) => h.value);
-}
 
 async function expectBackOnTasksWithWarning(page: Page): Promise<void> {
     await expect(page).toHaveURL(/\/tasks$/);

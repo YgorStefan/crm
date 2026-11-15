@@ -1,13 +1,7 @@
-import { test, expect, type APIResponse } from '@playwright/test';
-import { login } from './helpers';
+import { test, expect } from '@playwright/test';
+import { login, setCookies } from './helpers';
 
 const GOOGLE_USER_DATA_POLICY_URL = 'https://developers.google.com/terms/api-services-user-data-policy';
-
-function setCookies(resp: APIResponse): string[] {
-    return resp.headersArray()
-        .filter((h) => h.name.toLowerCase() === 'set-cookie')
-        .map((h) => h.value);
-}
 
 test.describe('Política de privacidade', () => {
     test('a página abre sem login e traz a declaração de Uso Limitado do Google', async ({ page }) => {

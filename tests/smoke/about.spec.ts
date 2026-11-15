@@ -1,11 +1,5 @@
-import { test, expect, type APIResponse } from '@playwright/test';
-import { login } from './helpers';
-
-function setCookies(resp: APIResponse): string[] {
-    return resp.headersArray()
-        .filter((h) => h.name.toLowerCase() === 'set-cookie')
-        .map((h) => h.value);
-}
+import { test, expect } from '@playwright/test';
+import { login, setCookies } from './helpers';
 
 test.describe('Página sobre o CRM', () => {
     test('abre sem login, sem redirecionar, e leva à política de privacidade', async ({ page }) => {
