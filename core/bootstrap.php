@@ -31,7 +31,6 @@ if (defined('APP_ENV') && APP_ENV === 'production') {
 ini_set('session.gc_maxlifetime', (string) SESSION_LIFETIME);
 
 session_name(SESSION_NAME);
-session_start();
 
 // ------------------------------------------------------------------
 // 3. Autoloader PSR-4
@@ -57,6 +56,18 @@ spl_autoload_register(function (string $className): void {
         }
     }
 });
+
+// a recusa vem antes do session_start, que por isso espera o autoloader: a
+// sessao nova de um post de outro site, que chega sem o cookie, mandaria um
+// set-cookie que troca o do usuario e o desloga em todas as abas.
+if (\Core\Http\CrossSiteRequest::isUnsafe($_SERVER)) {
+    http_response_code(403);
+    header('Content-Type: text/plain; charset=utf-8');
+    echo 'Ação bloqueada: o pedido veio de outro site.';
+    exit;
+}
+
+session_start();
 
 // ------------------------------------------------------------------
 // 4. Helpers globais

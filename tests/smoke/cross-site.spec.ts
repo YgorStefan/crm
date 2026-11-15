@@ -16,7 +16,7 @@ async function outroSiteCom(page: Page, html: string): Promise<void> {
     await page.goto(OUTRO_SITE);
 }
 
-test.describe('Link do CRM clicado em outro site', () => {
+test.describe('Chegada ao CRM vinda de outro site', () => {
     test('o cookie de sessao sai com samesite lax', async ({ request }) => {
         const resp = await request.get('/login');
 
@@ -34,6 +34,34 @@ test.describe('Link do CRM clicado em outro site', () => {
 
         await page.goto('/dashboard');
         await expect(page).toHaveURL(/\/dashboard$/);
+    });
+
+    test('formulario de outro site enviado ao crm nao desloga quem esta logado', async ({ page, baseURL }) => {
+        await login(page);
+        const recusa = page.waitForResponse((r) => r.url().endsWith('/clients/store'));
+
+        await outroSiteCom(page, `<form id="f" method="post" action="${baseURL}/clients/store">`
+            + '<input name="name" value="Cliente de outro site"></form>'
+            + '<script>document.getElementById("f").submit()</script>');
+
+        const resp = await recusa;
+        expect(resp.status()).toBe(403);
+        expect(await resp.headerValue('set-cookie')).toBeNull();
+
+        await page.goto('/dashboard');
+        await expect(page).toHaveURL(/\/dashboard$/);
+        await expect(page.locator('a.sidebar-logout[href$="/logout"]')).toBeVisible();
+    });
+
+    test('post de outro site e recusado antes de abrir sessao', async ({ request }) => {
+        const resp = await request.post('/login', {
+            headers: { 'Sec-Fetch-Site': 'cross-site', 'Sec-Fetch-Mode': 'navigate', 'Sec-Fetch-Dest': 'document' },
+            form: { email: 'x@example.com', password: 'x' },
+            maxRedirects: 0,
+        });
+
+        expect(resp.status()).toBe(403);
+        expect(setCookies(resp)).toEqual([]);
     });
 
     test('quem nao esta logado cai no login e volta para o link depois de entrar', async ({ page, baseURL }) => {
