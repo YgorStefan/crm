@@ -61,6 +61,29 @@ final class ClientArchiveGoogleTest extends TestCase
         return [(int) $linha['google_sync_pending'], (int) $linha['google_changed_fields']];
     }
 
+    public function testFalhaAoMarcarOReenvioNaoDeixaOClienteArquivado(): void
+    {
+        $tarefas = new class extends Task {
+            public function markClientDescriptionPending(int $clientId): int
+            {
+                throw new \PDOException('lock wait timeout simulado');
+            }
+        };
+        $controller = new class(tasks: $tarefas) extends ClientController {
+            protected function redirect(string $path): void
+            {
+            }
+        };
+
+        try {
+            $controller->destroy(['id' => 10]);
+            $this->fail('a falha da marcacao devia subir');
+        } catch (\PDOException) {
+        }
+
+        $this->assertSame(1, (int) $this->pdo->query('SELECT is_active FROM clients WHERE id = 10')->fetchColumn());
+    }
+
     public function testArquivarReenviaADescricaoDasTarefasAbertasDoClienteNaAgenda(): void
     {
         $aberta     = $this->tarefa(10, 'evtaberta', 'pending');

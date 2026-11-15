@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use Core\Controller;
+use Core\Database;
 use Core\Middleware\CsrfMiddleware;
 use App\Models\Client;
 use App\Models\ClientSale;
@@ -314,8 +315,19 @@ class ClientController extends Controller
             $this->redirect('/clients');
             return;
         }
-        if ($this->clients->softDelete($id)) {
-            $this->tasks->markClientDescriptionPending($id);
+        // arquivar e marcar o reenvio vao juntos: arquivado sem a marca, o evento
+        // ficaria com o link para uma ficha que nao existe, e repetir a acao nao
+        // marcaria, porque o cliente ja estaria inativo.
+        $db = Database::getInstance();
+        $db->beginTransaction();
+        try {
+            if ($this->clients->softDelete($id)) {
+                $this->tasks->markClientDescriptionPending($id);
+            }
+            $db->commit();
+        } catch (\Throwable $e) {
+            $db->rollBack();
+            throw $e;
         }
 
         $this->flash('success', 'Cliente removido com sucesso.');
