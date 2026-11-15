@@ -6,7 +6,7 @@ import { expect } from '@playwright/test';
 
 const execFileAsync = promisify(execFile);
 
-/** Os Set-Cookie da resposta, um por item, para provar que a página não abriu sessão. */
+/** Os Set-Cookie da resposta, um por item. */
 export function setCookies(resp: APIResponse): string[] {
     return resp.headersArray()
         .filter((h) => h.name.toLowerCase() === 'set-cookie')

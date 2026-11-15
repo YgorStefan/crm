@@ -875,8 +875,8 @@ class Task extends Model
         // descricao, para o patch nao desfazer titulo nem data mudados no google.
         // como toda edicao do crm, o patch leva o status e sobrescreve a
         // descricao de la, entao evento apagado no google e ainda nao lido volta
-        // para a agenda. a concluida fica de fora: reenviar traria de volta o
-        // evento que a pessoa limpou da agenda, e o link dela quase nao e usado.
+        // para a agenda. a concluida fica de fora, com o link antigo, porque
+        // reenviar traria de volta o evento que a pessoa limpou da agenda.
         $stmt = $this->db->prepare(
             "UPDATE tasks SET google_sync_pending = google_sync_pending + 1,
                               google_changed_fields = google_changed_fields | :bit
