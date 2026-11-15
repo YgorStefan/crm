@@ -314,7 +314,9 @@ class ClientController extends Controller
             $this->redirect('/clients');
             return;
         }
-        $this->clients->softDelete($id);
+        if ($this->clients->softDelete($id)) {
+            $this->tasks->markClientDescriptionPending($id);
+        }
 
         $this->flash('success', 'Cliente removido com sucesso.');
         $this->redirect('/clients');
