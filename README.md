@@ -19,7 +19,7 @@ Sistema de CRM (Customer Relationship Management) empresarial desenvolvido do ze
 | Calendário | FullCalendar 6 (CDN) |
 | Ícones | Lucide (inline SVG, sem CDN runtime) |
 | Multi-tenant | Coluna `tenant_id` em todas as tabelas + isolamento no Model |
-| Hospedagem alvo | Hostinger Business (shared hosting) |
+| Hospedagem | VM na Oracle Cloud, Docker com FrankenPHP e PHP 8.3 |
 
 ---
 
@@ -367,36 +367,20 @@ intencional.
 ### CI (GitHub Actions)
 
 O workflow único (`.github/workflows/ci.yml`) roda em sequência: instala
-PHP 8.2 + Node 20, sobe um serviço MySQL 8, importa `database/schema.sql`,
+PHP 8.2 + Node 20, sobe um serviço MariaDB 11 (o motor de produção), importa `database/schema.sql`,
 roda o PHPUnit, sobe o servidor PHP embutido, roda o Playwright (com relatório
 publicado como artefato) e finalmente o smoke do k6 — falhando o pipeline se
 qualquer etapa falhar.
 
 ---
 
-## Deploy na Hostinger
+## Deploy
 
-### Setup inicial (uma vez por ambiente)
-1. Faça upload de todos os arquivos via FTP/SSH para `public_html/crm/` (ou onde a hospedagem aponta).
-2. Importe `database/schema.sql` pelo phpMyAdmin / hPanel.
-3. Crie um `.env` na raiz com as credenciais reais (use `.env.example` como base).
-4. Ajuste `APP_URL=https://seudominio.com.br/crm` e `APP_ENV=production`.
-5. Garanta que `public/` é o **DocumentRoot** — nunca exponha `/app`, `/core`, `/config`.
-6. Rode `php bin/migrate.php --baseline` UMA vez (registra que o schema atual já está aplicado).
+Push na `main` publica em produção: o workflow `.github/workflows/deploy.yml` entra por SSH numa VM da Oracle Cloud e reconstrói a imagem do app (Docker, FrankenPHP, PHP 8.3). O Dockerfile e as variáveis de ambiente de produção ficam num repositório de infraestrutura à parte, privado. Variável nova do `.env` precisa ser cadastrada lá, e só vale quando o container é recriado.
 
-### Deploy contínuo (toda mudança)
-Use o pipeline automatizado, que evita os erros mais comuns (CSS desatualizado, migration esquecida, arquivo solto via SCP):
-```powershell
-# Local (Windows)
-powershell -ExecutionPolicy Bypass -File bin/deploy.ps1
-```
-O script executa em ordem: verifica git status limpo → `npm run build` → commit do CSS se mudou → `git push` → SSH em prod (`git pull` + `php bin/migrate.php`) → mostra status final das migrations.
+**Migration não roda sozinha no deploy.** Migration nova é aplicada à mão na VM (`php bin/migrate.php`), antes do push do código que depende dela.
 
-Flags úteis:
-```powershell
-powershell -File bin/deploy.ps1 -DryRun      # mostra o que faria, não executa
-powershell -File bin/deploy.ps1 -SkipBuild   # pula rebuild do Tailwind
-```
+O `bin/deploy.ps1` e o `bin/deploy.config.example.ps1` são do caminho antigo, da hospedagem compartilhada, e não são mais usados.
 
 > Em produção a CSP usa `script-src 'self' 'nonce-…' 'strict-dynamic'`, então qualquer script/style novo precisa do atributo `nonce="<?= CSP_NONCE ?>"`.
 
@@ -408,12 +392,12 @@ Para evitar bugs que só aparecem em produção, mantenha os ambientes o mais id
 
 | Item | Local (recomendado) | Produção |
 |---|---|---|
-| URL base | `http://localhost/crm` | `https://seudominio.com.br/crm` |
-| `APP_URL` no `.env` | `http://localhost/crm` (sem `/public` no fim) | `https://seudominio.com.br/crm` |
-| Servidor web | Apache (XAMPP/Laragon) com DocumentRoot em `crm/public` | Apache da Hostinger com DocumentRoot em `crm/public` |
+| URL base | `http://localhost/crm` | `https://crm.seudominio.com.br` |
+| `APP_URL` no `.env` | `http://localhost/crm` (sem `/public` no fim) | `https://crm.seudominio.com.br` |
+| Servidor web | Apache (XAMPP/Laragon) com DocumentRoot em `crm/public` | FrankenPHP no container, com o docroot em `/app/public` |
 | `APP_ENV` | `development` (mostra erros na tela) | `production` (oculta erros) |
-| Migrations | `php bin/migrate.php` após cada pull | mesmo comando, automatizado pelo `bin/deploy.ps1` |
-| Tailwind CSS | `npm run watch` enquanto desenvolve | gerado pelo `bin/deploy.ps1`, versionado |
+| Migrations | `php bin/migrate.php` após cada pull | mesmo comando, aplicado à mão na VM antes do deploy |
+| Tailwind CSS | `npm run watch` enquanto desenvolve | versionado, e gerado de novo no build da imagem |
 
 ### Por que isso importa
 Bugs que ocorreram na prática por divergência:
