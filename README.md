@@ -380,8 +380,6 @@ Push na `main` publica em produção: o workflow `.github/workflows/deploy.yml` 
 
 **Migration não roda sozinha no deploy.** Migration nova é aplicada à mão na VM (`php bin/migrate.php`), antes do push do código que depende dela.
 
-O `bin/deploy.ps1` e o `bin/deploy.config.example.ps1` são do caminho antigo, da hospedagem compartilhada, e não são mais usados.
-
 > Em produção a CSP usa `script-src 'self' 'nonce-…' 'strict-dynamic'`, então qualquer script/style novo precisa do atributo `nonce="<?= CSP_NONCE ?>"`.
 
 ---
