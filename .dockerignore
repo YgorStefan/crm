@@ -1,0 +1,27 @@
+# fora do build da imagem, pra nao assar segredo nem lixo e deixar o contexto menor
+.git
+.github
+.gitattributes
+node_modules
+vendor
+/public/build
+/public/hot
+/public/storage
+
+# NUNCA assar o .env de dev na imagem (produção usa env_file do compose)
+.env
+.env.*
+
+# dados e caches locais
+database/*.sqlite
+storage/logs/*
+storage/framework/cache/data/*
+storage/framework/sessions/*
+storage/framework/views/*
+storage/app/private/*
+storage/app/public/*
+
+# não precisa na imagem de produção
+tests
+docs
+*.md
